@@ -20,7 +20,6 @@
   "dependencies": {
     "@effect/platform-node": "4.0.0-rc.112",
     "@googleapis/sheets": "^14.0.0",
-    "effect": "4.0.0-rc.112",
-    "google-auth-library": "^11.0.2"
+    "effect": "4.0.0-rc.112"
   }
 }

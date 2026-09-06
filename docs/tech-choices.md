@@ -17,7 +17,7 @@ Tutto lo script è scritto con Effect 4, oggi release candidate: `effect` e `@ef
 ## Google Sheets
 
 - **Auth**: service account. Chiave JSON generata su Google Cloud con Sheets API abilitata; il foglio va condiviso con l'email del service account in modalità editor. Nessuna password personale coinvolta, revocabile in qualsiasi momento.
-- **Libreria**: `@googleapis/sheets` con `google-auth-library` (JWT), avvolte in un Layer Effect con `Effect.tryPromise` in forma oggetto e rejection mappate su errori tagged. Scartata `google-spreadsheet`: non espone `textFormatRuns` e separa inserimento e scrittura in due chiamate.
+- **Libreria**: `@googleapis/sheets`, con il client JWT di `google-auth-library` preso dal suo riesporto `auth` (così la versione è una sola, quella che `googleapis-common` pinna), avvolte in un Layer Effect con `Effect.tryPromise` in forma oggetto e rejection mappate su errori tagged. Scartata `google-spreadsheet`: non espone `textFormatRuns` e separa inserimento e scrittura in due chiamate.
 - **Link nella colonna Nome**: link ricco via `updateCells` con `textFormatRuns[].format.link`, indipendente dal locale. Scartata la formula `=HYPERLINK`: con `USER_ENTERED` il separatore segue il locale del foglio (issue Google chiusa come won't fix).
 - **Lettura**: `spreadsheets.values.get` (valori formattati) per il match sul testo visibile della colonna Nome. Colonne individuate per nome dell'header, normalizzato e per prefisso (`Data` matcha `Data (+ o -)`); colonna mancante → errore tagged all'avvio.
 - **Inserimento**: un solo `batchUpdate` con `insertDimension` + `updateCells` (e `bold` per le righe sezione): la riga compare già valorizzata, nessuna riga vuota orfana in caso di crash.
