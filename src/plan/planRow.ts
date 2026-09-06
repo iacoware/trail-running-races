@@ -1,7 +1,7 @@
 import { Option, Result } from "effect"
 import type { FoundRace } from "../agent/RaceCard.ts"
 import { parseDate } from "../dates/parseDate.ts"
-import type { Cells } from "../sheet/columns.ts"
+import type { Cells, Columns } from "../sheet/columns.ts"
 import type { Sheet } from "../sheet/parseSheet.ts"
 import { SectionMissingError, UnparsableDateError, type PlanError } from "./errors.ts"
 import { formatCells } from "./formatCells.ts"
@@ -10,9 +10,11 @@ import { targetSection } from "./targetSection.ts"
 
 export type PlannedRow = {
   readonly name: string
+  readonly url: string
   readonly section: string
   readonly row: number
   readonly after: Option.Option<string>
+  readonly columns: Columns
   readonly cells: Cells
 }
 
@@ -44,8 +46,10 @@ export const planRow = (
     ),
     Result.map((section) => ({
       name,
+      url: race.url,
       section: section.name,
       ...insertionAt(section, start.value),
+      columns: sheet.columns,
       cells: formatCells(name, race),
     })),
   )

@@ -5,6 +5,7 @@ import { AgentTimeout } from "../agent/errors.ts"
 import type { FoundRace, RaceCard } from "../agent/RaceCard.ts"
 import type { PlannedRow } from "../plan/planRow.ts"
 import { RaceList } from "../races/RaceList.ts"
+import { SheetApiError } from "../sheet/errors.ts"
 import { SheetReader } from "../sheet/SheetReader.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
 import { captureLogs } from "../testing/captureLogs.ts"
@@ -51,6 +52,23 @@ const agentAnswering = (searched: Array<string>, answers: Record<string, RaceCar
       },
     }),
   )
+
+// A writer that really inserts, so the next race is planned against the sheet it left behind.
+const insertingSheet = (...rows: Array<Array<string>>) => {
+  const current = [header, ...rows]
+  return Layer.merge(
+    Layer.succeed(SheetReader, SheetReader.of({ rows: Effect.sync(() => [...current]) })),
+    Layer.succeed(
+      SheetWriter,
+      SheetWriter.of({
+        insert: (planned) =>
+          Effect.sync(() => {
+            current.splice(planned.row - 1, 0, [planned.cells.name, planned.cells.date])
+          }),
+      }),
+    ),
+  )
+}
 
 const outcomes = (only: Option.Option<string>) => Stream.runCollect(fill({ only }))
 
@@ -161,4 +179,63 @@ it.effect("with --only does not invoke the agent for a race already in the sheet
     expect(results).toEqual([])
     expect(logs).toEqual(['Info: "chianti utmb" è già nel foglio, agente non invocato'])
   }).pipe(Effect.provide(listOf("Gara Nuova")), Effect.provide(tuscany)),
+)
+
+it.effect("plans the second race of a section against the row the first one just took", () =>
+  Effect.gen(function* () {
+    const results = yield* outcomes(Option.none()).pipe(
+      Effect.provide(
+        agentAnswering([], {
+          "Prima Nuova": found({ data: "5 marzo" }),
+          "Seconda Nuova": found({ data: "6 marzo" }),
+        }),
+      ),
+    )
+
+    const rows = results.map((outcome) => (outcome._tag === "Filled" ? outcome.row.row : 0))
+    expect(rows).toEqual([4, 5])
+  }).pipe(
+    Effect.provide(listOf("Prima Nuova", "Seconda Nuova")),
+    Effect.provide(
+      insertingSheet(
+        ["Toscana"],
+        ["Brunello Crossing", "20-21 febbraio"],
+        ["Chianti UTMB", "18-21 marzo"],
+      ),
+    ),
+  ),
+)
+
+it.effect("reports the write error of one race and keeps inserting the next one", () =>
+  Effect.gen(function* () {
+    const written: Array<PlannedRow> = []
+    const failing = Layer.succeed(
+      SheetWriter,
+      SheetWriter.of({
+        insert: (row) =>
+          row.name === "Gara Rifiutata"
+            ? Effect.fail(
+                new SheetApiError({
+                  spreadsheetId: "foglio",
+                  message: "quota superata",
+                  cause: undefined,
+                }),
+              )
+            : Effect.sync(() => void written.push(row)),
+      }),
+    )
+
+    const results = yield* outcomes(Option.none()).pipe(
+      Effect.provide(
+        agentAnswering([], { "Gara Rifiutata": found(), "Gara Buona": found() }),
+      ),
+      Effect.provide(failing),
+    )
+
+    expect(results.map((outcome) => outcome._tag)).toEqual(["Failed", "Filled"])
+    expect(written.map((row) => row.name)).toEqual(["Gara Buona"])
+  }).pipe(
+    Effect.provide(listOf("Gara Rifiutata", "Gara Buona")),
+    Effect.provide(tuscany),
+  ),
 )

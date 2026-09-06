@@ -12,10 +12,16 @@ const count = (label: string, lines: ReadonlyArray<string>) => [
 ]
 
 // The plan is printed race by race as the run goes; not found and ambiguous appear here only.
-export const summaryLines = (outcomes: ReadonlyArray<RaceOutcome>): ReadonlyArray<string> => [
+// A dry run plans the rows it would write, a real run has already written them.
+export type FilledLabel = "pianificate" | "inserite"
+
+export const summaryLines = (
+  outcomes: ReadonlyArray<RaceOutcome>,
+  filled: FilledLabel,
+): ReadonlyArray<string> => [
   "== riepilogo",
   ...count(
-    "pianificate",
+    filled,
     withTag(outcomes, "Filled").map((outcome) => outcome.name),
   ),
   ...count(

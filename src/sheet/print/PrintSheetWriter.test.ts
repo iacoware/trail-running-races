@@ -1,13 +1,10 @@
 import { Option } from "effect"
 import { expect, test } from "vitest"
-import type { PlannedRow } from "../../plan/planRow.ts"
+import { plannedRow } from "../../testing/plannedRow.ts"
 import { describePlan } from "./PrintSheetWriter.ts"
 
-const planned: PlannedRow = {
+const planned = plannedRow({
   name: "Garfagnana Epic Trail",
-  section: "Toscana",
-  row: 4,
-  after: Option.some("Brunello Crossing"),
   cells: {
     name: "Garfagnana Epic Trail",
     date: "5-6 marzo",
@@ -16,7 +13,7 @@ const planned: PlannedRow = {
     type: "Trail",
     distances: "42km 2500m+\n21km 1200m+",
   },
-}
+})
 
 test("describes section, destination row, preceding race and the six cells", () => {
   expect(describePlan(planned)).toEqual([
@@ -33,13 +30,13 @@ test("describes section, destination row, preceding race and the six cells", () 
 })
 
 test("says the row opens the section when no race precedes it", () => {
-  const lines = describePlan({ ...planned, row: 3, after: Option.none() })
+  const lines = describePlan(plannedRow({ ...planned, row: 3, after: Option.none() }))
 
   expect(lines[1]).toBe("Toscana, riga 3, in testa alla sezione")
 })
 
 test("prints an empty cell as its bare label", () => {
-  const lines = describePlan({ ...planned, cells: { ...planned.cells, distances: "" } })
+  const lines = describePlan(plannedRow({ cells: { ...planned.cells, distances: "" } }))
 
   expect(lines.at(-1)).toBe("Distanze:")
 })

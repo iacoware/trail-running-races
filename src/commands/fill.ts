@@ -5,9 +5,14 @@ import type { FoundRace } from "../agent/RaceCard.ts"
 import type { PlanError } from "../plan/errors.ts"
 import { missingRaces } from "../races/missingRaces.ts"
 import { planRow, type PlannedRow } from "../plan/planRow.ts"
-import type { SheetWriteError } from "../sheet/errors.ts"
+import type {
+  SheetColumnMissingError,
+  SheetReadError,
+  SheetWriteError,
+} from "../sheet/errors.ts"
 import type { Sheet } from "../sheet/parseSheet.ts"
-import { readSheet } from "../sheet/readSheet.ts"
+import { readSheet, readSheetQuietly } from "../sheet/readSheet.ts"
+import { SheetReader } from "../sheet/SheetReader.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
 import { missingIn } from "./missing.ts"
 
@@ -22,7 +27,12 @@ export type RaceOutcome =
   | {
       readonly _tag: "Failed"
       readonly name: string
-      readonly error: AgentError | PlanError | SheetWriteError
+      readonly error:
+        | AgentError
+        | PlanError
+        | SheetColumnMissingError
+        | SheetReadError
+        | SheetWriteError
     }
 
 // `--only` narrows the candidates to one name, even one absent from the list, but a race
@@ -40,18 +50,19 @@ const candidates = (sheet: Sheet, only: Option.Option<string>) =>
       }),
   })
 
-const write = (sheet: Sheet, name: string, race: FoundRace) =>
+const write = (name: string, race: FoundRace) =>
   Effect.gen(function* () {
     const writer = yield* SheetWriter
+    // The sheet is read again here: a race inserted earlier in this run moved the rows below it.
+    const sheet = yield* readSheetQuietly
     const planned = yield* Effect.fromResult(planRow(sheet, name, race))
     yield* writer.insert(planned)
     return { _tag: "Filled", name, row: planned } as const
   })
 
 const outcomeFor = (
-  sheet: Sheet,
   name: string,
-): Effect.Effect<RaceOutcome, never, Agent | SheetWriter> =>
+): Effect.Effect<RaceOutcome, never, Agent | SheetReader | SheetWriter> =>
   Effect.gen(function* () {
     const agent = yield* Agent
     const card = yield* Effect.result(agent.search(name))
@@ -62,7 +73,7 @@ const outcomeFor = (
       case "ambigua":
         return { _tag: "Ambiguous", name, candidates: card.success.candidati } as const
       case "trovata":
-        return yield* write(sheet, name, card.success)
+        return yield* write(name, card.success)
     }
   }).pipe(
     // One race in error never stops the run: it is reported and the next race is searched.
@@ -74,8 +85,6 @@ export const fill = (options: { readonly only: Option.Option<string> }) =>
     Effect.gen(function* () {
       const sheet = yield* readSheet
       const names = yield* candidates(sheet, options.only)
-      return Stream.fromIterable(names).pipe(
-        Stream.mapEffect((name) => outcomeFor(sheet, name)),
-      )
+      return Stream.fromIterable(names).pipe(Stream.mapEffect(outcomeFor))
     }),
   )

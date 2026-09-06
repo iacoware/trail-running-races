@@ -19,9 +19,11 @@ const isAuthFailure = (status: number | undefined, code: string, message: string
   message.startsWith("invalid_grant") ||
   code.startsWith("ERR_OSSL")
 
+export type GoogleCallError = SheetAuthError | SheetNotFoundError | SheetApiError
+
 export const toSheetError =
   (spreadsheetId: string) =>
-  (cause: unknown): SheetAuthError | SheetNotFoundError | SheetApiError => {
+  (cause: unknown): GoogleCallError => {
     const status = statusOf(cause)
     const message = messageOf(cause)
 

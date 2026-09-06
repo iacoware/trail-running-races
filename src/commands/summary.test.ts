@@ -1,19 +1,13 @@
-import { Option } from "effect"
 import { expect, test } from "vitest"
 import { AgentTimeout } from "../agent/errors.ts"
+import { plannedRow } from "../testing/plannedRow.ts"
 import type { RaceOutcome } from "./fill.ts"
 import { hasErrors, summaryLines } from "./summary.ts"
 
 const filled = (name: string): RaceOutcome => ({
   _tag: "Filled",
   name,
-  row: {
-    name,
-    section: "Toscana",
-    row: 4,
-    after: Option.none(),
-    cells: { name, date: "2 maggio", place: "", fromFlorence: "", type: "Trail", distances: "" },
-  },
+  row: plannedRow({ name }),
 })
 
 const timedOut = (name: string): RaceOutcome => ({
@@ -32,7 +26,7 @@ test("counts every category and lists the races behind each one", () => {
     { _tag: "NotFound", name: "Gara inesistente di prova" },
     { _tag: "Ambiguous", name: "Sky trail Covigliaio", candidates: ["2024", "2025"] },
     timedOut("Ultra trail Mugello"),
-  ])
+  ], "pianificate")
 
   expect(lines).toEqual([
     "== riepilogo",
@@ -48,7 +42,7 @@ test("counts every category and lists the races behind each one", () => {
 })
 
 test("keeps the zero counts of an empty run", () => {
-  expect(summaryLines([])).toEqual([
+  expect(summaryLines([], "pianificate")).toEqual([
     "== riepilogo",
     "pianificate: 0",
     "non trovate: 0",
