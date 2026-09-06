@@ -20,11 +20,11 @@ const linkedCell = (value: string, uri: string): sheets_v4.Schema$CellData =>
     ? {}
     : { ...cell(value), textFormatRuns: [{ startIndex: 0, format: { link: { uri } } }] }
 
+const blankRowValues = (columns: Columns): Array<sheets_v4.Schema$CellData> =>
+  Array.from({ length: width(columns) }, () => ({}))
+
 const rowValues = (planned: PlannedRow) => {
-  const values: Array<sheets_v4.Schema$CellData> = Array.from(
-    { length: width(planned.columns) },
-    () => ({}),
-  )
+  const values = blankRowValues(planned.columns)
   for (const key of COLUMN_KEYS) values[planned.columns[key]] = cell(planned.cells[key])
   values[planned.columns.name] = Option.match(planned.url, {
     onNone: () => cell(planned.cells.name),
@@ -34,10 +34,7 @@ const rowValues = (planned: PlannedRow) => {
 }
 
 const sectionHeaderValues = (planned: PlannedRow) => {
-  const values: Array<sheets_v4.Schema$CellData> = Array.from(
-    { length: width(planned.columns) },
-    () => ({}),
-  )
+  const values = blankRowValues(planned.columns)
   values[planned.columns.name] = cell(planned.section)
   return values
 }

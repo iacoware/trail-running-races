@@ -31,6 +31,15 @@ const reviewMessage: Readonly<Record<ReviewOutcome, string>> = {
   ambigua: "più di un evento con questo nome",
 }
 
+const missingSectionPosition = (
+  target: Extract<SectionTarget, { readonly _tag: "MissingSpecialSection" }>,
+) => ({
+  section: target.name,
+  row: target.action.headerRow + 1,
+  after: Option.none<string>(),
+  sectionAction: target.action,
+})
+
 const positionIn = (target: SectionTarget, start: DayOfYear) =>
   target._tag === "ExistingSection"
     ? {
@@ -38,21 +47,11 @@ const positionIn = (target: SectionTarget, start: DayOfYear) =>
         ...insertionAt(target.section, start),
         sectionAction: target.action,
       }
-    : {
-        section: target.name,
-        row: target.action.headerRow + 1,
-        after: Option.none<string>(),
-        sectionAction: target.action,
-      }
+    : missingSectionPosition(target)
 
 const reviewPositionIn = (target: SectionTarget) => {
   if (target._tag === "MissingSpecialSection") {
-    return {
-      section: target.name,
-      row: target.action.headerRow + 1,
-      after: Option.none<string>(),
-      sectionAction: target.action,
-    }
+    return missingSectionPosition(target)
   }
   const previous = target.section.races.at(-1)
   return {
