@@ -28,7 +28,7 @@ const formatDistance = (distance: Distance) => {
 const distances = (list: ReadonlyArray<Distance>) =>
   list
     .filter(isListed)
-    .toSorted((left, right) => right.km - left.km)
+    .toSorted((left, right) => left.km - right.km)
     .map(formatDistance)
     .join("\n")
 

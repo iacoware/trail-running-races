@@ -42,6 +42,6 @@
 
 **Tipo** — Disciplina prevalente della gara, un solo valore tra `Trail` e `Sky`.
 
-**Distanza** — Un percorso proposto dalla gara: chilometri, dislivello positivo (può mancare), flag "camminata" per i percorsi non competitivi, flag "bambini" per i percorsi riservati ai bambini. Una gara ne ha una o più; nel foglio compaiono per chilometri decrescenti.
+**Distanza** — Un percorso proposto dalla gara: chilometri, dislivello positivo (può mancare), flag "camminata" per i percorsi non competitivi, flag "bambini" per i percorsi riservati ai bambini. Una gara ne ha una o più; nel foglio compaiono per chilometri crescenti.
 
 **Percorso ignorato** — Percorso che non compare nel foglio: riservato ai bambini, oppure non competitivo e sotto i 5km. La soglia vale solo per le non competitive; una gara competitiva corta resta.

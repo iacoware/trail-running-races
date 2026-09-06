@@ -62,7 +62,7 @@ Per l'ordinamento conta il giorno di inizio. Confronto su (mese, giorno).
 - Data: il campo `data` restituito dall'agente, ripulito da spazi doppi.
 - Luogo: l'agente restituisce una lista di comuni; lo script li unisce con `, `.
 - Da FI: dai minuti stimati dall'agente, `~50min`, `~1h`, `~1h30`. Il foglio è pensato per chi vive a Firenze; il punto di partenza non è configurabile.
-- Distanze: una riga per elemento, `{km}km {dislivello}m+` (solo `{km}km` se il dislivello manca), con `, camminata` in coda se il flag è vero, ordinati per km decrescente. Prima della formattazione si scartano i percorsi con flag `bambini` e quelli con `camminata` e meno di 5km. Se non resta nulla la cella rimane vuota. Decimali con il punto (le righe esistenti sono miste, non si toccano).
+- Distanze: una riga per elemento, `{km}km {dislivello}m+` (solo `{km}km` se il dislivello manca), con `, camminata` in coda se il flag è vero, ordinati per km crescente. Prima della formattazione si scartano i percorsi con flag `bambini` e quelli con `camminata` e meno di 5km. Se non resta nulla la cella rimane vuota. Decimali con il punto (le righe esistenti sono miste, non si toccano).
 
 ## Cosa non c'è
 

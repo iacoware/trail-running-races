@@ -43,7 +43,7 @@ test.each([
   expect(formatCells("Gara", race({ minutiDaFirenze: minutes })).fromFlorence).toBe(expected)
 })
 
-test("orders the distances by descending km, with the climb and the walk suffix", () => {
+test("orders the distances by ascending km, with the climb and the walk suffix", () => {
   const cells = formatCells(
     "Gara",
     race({
@@ -55,7 +55,7 @@ test("orders the distances by descending km, with the climb and the walk suffix"
     }),
   )
 
-  expect(cells.distances).toBe("45km 1820m+\n24km\n17.5km 750m+, camminata")
+  expect(cells.distances).toBe("17.5km 750m+, camminata\n24km\n45km 1820m+")
 })
 
 test("drops the children routes and the walks under 5km, keeping a competitive short one", () => {
@@ -71,7 +71,7 @@ test("drops the children routes and the walks under 5km, keeping a competitive s
     }),
   )
 
-  expect(cells.distances).toBe("12km 300m+, camminata\n4km 200m+")
+  expect(cells.distances).toBe("4km 200m+\n12km 300m+, camminata")
 })
 
 test("leaves the distances cell empty when nothing is left", () => {

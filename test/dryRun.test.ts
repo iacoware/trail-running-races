@@ -61,7 +61,7 @@ test("plans a Tuscan race between the two races bracketing its date", async () =
 test("keeps only the walk over 5km among the non competitive routes", async () => {
   const run = await dryRunOn(["Garfagnana Epic Trail"])
 
-  expect(run.stdout).toContain("Distanze: 42km 2500m+\n          12km 300m+, camminata\n")
+  expect(run.stdout).toContain("Distanze: 12km 300m+, camminata\n          42km 2500m+\n")
 })
 
 test("sends a sectionless region to Resto di Italia and a foreign race to Estero", async () => {
