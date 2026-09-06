@@ -4,7 +4,7 @@
 
 **Sources:** `docs/goal.md`, `docs/concepts.md`, `docs/arch-choices.md`, `docs/tech-choices.md`, `fixtures/sheet.csv`.
 
-**Current state:** Niente consegnato: esistono i documenti in `docs/` e il CSV di fixture, nessun repository git, nessun codice. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
+**Current state:** Consegnata S0: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, `pnpm typecheck` e `pnpm test` verdi, chiave del service account in locale fuori da git e lettura del foglio reale verificata. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
 
 ## Themes
 
@@ -21,7 +21,6 @@
 
 | Id | Title | Theme | Kind | Size | Readiness | Executor | Depends on |
 |---|---|---|---|---|---|---|---|
-| S0 | [Repository, toolchain e accesso al foglio](slices/S0-repository-e-credenziali.md) | `—` | `enabler` | `small` | `ready` | `mixed` | — |
 | S1 | [Skeleton: l'header del foglio letto via service account](slices/S1-skeleton-header-foglio.md) | `—` | `release` | `small` | `ready` | `agent` | — |
 | S2 | [missing: i nomi mancanti dal foglio reale](slices/S2-missing-gare-mancanti.md) | `mancanti` | `product` | `small` | `ready` | `agent` | — |
 | S3 | [Scheda gara validata dall'agente per un nome](slices/S3-scheda-gara-dall-agente.md) | `inserimento` | `enabler` | `medium` | `ready` | `agent` | S2 |
