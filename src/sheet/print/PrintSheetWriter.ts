@@ -16,8 +16,17 @@ const position = (planned: PlannedRow) =>
     onSome: (name) => `dopo ${name}`,
   })
 
+const sectionCreation = (planned: PlannedRow) =>
+  planned.sectionAction._tag === "UseExistingSection"
+    ? []
+    : [
+        `crea ${planned.section}: riga vuota ${planned.sectionAction.separatorRow}, ` +
+          `intestazione in grassetto ${planned.sectionAction.headerRow}`,
+      ]
+
 export const describePlan = (planned: PlannedRow): ReadonlyArray<string> => [
   `== ${planned.name}`,
+  ...sectionCreation(planned),
   `${planned.section}, riga ${planned.row}, ${position(planned)}`,
   ...COLUMN_KEYS.flatMap((key) => cellLines(COLUMN_HEADERS[key], planned.cells[key])),
 ]

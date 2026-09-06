@@ -63,6 +63,17 @@ const insertingSheet = (...rows: Array<Array<string>>) => {
       SheetWriter.of({
         insert: (planned) =>
           Effect.sync(() => {
+            if (planned.sectionAction._tag === "CreateSection") {
+              current.splice(
+                planned.sectionAction.separatorRow - 1,
+                0,
+                [],
+                [planned.section],
+                [planned.cells.name, planned.cells.date],
+                ...(planned.sectionAction.trailingSeparator ? [[]] : []),
+              )
+              return
+            }
             current.splice(planned.row - 1, 0, [planned.cells.name, planned.cells.date])
           }),
       }),
@@ -117,6 +128,7 @@ test("parks not found and ambiguous races at the end of Da verificare", () =>
         section: "Da verificare",
         row: 7,
         after: Option.none(),
+        sectionAction: { _tag: "UseExistingSection" },
         columns: {
           name: 0,
           date: 1,
@@ -140,6 +152,7 @@ test("parks not found and ambiguous races at the end of Da verificare", () =>
         section: "Da verificare",
         row: 7,
         after: Option.none(),
+        sectionAction: { _tag: "UseExistingSection" },
         columns: {
           name: 0,
           date: 1,
@@ -202,7 +215,7 @@ test("appends an unresolved race after the last row in Da verificare", () =>
   ),
 )
 
-test("reports a missing Da verificare section as a tagged race failure", () =>
+test("creates Da verificare when parking the first unresolved race", () =>
   Effect.gen(function* () {
     const written: Array<PlannedRow> = []
 
@@ -211,10 +224,9 @@ test("reports a missing Da verificare section as a tagged race failure", () =>
       Effect.provide(writerInto(written)),
     )
 
-    expect(written).toEqual([])
-    expect(results).toHaveLength(1)
-    const [outcome] = results
-    expect(outcome?._tag === "Failed" && outcome.error._tag).toBe("SectionMissingError")
+    expect(results.map((outcome) => outcome._tag)).toEqual(["NotFound"])
+    expect(written[0]?.section).toBe("Da verificare")
+    expect(written[0]?.sectionAction._tag).toBe("CreateSection")
   }).pipe(
     Effect.provide(listOf("Gara Assente")),
     Effect.provide(sheetWith(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])),
@@ -261,7 +273,7 @@ test("keeps searching the next race after one fails, reporting the tagged error"
   }).pipe(Effect.provide(listOf("Gara Rotta", "Gara Buona")), Effect.provide(tuscany)),
 )
 
-test("reports the missing destination section as an error and plans nothing", () =>
+test("creates Estero when a foreign race first needs it", () =>
   Effect.gen(function* () {
     const written: Array<PlannedRow> = []
 
@@ -270,11 +282,34 @@ test("reports the missing destination section as an error and plans nothing", ()
       Effect.provide(writerInto(written)),
     )
 
-    expect(written).toEqual([])
-    expect(results).toHaveLength(1)
-    const [outcome] = results
-    expect(outcome?._tag === "Failed" && outcome.error._tag).toBe("SectionMissingError")
+    expect(results.map((outcome) => outcome._tag)).toEqual(["Filled"])
+    expect(written[0]?.section).toBe("Estero")
+    expect(written[0]?.sectionAction._tag).toBe("CreateSection")
   }).pipe(Effect.provide(listOf("Gara Francese")), Effect.provide(tuscany)),
+)
+
+test("plans a second race against the special section created by the first", () =>
+  Effect.gen(function* () {
+    const results = yield* outcomes(Option.none()).pipe(
+      Effect.provide(
+        agentAnswering([], {
+          "Prima Francese": found({ regione: "Estero", data: "5 marzo" }),
+          "Seconda Francese": found({ regione: "Estero", data: "6 marzo" }),
+        }),
+      ),
+    )
+
+    const filled = results.filter((outcome) => outcome._tag === "Filled")
+    expect(filled.map((outcome) => [outcome.row.row, outcome.row.sectionAction._tag])).toEqual([
+      [6, "CreateSection"],
+      [7, "UseExistingSection"],
+    ])
+  }).pipe(
+    Effect.provide(listOf("Prima Francese", "Seconda Francese")),
+    Effect.provide(
+      insertingSheet(["Toscana"], ["Brunello Crossing", "20-21 febbraio"]),
+    ),
+  ),
 )
 
 test("with --only searches that name even when it is absent from the list", () =>

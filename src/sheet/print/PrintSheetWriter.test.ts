@@ -35,6 +35,28 @@ test("says the row opens the section when no race precedes it", () => {
   expect(lines[1]).toBe("Toscana, riga 3, in testa alla sezione")
 })
 
+test("describes the separator and bold header when the destination section is created", () => {
+  const lines = describePlan(
+    plannedRow({
+      section: "Estero",
+      row: 8,
+      after: Option.none(),
+      sectionAction: {
+        _tag: "CreateSection",
+        separatorRow: 6,
+        headerRow: 7,
+        trailingSeparator: false,
+      },
+    }),
+  )
+
+  expect(lines.slice(0, 3)).toEqual([
+    "== Gara Nuova",
+    "crea Estero: riga vuota 6, intestazione in grassetto 7",
+    "Estero, riga 8, in testa alla sezione",
+  ])
+})
+
 test("prints an empty cell as its bare label", () => {
   const lines = describePlan(plannedRow({ cells: { ...planned.cells, distances: "" } }))
 

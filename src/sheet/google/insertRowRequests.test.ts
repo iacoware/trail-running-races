@@ -91,3 +91,69 @@ test("spans every column up to the last one, filling the gaps with blanks", () =
   expect(values?.[6]).toEqual({})
   expect(values?.[7]?.userEnteredValue).toEqual({ stringValue: "42km 2500m+\n21km 1200m+" })
 })
+
+test("atomically inserts a separator, section header and race when creating a section", () => {
+  const requests = requestsFor({
+    section: "Estero",
+    row: 8,
+    after: Option.none(),
+    sectionAction: {
+      _tag: "CreateSection",
+      separatorRow: 6,
+      headerRow: 7,
+      trailingSeparator: false,
+    },
+  })
+
+  expect(requests).toHaveLength(4)
+  expect(requests[0]?.insertDimension).toEqual({
+    range: { sheetId: SHEET_ID, dimension: "ROWS", startIndex: 5, endIndex: 8 },
+    inheritFromBefore: false,
+  })
+  expect(requests[1]?.updateCells?.start).toEqual({
+    sheetId: SHEET_ID,
+    rowIndex: 6,
+    columnIndex: 0,
+  })
+  expect(requests[1]?.updateCells?.rows?.map((row) => row.values?.[0]?.userEnteredValue)).toEqual([
+    { stringValue: "Estero" },
+    { stringValue: "Garfagnana Epic Trail" },
+  ])
+  expect(requests[2]?.repeatCell).toEqual({
+    range: {
+      sheetId: SHEET_ID,
+      startRowIndex: 6,
+      endRowIndex: 7,
+    },
+    cell: { userEnteredFormat: { textFormat: { bold: true } } },
+    fields: "userEnteredFormat.textFormat.bold",
+  })
+  expect(requests[3]?.repeatCell).toEqual({
+    range: {
+      sheetId: SHEET_ID,
+      startRowIndex: 7,
+      endRowIndex: 8,
+    },
+    cell: { userEnteredFormat: { textFormat: { bold: false } } },
+    fields: "userEnteredFormat.textFormat.bold",
+  })
+})
+
+test("adds a trailing separator when creating before a section directly below the sheet header", () => {
+  const [insert] = requestsFor({
+    row: 4,
+    sectionAction: {
+      _tag: "CreateSection",
+      separatorRow: 2,
+      headerRow: 3,
+      trailingSeparator: true,
+    },
+  })
+
+  expect(insert?.insertDimension?.range).toEqual({
+    sheetId: SHEET_ID,
+    dimension: "ROWS",
+    startIndex: 1,
+    endIndex: 5,
+  })
+})

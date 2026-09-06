@@ -33,11 +33,73 @@ const rowValues = (planned: PlannedRow) => {
   return values
 }
 
-// One atomic request inserts the row and fills it: a crash never leaves an empty row behind.
+const sectionHeaderValues = (planned: PlannedRow) => {
+  const values: Array<sheets_v4.Schema$CellData> = Array.from(
+    { length: width(planned.columns) },
+    () => ({}),
+  )
+  values[planned.columns.name] = cell(planned.section)
+  return values
+}
+
+const bold = (
+  sheetId: number,
+  row: number,
+  value: boolean,
+): sheets_v4.Schema$Request => ({
+  repeatCell: {
+    range: {
+      sheetId,
+      startRowIndex: row - 1,
+      endRowIndex: row,
+    },
+    cell: { userEnteredFormat: { textFormat: { bold: value } } },
+    fields: "userEnteredFormat.textFormat.bold",
+  },
+})
+
+const createSectionRequests = (
+  sheetId: number,
+  planned: PlannedRow,
+): ReadonlyArray<sheets_v4.Schema$Request> => {
+  if (planned.sectionAction._tag !== "CreateSection") return []
+  const { separatorRow, headerRow, trailingSeparator } = planned.sectionAction
+  const index = separatorRow - 1
+  const insertedRows = trailingSeparator ? 4 : 3
+
+  return [
+    {
+      insertDimension: {
+        range: {
+          sheetId,
+          dimension: "ROWS",
+          startIndex: index,
+          endIndex: index + insertedRows,
+        },
+        inheritFromBefore: false,
+      },
+    },
+    {
+      updateCells: {
+        start: { sheetId, rowIndex: headerRow - 1, columnIndex: 0 },
+        rows: [{ values: sectionHeaderValues(planned) }, { values: rowValues(planned) }],
+        fields: WRITTEN_FIELDS,
+      },
+    },
+    bold(sheetId, headerRow, true),
+    bold(sheetId, planned.row, false),
+  ]
+}
+
+// The whole returned array is sent in one batchUpdate: a crash leaves neither an empty row nor
+// a newly-created special section without its first race.
 export const insertRowRequests = (
   sheetId: number,
   planned: PlannedRow,
 ): ReadonlyArray<sheets_v4.Schema$Request> => {
+  if (planned.sectionAction._tag === "CreateSection") {
+    return createSectionRequests(sheetId, planned)
+  }
   const index = planned.row - 1
   return [
     {

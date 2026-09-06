@@ -7,6 +7,7 @@ const DEFAULTS: PlannedRow = {
   section: "Toscana",
   row: 4,
   after: Option.some("Brunello Crossing"),
+  sectionAction: { _tag: "UseExistingSection" },
   columns: { name: 0, date: 1, place: 2, fromFlorence: 3, type: 4, distances: 5 },
   cells: {
     name: "Gara Nuova",

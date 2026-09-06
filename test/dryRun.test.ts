@@ -72,15 +72,36 @@ test("sends a sectionless region to Resto di Italia and a foreign race to Estero
   expect(run.exitCode).toBe(0)
 })
 
-test("reports a tagged error and plans nothing when the section is missing", async () => {
+test("creates missing Estero between Resto di Italia and Da verificare", async () => {
   const run = await dryRunOnEdited(["Gara Francese"], (csv) =>
     csv.replace(/^Estero,+\r?\n/m, ""),
   )
 
-  expect(run.stdout).not.toContain("== Gara Francese")
-  expect(run.stdout).toContain("errori: 1")
-  expect(run.stdout).toContain("Gara Francese: SectionMissingError")
-  expect(run.exitCode).toBe(1)
+  expect(run.stdout).toContain("crea Estero: riga vuota 9, intestazione in grassetto 10")
+  expect(run.stdout).toContain("Estero, riga 11, in testa alla sezione")
+  expect(run.stdout).toContain("errori: 0")
+  expect(run.exitCode).toBe(0)
+})
+
+test("creates Da verificare at the bottom when no special section exists", async () => {
+  const run = await dryRunOnEdited(["Gara inesistente di prova"], (csv) =>
+    csv.replace(/^(Resto di Italia|Estero|Da verificare),+(?:\r?\n|$)/gm, ""),
+  )
+
+  expect(run.stdout).toContain("crea Da verificare:")
+  expect(run.stdout).toContain("Da verificare,")
+  expect(run.stdout).toContain("Data: non ho trovato niente")
+  expect(run.exitCode).toBe(0)
+})
+
+test("creates Resto di Italia, never the absent regional section", async () => {
+  const run = await dryRunOnEdited(["Gara Lombarda"], (csv) =>
+    csv.replace(/^Resto di Italia,+\r?\n/m, ""),
+  )
+
+  expect(run.stdout).toContain("crea Resto di Italia:")
+  expect(run.stdout).not.toContain("crea Lombardia:")
+  expect(run.exitCode).toBe(0)
 })
 
 test("plans a later race before the first unparsable row of its section", async () => {

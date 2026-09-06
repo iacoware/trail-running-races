@@ -2,7 +2,7 @@ import { Option, Result } from "effect"
 import { expect, test } from "vitest"
 import type { FoundRace } from "../agent/RaceCard.ts"
 import { parseSheet, type Sheet } from "../sheet/parseSheet.ts"
-import { planRow } from "./planRow.ts"
+import { planReviewRow, planRow } from "./planRow.ts"
 
 const header = ["Nome", "Data (+ o -)", "Luogo", "Da FI", "Tipo", "Distanze"]
 
@@ -24,8 +24,8 @@ const race = (over: Partial<FoundRace> = {}): FoundRace => ({
 const plan = (sheet: Sheet, name: string, found: FoundRace) =>
   Result.getOrThrow(planRow(sheet, name, found))
 
-const planFailure = (sheet: Sheet, name: string, found: FoundRace) =>
-  Result.getOrThrow(Result.flip(planRow(sheet, name, found)))
+const reviewPlan = (sheet: Sheet, name: string) =>
+  Result.getOrThrow(planReviewRow(sheet, name, "non_trovata"))
 
 const tuscany = sheetOf(
   ["Toscana"],
@@ -96,13 +96,77 @@ test("matches a section name written with a typographic apostrophe", () => {
   expect(planned.section).toBe("Valle d’Aosta")
 })
 
-test("fails naming the missing destination section, without a plan", () => {
+test("creates missing Estero at the bottom with its separator and header", () => {
   const sheet = sheetOf(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])
 
-  const error = planFailure(sheet, "Gara Francese", race({ regione: "Estero" }))
+  const planned = plan(sheet, "Gara Francese", race({ regione: "Estero" }))
 
-  expect(error._tag).toBe("SectionMissingError")
-  expect(error.message).toContain("Estero")
+  expect(planned.section).toBe("Estero")
+  expect(planned.row).toBe(6)
+  expect(planned.after).toEqual(Option.none())
+  expect(planned.sectionAction).toEqual({
+    _tag: "CreateSection",
+    separatorRow: 4,
+    headerRow: 5,
+    trailingSeparator: false,
+  })
+})
+
+test("creates a missing special section before the first later one in canonical order", () => {
+  const sheet = sheetOf(
+    ["Toscana"],
+    ["Brunello Crossing", "20-21 febbraio"],
+    [],
+    ["Resto di Italia"],
+    [],
+    ["Da verificare"],
+  )
+
+  const planned = plan(sheet, "Gara Francese", race({ regione: "Estero" }))
+
+  expect(planned.row).toBe(8)
+  expect(planned.sectionAction).toEqual({
+    _tag: "CreateSection",
+    separatorRow: 6,
+    headerRow: 7,
+    trailingSeparator: false,
+  })
+})
+
+test(
+  "adds a trailing separator when the following special section is directly below the header",
+  () => {
+    const sheet = sheetOf(["Estero"])
+
+    const planned = plan(sheet, "Gara Lombarda", race({ regione: "Lombardia" }))
+
+    expect(planned.sectionAction).toEqual({
+      _tag: "CreateSection",
+      separatorRow: 2,
+      headerRow: 3,
+      trailingSeparator: true,
+    })
+    expect(planned.row).toBe(4)
+  },
+)
+
+test("creates Resto di Italia instead of a missing regional section", () => {
+  const sheet = sheetOf(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])
+
+  const planned = plan(sheet, "Gara Lombarda", race({ regione: "Lombardia" }))
+
+  expect(planned.section).toBe("Resto di Italia")
+  expect(planned.sectionAction._tag).toBe("CreateSection")
+})
+
+test("creates Da verificare on a sheet without special sections", () => {
+  const sheet = sheetOf(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])
+
+  const planned = reviewPlan(sheet, "Gara Assente")
+
+  expect(planned.section).toBe("Da verificare")
+  expect(planned.row).toBe(6)
+  expect(planned.sectionAction._tag).toBe("CreateSection")
 })
 
 test("stops before the first unparsable row even when the new date is later", () => {

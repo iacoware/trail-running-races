@@ -21,6 +21,7 @@ export type Sheet = {
   readonly sections: ReadonlyArray<Section>
   readonly orphans: ReadonlyArray<RaceRow>
   readonly warnings: ReadonlyArray<SheetWarning>
+  readonly lastRow: number
 }
 
 const isBlank = (cell: string) => cell.trim() === ""
@@ -85,6 +86,7 @@ export const parseSheet = (
   Result.map(resolveColumns(rows[0] ?? []), (columns) => ({
     columns,
     ...readSections(columns, rows),
+    lastRow: rows.length,
   }))
 
 export const raceRows = (sheet: Sheet): ReadonlyArray<RaceRow> => [
