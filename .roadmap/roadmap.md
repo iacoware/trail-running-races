@@ -4,7 +4,7 @@
 
 **Sources:** `docs/goal.md`, `docs/concepts.md`, `docs/arch-choices.md`, `docs/tech-choices.md`, `fixtures/sheet.csv`.
 
-**Current state:** Consegnate S0, S1 e S2: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, e `pnpm start missing` che stampa i nomi dell'elenco senza riga nel foglio reale attraverso i port `RaceList` e `SheetReader`, con colonne e sezioni ricavate dalla griglia in codice puro e il match sul testo visibile della colonna Nome verificato anche sulle celle con link; la promessa di `mancanti` è mantenuta. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
+**Current state:** Consegnate S0, S1, S2 e S3: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, `pnpm start missing` che stampa i nomi dell'elenco senza riga nel foglio reale attraverso i port `RaceList` e `SheetReader`, e `fill --dry-run [--only <nome>]` che invoca l'agente headless una gara per volta attraverso il port `Agent` su `ChildProcessSpawner` con timeout, e stampa la scheda decodificata con lo Schema chiuso — regione, tipo e data vincolata alla grammatica italiana del parser — oppure l'errore tagged. Restano da fare posizionamento, celle e scrittura. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
 
 ## Themes
 
@@ -20,12 +20,11 @@
 
 | Id | Title | Theme | Kind | Size | Readiness | Executor | Depends on |
 |---|---|---|---|---|---|---|---|
-| S3 | [Scheda gara validata dall'agente per un nome](slices/S3-scheda-gara-dall-agente.md) | `inserimento` | `enabler` | `medium` | `ready` | `agent` | — |
-| S4 | [Piano di inserimento in dry run, anche da CSV](slices/S4-piano-dry-run-da-csv.md) | `anteprima` | `product` | `medium` | `ready` | `agent` | S3 |
+| S4 | [Piano di inserimento in dry run, anche da CSV](slices/S4-piano-dry-run-da-csv.md) | `anteprima` | `product` | `medium` | `ready` | `agent` | — |
 | S5 | [Riga della gara trovata inserita nel foglio](slices/S5-inserimento-nel-foglio.md) | `inserimento` | `product` | `medium` | `ready` | `agent` | S4 |
 | S6 | [Non trovata e ambigua parcheggiate in Da verificare](slices/S6-da-verificare.md) | `da-verificare` | `product` | `small` | `ready` | `agent` | S5 |
 | S7 | [Sezioni speciali create quando mancano](slices/S7-sezioni-speciali.md) | `sezioni-speciali` | `product` | `small` | `ready` | `agent` | S5, S6 |
-| S8 | [Lo stesso run con Codex come agente](slices/S8-codex-come-agente.md) | `agente-intercambiabile` | `product` | `small` | `ready` | `mixed` | S3 |
+| S8 | [Lo stesso run con Codex come agente](slices/S8-codex-come-agente.md) | `agente-intercambiabile` | `product` | `small` | `ready` | `mixed` | — |
 
 ## LATER
 
@@ -47,9 +46,6 @@
 
 ## Assumptions
 
-- `inserimento, S3` — `Tipo` è chiuso a `Trail` e `Sky` come nello schema della scheda; i puntini in `goal.md` § Formato del foglio descrivono il foglio esistente, che non si tocca. Un valore diverso rende la scheda non valida.
-- `inserimento, S3` — `--only <nome>` restringe i candidati a quel nome ma non salta il controllo di presenza nel foglio: una gara già presente non viene ricercata neppure con `--only`.
-- `anteprima, S4` — La grammatica delle date ha tre forme (`tech-choices.md` § Parser), non le due di `concepts.md` § Data di riferimento: l'intervallo a cavallo di mese è un intervallo.
 - `anteprima, S4` — `--dry-run` da solo legge il foglio reale, credenziali incluse; "senza richiedere credenziali" del goal si ottiene con `--sheet-csv`, che implica il dry run.
 - `anteprima, S4` — Nel dry run ogni posizione è calcolata contro il foglio così com'è stato letto, non contro le righe pianificate prima nello stesso run: due gare nuove nella stessa sezione possono indicare la stessa riga di destinazione.
 - `sezioni-speciali, S7` — La creazione di una sezione speciale e la riga gara che la richiede vanno nella stessa richiesta atomica, così un crash non lascia una sezione vuota.

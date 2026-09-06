@@ -16,7 +16,7 @@ L'autore: vede dove finirebbe ogni gara e con quali celle, e lo verifica sul CSV
 ## Includes
 
 - Layer alternativo di `SheetReader` da CSV per `--sheet-csv <path>`, che implica `--dry-run`; stessa griglia e stesso modello di sezioni di `S2`.
-- Parser delle date con le tre forme di `tech-choices.md` § Parser, senza anno, mese case insensitive; ordine sul giorno di inizio, confronto su (mese, giorno); data della scheda fuori grammatica già respinta dallo Schema.
+- Ordinamento sulle date della colonna `Data` con il parser consegnato in `S3` (tre forme di `tech-choices.md` § Parser, senza anno, mese case insensitive): confronto su (mese, giorno) del giorno di inizio; data della scheda fuori grammatica già respinta dallo Schema.
 - Posizione: regione → sezione esistente per nome normalizzato con alias (`Emilia-Romagna`, `Trentino-Alto Adige`, `Friuli-Venezia Giulia`, `Valle d'Aosta`), regione italiana senza sezione → `Resto di Italia`, `Estero` → `Estero`; dopo l'ultima riga con data parsabile minore o uguale e comunque prima della prima riga non parsabile; sezione di destinazione assente → errore tagged, nessun piano.
 - Ogni posizione calcolata contro il foglio letto, non contro le righe pianificate prima nello stesso run.
 - Formattazione: `Data` ripulita da spazi doppi; `Luogo` unito con `, `; `Da FI` da minuti come `~50min`, `~1h`, `~1h30`; `Distanze` con i percorsi `bambini` e le `camminata` sotto 5km scartati, ordinati per km decrescente, `{km}km {dislivello}m+` con `, camminata` in coda, cella vuota se non resta nulla, decimali con il punto.
