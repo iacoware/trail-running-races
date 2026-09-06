@@ -4,19 +4,15 @@
 
 **Sources:** `docs/goal.md`, `docs/concepts.md`, `docs/arch-choices.md`, `docs/tech-choices.md`, `fixtures/sheet.csv`.
 
-**Current state:** Consegnate S0, S1, S2, S3, S4, S5, S6 e S7: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, `pnpm start missing` che stampa i nomi dell'elenco senza riga nel foglio reale attraverso i port `RaceList` e `SheetReader`, e `fill [--dry-run] [--only <nome>] [--sheet-csv <path>]` che invoca l'agente headless una gara per volta attraverso il port `Agent`, decodifica la scheda con lo Schema chiuso, inserisce attraverso il port `SheetWriter` ogni gara trovata nella sezione prevista, parcheggia non trovate e ambigue in `Da verificare` e crea su richiesta le sezioni speciali mancanti nell'ordine canonico; prima di ogni inserimento rilegge il foglio, usa una sola richiesta atomica e chiude con il riepilogo di inserite, non trovate, ambigue ed errori. `--sheet-csv` legge il foglio da un export CSV e implica il dry run, così l'anteprima gira senza credenziali Google. Le promesse di `anteprima`, `inserimento`, `da-verificare` e `sezioni-speciali` sono mantenute. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
+**Current state:** Consegnate S0–S8: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, `pnpm start missing` che stampa i nomi dell'elenco senza riga nel foglio reale attraverso i port `RaceList` e `SheetReader`, e `fill [--dry-run] [--only <nome>] [--sheet-csv <path>]` che invoca Claude Code o Codex headless una gara per volta attraverso il port `Agent`, decodifica la scheda con lo Schema chiuso, inserisce attraverso il port `SheetWriter` ogni gara trovata nella sezione prevista, parcheggia non trovate e ambigue in `Da verificare` e crea su richiesta le sezioni speciali mancanti nell'ordine canonico; prima di ogni inserimento rilegge il foglio, usa una sola richiesta atomica e chiude con il riepilogo di inserite, non trovate, ambigue ed errori. `--sheet-csv` legge il foglio da un export CSV e implica il dry run, così l'anteprima gira senza credenziali Google. Le promesse di `anteprima`, `inserimento`, `da-verificare`, `sezioni-speciali` e `agente-intercambiabile` sono mantenute. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio); nessuna riga di rilascio segue.
 
 ## Themes
 
-| Theme | Promise | First validator |
-|---|---|---|
-| `agente-intercambiabile` | Passo da Claude Code a Codex cambiando una variabile d'ambiente, senza toccare il codice. | `S8` |
+Nessuno: tutte le promesse sono mantenute.
 
 ## NOW
 
-| Id | Title | Theme | Kind | Size | Readiness | Executor | Depends on |
-|---|---|---|---|---|---|---|---|
-| S8 | [Lo stesso run con Codex come agente](slices/S8-codex-come-agente.md) | `agente-intercambiabile` | `product` | `small` | `ready` | `mixed` | — |
+Nessuna slice pronta.
 
 ## LATER
 

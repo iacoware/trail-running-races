@@ -35,3 +35,7 @@
 ## 2026-09-07 — Revising
 
 - `sezioni-speciali` — **kept.** Promessa mantenuta da `S7` (archivio): il tema esce dalla tabella; `S8` non ha dipendenze da aggiornare.
+
+## 2026-09-07 — Revising
+
+- `agente-intercambiabile` — **kept.** Promessa mantenuta da `S8` (archivio): il tema esce dalla tabella e NOW resta vuoto.
