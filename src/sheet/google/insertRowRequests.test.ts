@@ -8,7 +8,7 @@ const SHEET_ID = 1234
 
 const planned = plannedRow({
   name: "Garfagnana Epic Trail",
-  url: "https://www.garfagnanaepictrail.it",
+  url: Option.some("https://www.garfagnanaepictrail.it"),
   row: 4,
   after: Option.some("Brunello Crossing"),
   cells: {
@@ -65,6 +65,14 @@ test("links the whole name to the official site as rich text, not as a formula",
   expect(update?.updateCells?.rows?.[0]?.values?.[0]?.textFormatRuns).toEqual([
     { startIndex: 0, format: { link: { uri: "https://www.garfagnanaepictrail.it" } } },
   ])
+})
+
+test("leaves an unresolved race name as plain text without a link", () => {
+  const [, update] = requestsFor({ url: Option.none() })
+
+  expect(update?.updateCells?.rows?.[0]?.values?.[0]).toEqual({
+    userEnteredValue: { stringValue: "Garfagnana Epic Trail" },
+  })
 })
 
 test("leaves an empty cell blank instead of writing an empty string into it", () => {

@@ -91,10 +91,21 @@ test("plans a later race before the first unparsable row of its section", async 
   expect(run.stdout).toContain("Toscana, riga 4, dopo Brunello Crossing")
 })
 
-test("lists a race the agent did not find in the summary only, keeping exit code 0", async () => {
+test("plans unresolved rows in Da verificare and keeps their details in the summary", async () => {
   const run = await dryRunOn(["Gara inesistente di prova", "Gara Doppia"])
 
-  expect(run.stdout).not.toContain("== Gara inesistente di prova")
+  expect(run.stdout).toContain(
+    "== Gara inesistente di prova\n" +
+      "Da verificare, riga 12, in testa alla sezione\n" +
+      "Nome: Gara inesistente di prova\n" +
+      "Data: non ho trovato niente\n",
+  )
+  expect(run.stdout).toContain(
+    "== Gara Doppia\n" +
+      "Da verificare, riga 12, in testa alla sezione\n" +
+      "Nome: Gara Doppia\n" +
+      "Data: più di un evento con questo nome\n",
+  )
   expect(run.stdout).toContain("pianificate: 0")
   expect(run.stdout).toContain("non trovate: 1\n  - Gara inesistente di prova")
   expect(run.stdout).toContain("ambigue: 1\n  - Gara Doppia: candidati edizione 2024")

@@ -26,7 +26,10 @@ const rowValues = (planned: PlannedRow) => {
     () => ({}),
   )
   for (const key of COLUMN_KEYS) values[planned.columns[key]] = cell(planned.cells[key])
-  values[planned.columns.name] = linkedCell(planned.cells.name, planned.url)
+  values[planned.columns.name] = Option.match(planned.url, {
+    onNone: () => cell(planned.cells.name),
+    onSome: (url) => linkedCell(planned.cells.name, url),
+  })
   return values
 }
 

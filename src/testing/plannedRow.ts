@@ -3,7 +3,7 @@ import type { PlannedRow } from "../plan/planRow.ts"
 
 const DEFAULTS: PlannedRow = {
   name: "Gara Nuova",
-  url: "https://www.esempio.it",
+  url: Option.some("https://www.esempio.it"),
   section: "Toscana",
   row: 4,
   after: Option.some("Brunello Crossing"),

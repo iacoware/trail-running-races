@@ -27,3 +27,7 @@
 ## 2026-09-07 — Revising
 
 - `inserimento` — **kept.** Promessa mantenuta da `S5` (archivio): il tema esce dalla tabella, `S6` e `S7` non dipendono più da una riga del registro.
+
+## 2026-09-07 — Revising
+
+- `da-verificare` — **kept.** Promessa mantenuta da `S6` (archivio): il tema esce dalla tabella, `S7` non dipende più da una riga del registro.

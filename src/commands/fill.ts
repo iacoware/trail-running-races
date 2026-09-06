@@ -4,7 +4,7 @@ import type { AgentError } from "../agent/errors.ts"
 import type { FoundRace } from "../agent/RaceCard.ts"
 import type { PlanError } from "../plan/errors.ts"
 import { missingRaces } from "../races/missingRaces.ts"
-import { planRow, type PlannedRow } from "../plan/planRow.ts"
+import { planReviewRow, planRow, type PlannedRow } from "../plan/planRow.ts"
 import type {
   SheetColumnMissingError,
   SheetReadError,
@@ -50,15 +50,23 @@ const candidates = (sheet: Sheet, only: Option.Option<string>) =>
       }),
   })
 
-const write = (name: string, race: FoundRace) =>
+const insert = (plannedFor: (sheet: Sheet) => Result.Result<PlannedRow, PlanError>) =>
   Effect.gen(function* () {
     const writer = yield* SheetWriter
     // The sheet is read again here: a race inserted earlier in this run moved the rows below it.
     const sheet = yield* readSheetQuietly
-    const planned = yield* Effect.fromResult(planRow(sheet, name, race))
+    const planned = yield* Effect.fromResult(plannedFor(sheet))
     yield* writer.insert(planned)
-    return { _tag: "Filled", name, row: planned } as const
+    return planned
   })
+
+const writeFound = (name: string, race: FoundRace) =>
+  insert((sheet) => planRow(sheet, name, race)).pipe(
+    Effect.map((row) => ({ _tag: "Filled", name, row }) as const),
+  )
+
+const park = (name: string, outcome: "non_trovata" | "ambigua") =>
+  insert((sheet) => planReviewRow(sheet, name, outcome))
 
 const outcomeFor = (
   name: string,
@@ -69,11 +77,13 @@ const outcomeFor = (
     if (Result.isFailure(card)) return { _tag: "Failed", name, error: card.failure } as const
     switch (card.success.esito) {
       case "non_trovata":
+        yield* park(name, card.success.esito)
         return { _tag: "NotFound", name } as const
       case "ambigua":
+        yield* park(name, card.success.esito)
         return { _tag: "Ambiguous", name, candidates: card.success.candidati } as const
       case "trovata":
-        return yield* write(name, card.success)
+        return yield* writeFound(name, card.success)
     }
   }).pipe(
     // One race in error never stops the run: it is reported and the next race is searched.
