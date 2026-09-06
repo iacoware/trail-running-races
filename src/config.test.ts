@@ -93,7 +93,9 @@ it.effect("defaults AGENT_CMD and AGENT_TIMEOUT when absent or blank", () =>
     const absent = yield* parseAgent({})
     const blank = yield* parseAgent({ AGENT_CMD: " ", AGENT_TIMEOUT: "" })
 
-    expect(absent.command).toBe("claude -p --output-format text --allowedTools WebSearch,WebFetch")
+    expect(absent.command).toBe(
+      "claude -p --output-format text --allowedTools WebSearch,WebFetch --model opus --effort medium",
+    )
     expect(absent.timeoutSeconds).toBe(300)
     expect(blank).toEqual(absent)
   }),

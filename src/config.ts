@@ -26,7 +26,10 @@ export const raceListConfig = Config.all({
   ),
 })
 
-const DEFAULT_AGENT_CMD = "claude -p --output-format text --allowedTools WebSearch,WebFetch"
+const DEFAULT_AGENT_CMD = [
+  "claude -p --output-format text --allowedTools WebSearch,WebFetch",
+  "--model opus --effort medium",
+].join(" ")
 const DEFAULT_AGENT_TIMEOUT_SECONDS = 300
 
 const PositiveIntFromString = Schema.NumberFromString.pipe(
