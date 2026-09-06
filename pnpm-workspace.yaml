@@ -1,0 +1,4 @@
+# msgpackr-extract è un acceleratore nativo opzionale (dipendenza transitiva di vitest):
+# senza approvazione pnpm 11 rifiuta di installare, con la build negata funziona in puro JS.
+allowBuilds:
+  msgpackr-extract: false

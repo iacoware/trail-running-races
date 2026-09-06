@@ -1,0 +1,9 @@
+node_modules/
+.pnpm-store/
+.env
+# La chiave del service account: qualunque JSON alla radice salvo quelli di progetto,
+# così anche il nome originale scaricato da Google Cloud (<project>-<hash>.json) resta fuori.
+/*.json
+!/package.json
+!/tsconfig.json
+.DS_Store
