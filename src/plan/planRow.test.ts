@@ -88,6 +88,14 @@ test("matches a section name that spells the region with spaces instead of hyphe
   expect(planned.section).toBe("Emilia Romagna")
 })
 
+test("matches a section name written with a typographic apostrophe", () => {
+  const sheet = sheetOf(["Valle d’Aosta"], ["Gara Esistente", "2 maggio"])
+
+  const planned = plan(sheet, "Gara Nuova", race({ regione: "Valle d'Aosta" }))
+
+  expect(planned.section).toBe("Valle d’Aosta")
+})
+
 test("fails naming the missing destination section, without a plan", () => {
   const sheet = sheetOf(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])
 

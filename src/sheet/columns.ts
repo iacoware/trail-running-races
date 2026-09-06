@@ -10,7 +10,7 @@ export type Columns = Readonly<Record<ColumnKey, number>>
 export type Cells = Readonly<Record<ColumnKey, string>>
 
 // Headers are matched by prefix so that `Data` finds `Data (+ o -)`.
-const COLUMN_HEADERS: Readonly<Record<ColumnKey, string>> = {
+export const COLUMN_HEADERS: Readonly<Record<ColumnKey, string>> = {
   name: "Nome",
   date: "Data",
   place: "Luogo",

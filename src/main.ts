@@ -2,7 +2,7 @@ import { NodeRuntime, NodeServices } from "@effect/platform-node"
 import { Effect, Layer, Logger, Option, Result, Stream } from "effect"
 import * as ProcessAgent from "./agent/process/ProcessAgent.ts"
 import { fill } from "./commands/fill.ts"
-import { parseFillArgs } from "./commands/fillArgs.ts"
+import { parseFillArgs, type FillArgs } from "./commands/fillArgs.ts"
 import { missing } from "./commands/missing.ts"
 import { hasErrors, summaryLines } from "./commands/summary.ts"
 import * as FileRaceList from "./races/file/FileRaceList.ts"
@@ -40,7 +40,7 @@ const sheetReader = (sheetCsv: Option.Option<string>) =>
     onSome: CsvSheetReader.layer,
   })
 
-const dryRunFill = ({ only, sheetCsv }: { only: Option.Option<string>; sheetCsv: Option.Option<string> }) =>
+const dryRunFill = ({ only, sheetCsv }: FillArgs) =>
   Effect.gen(function* () {
     const outcomes = yield* Stream.runCollect(fill({ only }))
     for (const line of summaryLines(outcomes)) console.log(line)
@@ -59,9 +59,9 @@ const dryRunFill = ({ only, sheetCsv }: { only: Option.Option<string>; sheetCsv:
 const runFill = (args: ReadonlyArray<string>) =>
   Result.match(parseFillArgs(args), {
     onFailure: usageError,
-    onSuccess: ({ dryRun, only, sheetCsv }) =>
-      dryRun
-        ? dryRunFill({ only, sheetCsv })
+    onSuccess: (args) =>
+      args.dryRun
+        ? dryRunFill(args)
         : usageError("fill senza --dry-run non è ancora disponibile"),
   })
 

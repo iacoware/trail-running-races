@@ -1,6 +1,6 @@
 import type { RaceOutcome } from "./fill.ts"
 
-const of = <T extends RaceOutcome["_tag"]>(
+const withTag = <T extends RaceOutcome["_tag"]>(
   outcomes: ReadonlyArray<RaceOutcome>,
   tag: T,
 ): ReadonlyArray<Extract<RaceOutcome, { _tag: T }>> =>
@@ -16,21 +16,21 @@ export const summaryLines = (outcomes: ReadonlyArray<RaceOutcome>): ReadonlyArra
   "== riepilogo",
   ...count(
     "pianificate",
-    of(outcomes, "Filled").map((outcome) => outcome.name),
+    withTag(outcomes, "Filled").map((outcome) => outcome.name),
   ),
   ...count(
     "non trovate",
-    of(outcomes, "NotFound").map((outcome) => outcome.name),
+    withTag(outcomes, "NotFound").map((outcome) => outcome.name),
   ),
   ...count(
     "ambigue",
-    of(outcomes, "Ambiguous").map(
+    withTag(outcomes, "Ambiguous").map(
       (outcome) => `${outcome.name}: candidati ${outcome.candidates.join(", ")}`,
     ),
   ),
   ...count(
     "errori",
-    of(outcomes, "Failed").map(
+    withTag(outcomes, "Failed").map(
       (outcome) => `${outcome.name}: ${outcome.error._tag}: ${outcome.error.message}`,
     ),
   ),

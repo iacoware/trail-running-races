@@ -1,16 +1,7 @@
 import { Effect, Layer, Option } from "effect"
 import type { PlannedRow } from "../../plan/planRow.ts"
-import { COLUMN_KEYS, type ColumnKey } from "../columns.ts"
+import { COLUMN_HEADERS, COLUMN_KEYS } from "../columns.ts"
 import { SheetWriter } from "../SheetWriter.ts"
-
-const LABELS: Readonly<Record<ColumnKey, string>> = {
-  name: "Nome",
-  date: "Data",
-  place: "Luogo",
-  fromFlorence: "Da FI",
-  type: "Tipo",
-  distances: "Distanze",
-}
 
 // A multi-line cell keeps its lines, indented under the value so the cell reads as one block.
 const cellLines = (label: string, value: string) => {
@@ -28,7 +19,7 @@ const position = (planned: PlannedRow) =>
 export const describePlan = (planned: PlannedRow): ReadonlyArray<string> => [
   `== ${planned.name}`,
   `${planned.section}, riga ${planned.row}, ${position(planned)}`,
-  ...COLUMN_KEYS.flatMap((key) => cellLines(LABELS[key], planned.cells[key])),
+  ...COLUMN_KEYS.flatMap((key) => cellLines(COLUMN_HEADERS[key], planned.cells[key])),
 ]
 
 export const layer = Layer.succeed(

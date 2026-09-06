@@ -19,7 +19,11 @@ const filled = (name: string): RaceOutcome => ({
 const timedOut = (name: string): RaceOutcome => ({
   _tag: "Failed",
   name,
-  error: new AgentTimeout({ race: name, seconds: 300, message: "agente senza risposta entro 300s" }),
+  error: new AgentTimeout({
+    race: name,
+    seconds: 300,
+    message: "agente senza risposta entro 300s",
+  }),
 })
 
 test("counts every category and lists the races behind each one", () => {

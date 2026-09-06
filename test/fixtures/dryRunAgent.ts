@@ -5,7 +5,11 @@ for await (const chunk of process.stdin) prompt += chunk
 
 const name = /Gara da cercare: (.+)/.exec(prompt)?.[1]?.trim() ?? ""
 
-const distance = (km: number, dislivello: number, flags: Partial<Record<string, boolean>> = {}) => ({
+const distance = (
+  km: number,
+  dislivello: number,
+  flags: Partial<Record<string, boolean>> = {},
+) => ({
   km,
   dislivello,
   camminata: flags["camminata"] === true,

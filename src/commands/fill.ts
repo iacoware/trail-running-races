@@ -3,18 +3,22 @@ import { Agent } from "../agent/Agent.ts"
 import type { AgentError } from "../agent/errors.ts"
 import type { FoundRace } from "../agent/RaceCard.ts"
 import type { PlanError } from "../plan/errors.ts"
-import { planRow, type PlannedRow } from "../plan/planRow.ts"
 import { missingRaces } from "../races/missingRaces.ts"
-import { RaceList } from "../races/RaceList.ts"
+import { planRow, type PlannedRow } from "../plan/planRow.ts"
 import type { SheetWriteError } from "../sheet/errors.ts"
 import type { Sheet } from "../sheet/parseSheet.ts"
 import { readSheet } from "../sheet/readSheet.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
+import { missingIn } from "./missing.ts"
 
 export type RaceOutcome =
   | { readonly _tag: "Filled"; readonly name: string; readonly row: PlannedRow }
   | { readonly _tag: "NotFound"; readonly name: string }
-  | { readonly _tag: "Ambiguous"; readonly name: string; readonly candidates: ReadonlyArray<string> }
+  | {
+      readonly _tag: "Ambiguous"
+      readonly name: string
+      readonly candidates: ReadonlyArray<string>
+    }
   | {
       readonly _tag: "Failed"
       readonly name: string
@@ -25,11 +29,7 @@ export type RaceOutcome =
 // already in the sheet is never searched: the presence check always runs.
 const candidates = (sheet: Sheet, only: Option.Option<string>) =>
   Option.match(only, {
-    onNone: () =>
-      Effect.gen(function* () {
-        const list = yield* RaceList
-        return missingRaces(yield* list.names, sheet)
-      }),
+    onNone: () => missingIn(sheet),
     onSome: (name) =>
       Effect.gen(function* () {
         const wanted = missingRaces([name], sheet)
@@ -48,7 +48,10 @@ const write = (sheet: Sheet, name: string, race: FoundRace) =>
     return { _tag: "Filled", name, row: planned } as const
   })
 
-const outcomeFor = (sheet: Sheet, name: string) =>
+const outcomeFor = (
+  sheet: Sheet,
+  name: string,
+): Effect.Effect<RaceOutcome, never, Agent | SheetWriter> =>
   Effect.gen(function* () {
     const agent = yield* Agent
     const card = yield* Effect.result(agent.search(name))
@@ -72,9 +75,7 @@ export const fill = (options: { readonly only: Option.Option<string> }) =>
       const sheet = yield* readSheet
       const names = yield* candidates(sheet, options.only)
       return Stream.fromIterable(names).pipe(
-        Stream.mapEffect((name): Effect.Effect<RaceOutcome, never, Agent | SheetWriter> =>
-          outcomeFor(sheet, name),
-        ),
+        Stream.mapEffect((name) => outcomeFor(sheet, name)),
       )
     }),
   )
