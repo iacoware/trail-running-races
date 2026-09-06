@@ -28,7 +28,9 @@ export class SheetApiError extends Schema.TaggedError<SheetApiError>()("SheetApi
 }) {}
 
 export type SheetReadError =
-  | SheetAuthError
-  | SheetNotFoundError
-  | SheetTabNotFoundError
-  | SheetApiError
+  SheetAuthError | SheetNotFoundError | SheetTabNotFoundError | SheetApiError
+
+export class SheetColumnMissingError extends Schema.TaggedError<SheetColumnMissingError>()(
+  "SheetColumnMissingError",
+  { column: Schema.String, message: Schema.String },
+) {}
