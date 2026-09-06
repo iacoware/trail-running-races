@@ -1,6 +1,6 @@
 import { expect, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Option } from "effect"
-import { raceListConfig, sheetConfig } from "./config.ts"
+import { agentConfig, raceListConfig, sheetConfig } from "./config.ts"
 
 const parse = (env: Record<string, string>) => sheetConfig.parse(ConfigProvider.fromUnknown(env))
 
@@ -82,5 +82,37 @@ it.effect("falls back to races.txt when RACES_FILE is blank", () =>
     const config = yield* raceListConfig.parse(ConfigProvider.fromUnknown({ RACES_FILE: "  " }))
 
     expect(config.path).toBe("races.txt")
+  }),
+)
+
+const parseAgent = (env: Record<string, string>) =>
+  agentConfig.parse(ConfigProvider.fromUnknown(env))
+
+it.effect("defaults AGENT_CMD and AGENT_TIMEOUT when absent or blank", () =>
+  Effect.gen(function* () {
+    const absent = yield* parseAgent({})
+    const blank = yield* parseAgent({ AGENT_CMD: " ", AGENT_TIMEOUT: "" })
+
+    expect(absent.command).toBe("claude -p --output-format text --allowedTools WebSearch,WebFetch")
+    expect(absent.timeoutSeconds).toBe(300)
+    expect(blank).toEqual(absent)
+  }),
+)
+
+it.effect("reads AGENT_CMD trimmed and AGENT_TIMEOUT as seconds", () =>
+  Effect.gen(function* () {
+    const config = yield* parseAgent({ AGENT_CMD: " codex exec ", AGENT_TIMEOUT: "12" })
+
+    expect(config.command).toBe("codex exec")
+    expect(config.timeoutSeconds).toBe(12)
+  }),
+)
+
+it.effect("fails naming AGENT_TIMEOUT when it is not a positive integer", () =>
+  Effect.gen(function* () {
+    const error = yield* Effect.flip(parseAgent({ AGENT_TIMEOUT: "0.5" }))
+
+    expect(error._tag).toBe("ConfigError")
+    expect(error.message).toContain("AGENT_TIMEOUT")
   }),
 )
