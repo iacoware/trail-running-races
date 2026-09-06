@@ -8,7 +8,7 @@ TypeScript eseguito direttamente da Node >= 24, che fa type stripping nativo. Qu
 
 Tutto lo script è scritto con Effect 4, oggi release candidate: `effect` e `@effect/platform-node` pinnati alla stessa versione esatta (`4.0.0-rc.112`). Prima di scrivere codice si verifica l'API della versione installata, perché Effect 4 riorganizza i moduli rispetto alla 3. Uso previsto:
 
-- **Schema** per la scheda gara restituita dall'agente, per la configurazione da env e per il parser delle righe dell'elenco. Un solo schema condiviso tra decodifica dell'output dell'agente e formattazione delle celle.
+- **Schema** per la scheda gara restituita dall'agente e per la configurazione da env. Un solo schema condiviso tra decodifica dell'output dell'agente e formattazione delle celle. L'elenco gare è testo piatto senza struttura da validare: si legge con una funzione pura (`parseRaceList`), non con uno Schema.
 - **Config** per le env variables, con errori tipizzati se manca qualcosa.
 - **Servizi come port** definiti con `Context.Service` nella sola forma shape (`class Agent extends Context.Service<Agent, Shape>()("Agent") {}`), senza `make` incorporato, con implementazioni in Layer in file separati: `SheetReader`, `SheetWriter`, `Agent`, `RaceList`. Il dry run è un Layer alternativo di `SheetWriter` che stampa il piano; `--sheet-csv` è un Layer alternativo di `SheetReader`.
 - **ChildProcess / ChildProcessSpawner** di `effect/unstable/process`, forniti da `NodeServices.layer` di `@effect/platform-node`, per lanciare l'agente: prompt su stdin come `Stream`, stdout letto come stringa, timeout con `Effect.timeout`. Argomenti in forma array, non template literal (non gestisce le virgolette).
