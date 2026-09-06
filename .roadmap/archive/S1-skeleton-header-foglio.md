@@ -19,6 +19,10 @@ L'autore come sviluppatore: vede che runtime, Effect 4 rc, Config da env e Sheet
 - `Config` per `SHEET_ID`, `SHEET_TAB` (default il primo tab) e `GOOGLE_SERVICE_ACCOUNT_JSON` (JSON inline se inizia con `{`, altrimenti percorso), con errore tipizzato se manca qualcosa.
 - Port `SheetReader` definito con `Context.Service` in sola forma shape; Layer Google con JWT da `google-auth-library` e `@googleapis/sheets`, `Effect.tryPromise` in forma oggetto con rejection mappate su `SheetAuthError` e affini.
 - Un'operazione non di dominio: `spreadsheets.values.get` della prima riga del tab, stampata così com'è.
+- Come consegnato: il port espone `rows` (tutte le righe del tab, un solo `values.get`) e `main` stampa la prima, la forma che `S2` consuma.
+- Come consegnato: il tab si risolve con un `spreadsheets.get` preliminare (titoli e flag `hidden`), default il primo tab visibile; un `SHEET_TAB` inesistente dà `SheetTabNotFoundError` con i tab disponibili. La stessa chiamata servirà a `S5` per l'id numerico del tab.
+- Come consegnato: il client JWT è quello di `google-auth-library` preso dal riesporto `auth` di `@googleapis/sheets`; la dipendenza diretta portava una seconda versione con un tipo `JWT` incompatibile con `sheets({ auth })`. `tech-choices.md` § Google Sheets aggiornato.
+- Come consegnato: `pnpm start` carica `.env` se presente (`--env-file-if-exists`); le variabili già nell'ambiente prevalgono.
 
 ## Verification
 
@@ -35,13 +39,6 @@ Da un entry `.ts` senza build, Effect 4 rc con `Config` e Layer e `@googleapis/s
 - Colonne per header, sezioni, match dei nomi: `S2`.
 - Il processo figlio dell'agente: `S3` è la riga che lo valida.
 - Qualsiasi scrittura sul foglio: `S5`.
-
-## Note di consegna
-
-- Il port `SheetReader` espone `rows` (tutte le righe del tab, un solo `values.get`) e `main` stampa la prima: è la forma che `S2` consuma, invece di un'operazione usa e getta sulla sola riga 1.
-- Il tab si risolve con un `spreadsheets.get` preliminare (titoli e flag `hidden`): default il primo tab visibile, e un `SHEET_TAB` inesistente dà `SheetTabNotFoundError` con i tab disponibili invece di un 400 generico. La stessa chiamata servirà a `S5` per l'id numerico del tab.
-- Il client JWT è quello di `google-auth-library` preso dal riesporto `auth` di `@googleapis/sheets`: la dipendenza diretta portava una seconda versione della libreria e un tipo `JWT` incompatibile con `sheets({ auth })`. `tech-choices.md` § Google Sheets aggiornato.
-- `pnpm start` carica `.env` se presente (`--env-file-if-exists`); le variabili già nell'ambiente prevalgono.
 
 ## Open questions
 
