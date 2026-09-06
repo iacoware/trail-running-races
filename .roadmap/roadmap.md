@@ -4,13 +4,12 @@
 
 **Sources:** `docs/goal.md`, `docs/concepts.md`, `docs/arch-choices.md`, `docs/tech-choices.md`, `fixtures/sheet.csv`.
 
-**Current state:** Consegnate S0, S1, S2 e S3: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, `pnpm start missing` che stampa i nomi dell'elenco senza riga nel foglio reale attraverso i port `RaceList` e `SheetReader`, e `fill --dry-run [--only <nome>]` che invoca l'agente headless una gara per volta attraverso il port `Agent` su `ChildProcessSpawner` con timeout, e stampa la scheda decodificata con lo Schema chiuso — regione, tipo e data vincolata alla grammatica italiana del parser — oppure l'errore tagged. Restano da fare posizionamento, celle e scrittura. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
+**Current state:** Consegnate S0, S1, S2, S3 e S4: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, `pnpm start missing` che stampa i nomi dell'elenco senza riga nel foglio reale attraverso i port `RaceList` e `SheetReader`, e `fill --dry-run [--only <nome>] [--sheet-csv <path>]` che invoca l'agente headless una gara per volta attraverso il port `Agent`, decodifica la scheda con lo Schema chiuso e stampa attraverso il port `SheetWriter` il piano di ogni gara trovata — sezione, riga di destinazione e sei celle — chiudendo con il riepilogo di pianificate, non trovate, ambigue ed errori; `--sheet-csv` legge il foglio da un export CSV e implica il dry run, così l'anteprima gira senza credenziali Google. La promessa di `anteprima` è mantenuta. Resta da fare la scrittura sul foglio. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
 
 ## Themes
 
 | Theme | Promise | First validator |
 |---|---|---|
-| `anteprima` | Vedo cosa `fill` inserirebbe (sezione, posizione, celle) senza toccare il foglio, anche senza credenziali Google partendo da un CSV esportato. | `S4` |
 | `inserimento` | Una gara aggiunta all'elenco compare nel foglio nella sezione della sua regione, in ordine di data, con nome linkato e celle compilate, senza che io cerchi nulla; rilanciare non fa nulla. | `S5` |
 | `da-verificare` | Una gara che l'agente non trova, o trova ambigua, finisce in coda a `Da verificare` con il motivo e non viene ricercata di nuovo finché non la cancello. | `S6` |
 | `sezioni-speciali` | Non devo preparare `Resto di Italia`, `Estero` e `Da verificare`: lo script le crea in fondo al foglio quando servono, nell'ordine canonico. | `S7` |
@@ -20,8 +19,7 @@
 
 | Id | Title | Theme | Kind | Size | Readiness | Executor | Depends on |
 |---|---|---|---|---|---|---|---|
-| S4 | [Piano di inserimento in dry run, anche da CSV](slices/S4-piano-dry-run-da-csv.md) | `anteprima` | `product` | `medium` | `ready` | `agent` | — |
-| S5 | [Riga della gara trovata inserita nel foglio](slices/S5-inserimento-nel-foglio.md) | `inserimento` | `product` | `medium` | `ready` | `agent` | S4 |
+| S5 | [Riga della gara trovata inserita nel foglio](slices/S5-inserimento-nel-foglio.md) | `inserimento` | `product` | `medium` | `ready` | `agent` | — |
 | S6 | [Non trovata e ambigua parcheggiate in Da verificare](slices/S6-da-verificare.md) | `da-verificare` | `product` | `small` | `ready` | `agent` | S5 |
 | S7 | [Sezioni speciali create quando mancano](slices/S7-sezioni-speciali.md) | `sezioni-speciali` | `product` | `small` | `ready` | `agent` | S5, S6 |
 | S8 | [Lo stesso run con Codex come agente](slices/S8-codex-come-agente.md) | `agente-intercambiabile` | `product` | `small` | `ready` | `mixed` | — |
@@ -46,8 +44,6 @@
 
 ## Assumptions
 
-- `anteprima, S4` — `--dry-run` da solo legge il foglio reale, credenziali incluse; "senza richiedere credenziali" del goal si ottiene con `--sheet-csv`, che implica il dry run.
-- `anteprima, S4` — Nel dry run ogni posizione è calcolata contro il foglio così com'è stato letto, non contro le righe pianificate prima nello stesso run: due gare nuove nella stessa sezione possono indicare la stessa riga di destinazione.
 - `sezioni-speciali, S7` — La creazione di una sezione speciale e la riga gara che la richiede vanno nella stessa richiesta atomica, così un crash non lascia una sezione vuota.
 
 ## Open questions

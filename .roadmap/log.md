@@ -19,3 +19,7 @@
 ## 2026-09-06 — Revising
 
 - `mancanti` — **kept.** Promessa mantenuta da `S2` (archivio): il tema esce dalla tabella, `S3` non dipende più da una riga del registro.
+
+## 2026-09-06 — Revising
+
+- `anteprima` — **kept.** Promessa mantenuta da `S4` (archivio): il tema esce dalla tabella, `S5` non dipende più da una riga del registro.

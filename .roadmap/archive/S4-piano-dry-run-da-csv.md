@@ -1,6 +1,6 @@
 # S4 — Piano di inserimento in dry run, anche da CSV
 
-← [Register](../roadmap.md#now)
+← [Register](../roadmap.md)
 
 **Outcome:** `fill --dry-run` stampa per ogni gara trovata la sezione, la riga di destinazione e le sei celle, dal foglio reale o da un CSV esportato senza credenziali.
 
