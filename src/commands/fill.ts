@@ -1,39 +1,79 @@
-import { Effect, Option, type Result, Stream } from "effect"
+import { Effect, Option, Result, Stream } from "effect"
 import { Agent } from "../agent/Agent.ts"
 import type { AgentError } from "../agent/errors.ts"
-import type { RaceCard } from "../agent/RaceCard.ts"
+import type { FoundRace } from "../agent/RaceCard.ts"
+import type { PlanError } from "../plan/errors.ts"
+import { planRow, type PlannedRow } from "../plan/planRow.ts"
 import { missingRaces } from "../races/missingRaces.ts"
+import { RaceList } from "../races/RaceList.ts"
+import type { SheetWriteError } from "../sheet/errors.ts"
+import type { Sheet } from "../sheet/parseSheet.ts"
 import { readSheet } from "../sheet/readSheet.ts"
-import { missing } from "./missing.ts"
+import { SheetWriter } from "../sheet/SheetWriter.ts"
 
-export type FillOutcome = {
-  readonly name: string
-  readonly result: Result.Result<RaceCard, AgentError>
-}
+export type RaceOutcome =
+  | { readonly _tag: "Filled"; readonly name: string; readonly row: PlannedRow }
+  | { readonly _tag: "NotFound"; readonly name: string }
+  | { readonly _tag: "Ambiguous"; readonly name: string; readonly candidates: ReadonlyArray<string> }
+  | {
+      readonly _tag: "Failed"
+      readonly name: string
+      readonly error: AgentError | PlanError | SheetWriteError
+    }
 
 // `--only` narrows the candidates to one name, even one absent from the list, but a race
 // already in the sheet is never searched: the presence check always runs.
-const candidates = (only: Option.Option<string>) =>
+const candidates = (sheet: Sheet, only: Option.Option<string>) =>
   Option.match(only, {
-    onNone: () => missing,
+    onNone: () =>
+      Effect.gen(function* () {
+        const list = yield* RaceList
+        return missingRaces(yield* list.names, sheet)
+      }),
     onSome: (name) =>
       Effect.gen(function* () {
-        const candidates = missingRaces([name], yield* readSheet)
-        if (candidates.length === 0) {
+        const wanted = missingRaces([name], sheet)
+        if (wanted.length === 0) {
           yield* Effect.logInfo(`"${name}" è già nel foglio, agente non invocato`)
         }
-        return candidates
+        return wanted
       }),
   })
+
+const write = (sheet: Sheet, name: string, race: FoundRace) =>
+  Effect.gen(function* () {
+    const writer = yield* SheetWriter
+    const planned = yield* Effect.fromResult(planRow(sheet, name, race))
+    yield* writer.insert(planned)
+    return { _tag: "Filled", name, row: planned } as const
+  })
+
+const outcomeFor = (sheet: Sheet, name: string) =>
+  Effect.gen(function* () {
+    const agent = yield* Agent
+    const card = yield* Effect.result(agent.search(name))
+    if (Result.isFailure(card)) return { _tag: "Failed", name, error: card.failure } as const
+    switch (card.success.esito) {
+      case "non_trovata":
+        return { _tag: "NotFound", name } as const
+      case "ambigua":
+        return { _tag: "Ambiguous", name, candidates: card.success.candidati } as const
+      case "trovata":
+        return yield* write(sheet, name, card.success)
+    }
+  }).pipe(
+    // One race in error never stops the run: it is reported and the next race is searched.
+    Effect.catch((error) => Effect.succeed({ _tag: "Failed", name, error } as const)),
+  )
 
 export const fill = (options: { readonly only: Option.Option<string> }) =>
   Stream.unwrap(
     Effect.gen(function* () {
-      const agent = yield* Agent
-      const names = yield* candidates(options.only)
+      const sheet = yield* readSheet
+      const names = yield* candidates(sheet, options.only)
       return Stream.fromIterable(names).pipe(
-        Stream.mapEffect((name) =>
-          Effect.map(Effect.result(agent.search(name)), (result) => ({ name, result })),
+        Stream.mapEffect((name): Effect.Effect<RaceOutcome, never, Agent | SheetWriter> =>
+          outcomeFor(sheet, name),
         ),
       )
     }),

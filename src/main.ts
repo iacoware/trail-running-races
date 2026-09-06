@@ -1,13 +1,17 @@
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect, Layer, Logger, Result, Stream } from "effect"
+import { Effect, Layer, Logger, Option, Result, Stream } from "effect"
 import * as ProcessAgent from "./agent/process/ProcessAgent.ts"
-import { fill, type FillOutcome } from "./commands/fill.ts"
+import { fill } from "./commands/fill.ts"
 import { parseFillArgs } from "./commands/fillArgs.ts"
 import { missing } from "./commands/missing.ts"
+import { hasErrors, summaryLines } from "./commands/summary.ts"
 import * as FileRaceList from "./races/file/FileRaceList.ts"
+import * as CsvSheetReader from "./sheet/csv/CsvSheetReader.ts"
 import * as GoogleSheetReader from "./sheet/google/GoogleSheetReader.ts"
+import * as PrintSheetWriter from "./sheet/print/PrintSheetWriter.ts"
 
-const USAGE = "uso: pnpm start missing | pnpm start fill --dry-run [--only <nome>]"
+const USAGE =
+  "uso: pnpm start missing | pnpm start fill --dry-run [--only <nome>] [--sheet-csv <path>]"
 
 // Warnings are meant for a person at the terminal: one plain line on stderr, no timestamps.
 const stderrLogger = Logger.layer([
@@ -28,27 +32,36 @@ const printMissing = Effect.gen(function* () {
   for (const name of names) console.log(name)
 }).pipe(Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheetReader.layer)))
 
-const printOutcome = ({ name, result }: FillOutcome) =>
-  Effect.sync(() => {
-    console.log(`== ${name}`)
-    if (Result.isSuccess(result)) {
-      console.log(JSON.stringify(result.success, null, 2))
-    } else {
-      console.log(`${result.failure._tag}: ${result.failure.message}`)
-      process.exitCode = 1
-    }
+// `--sheet-csv` reads a local export and needs no Google credentials; `--dry-run` alone
+// reads the real sheet.
+const sheetReader = (sheetCsv: Option.Option<string>) =>
+  Option.match(sheetCsv, {
+    onNone: () => GoogleSheetReader.layer,
+    onSome: CsvSheetReader.layer,
   })
+
+const dryRunFill = ({ only, sheetCsv }: { only: Option.Option<string>; sheetCsv: Option.Option<string> }) =>
+  Effect.gen(function* () {
+    const outcomes = yield* Stream.runCollect(fill({ only }))
+    for (const line of summaryLines(outcomes)) console.log(line)
+    if (hasErrors(outcomes)) process.exitCode = 1
+  }).pipe(
+    Effect.provide(
+      Layer.mergeAll(
+        FileRaceList.layer,
+        sheetReader(sheetCsv),
+        PrintSheetWriter.layer,
+        ProcessAgent.layer,
+      ),
+    ),
+  )
 
 const runFill = (args: ReadonlyArray<string>) =>
   Result.match(parseFillArgs(args), {
     onFailure: usageError,
-    onSuccess: ({ dryRun, only }) =>
+    onSuccess: ({ dryRun, only, sheetCsv }) =>
       dryRun
-        ? Stream.runForEach(fill({ only }), printOutcome).pipe(
-            Effect.provide(
-              Layer.mergeAll(FileRaceList.layer, GoogleSheetReader.layer, ProcessAgent.layer),
-            ),
-          )
+        ? dryRunFill({ only, sheetCsv })
         : usageError("fill senza --dry-run non è ancora disponibile"),
   })
 
