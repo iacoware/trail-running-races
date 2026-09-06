@@ -28,9 +28,22 @@ export class SheetApiError extends Schema.TaggedError<SheetApiError>()("SheetApi
 }) {}
 
 export type SheetReadError =
+  | SheetAuthError
+  | SheetNotFoundError
+  | SheetTabNotFoundError
+  | SheetApiError
+  | SheetCsvError
+
+export type SheetWriteError =
   SheetAuthError | SheetNotFoundError | SheetTabNotFoundError | SheetApiError
 
 export class SheetColumnMissingError extends Schema.TaggedError<SheetColumnMissingError>()(
   "SheetColumnMissingError",
   { column: Schema.String, message: Schema.String },
 ) {}
+
+export class SheetCsvError extends Schema.TaggedError<SheetCsvError>()("SheetCsvError", {
+  path: Schema.String,
+  message: Schema.String,
+  cause: Schema.Defect(),
+}) {}
