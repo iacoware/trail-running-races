@@ -15,3 +15,7 @@
 - `tech-choices.md` § Elenco gare (chiave normalizzata completa) / `arch-choices.md` § Chiave di identità (trim, case insensitive) — **assumption.** La stessa normalizzazione vale su entrambi i lati del match. → `mancanti, S2`
 - `arch-choices.md` § Posizionamento (riga vuota interna spezza la sezione, si rimuove a mano) / `concepts.md` § Sezione (inizio riconosciuto da header o riga vuota) — **assumption.** Le righe che seguono una riga vuota senza header di sezione restano fuori da ogni sezione, con un avviso; il match per nome le conta comunque presenti. → `mancanti, S2`
 - `tech-choices.md` § Google Sheets (un solo batchUpdate, `bold` per le righe sezione) / `arch-choices.md` § Non distruttività (una sola richiesta atomica per "inserisci riga") — **assumption.** La creazione di una sezione speciale e la riga che la richiede vanno nella stessa richiesta atomica. Argument: un crash tra le due lascerebbe una sezione vuota, che il vincolo di non distruttività non ammette. → `sezioni-speciali, S7`
+
+## 2026-09-06 — Revising
+
+- `mancanti` — **kept.** Promessa mantenuta da `S2` (archivio): il tema esce dalla tabella, `S3` non dipende più da una riga del registro.

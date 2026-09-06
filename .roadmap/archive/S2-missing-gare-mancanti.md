@@ -20,6 +20,14 @@ L'autore: dopo aver aggiunto nomi al file sa quali gare verranno cercate, prima 
 - `SheetReader` completo: `values.get` con valori formattati, colonne individuate per header normalizzato e per prefisso (`Data` matcha `Data (+ o -)`), colonna mancante → errore tagged all'avvio.
 - Modello del foglio da griglia: sezione = riga con solo Nome valorizzato preceduta dall'header o da una riga vuota, chiusa dalla riga vuota; le righe che seguono una riga vuota senza header restano fuori sezione con un avviso.
 - Diff per chiave e stampa dei nomi mancanti, uno per riga, nell'ordine del file; exit code 0.
+- Come consegnato: il port `SheetReader` resta a righe grezze (`rows`): colonne e sezioni si ricavano in codice puro (`src/sheet/columns.ts`, `src/sheet/parseSheet.ts`), così il Layer CSV di `S4` deve solo produrre righe. La colonna mancante è quindi un `SheetColumnMissingError` alzato al primo parse del foglio, non alla costruzione del Layer: per `missing` l'effetto è lo stesso (nessun mancante stampato, exit 1).
+- Come consegnato: il modello del foglio porta già `columns`, `headerRow`, numero di riga e tutte le sei celle: `S4` e `S5` li consumano per la posizione, `missing` usa solo `cells.name`.
+- Come consegnato: gli avvisi sono valori (`SheetWarning`, `DuplicateName`) formattati dal comando o dal Layer; `main` installa un logger che scrive `avviso: …` su stderr senza timestamp, il default di Effect era pensato per servizi.
+- Come consegnato: `parseRaceList` è una funzione pura, non uno Schema: `tech-choices.md` § Effect 4 aggiornato. Un `#` preceduto da spazi è comunque un commento.
+- Come consegnato: `raceKey` mappa anche `ʼ` (U+02BC) su `'`, oltre a `‘` e `’`. Gli header sono cercati con la stessa normalizzazione e con il primo prefisso che matcha: con i sei header attuali è univoco, un futuro `Nome breve` prima di `Nome` non lo sarebbe.
+- Come consegnato: `RACES_FILE` vuoto vale come assente (default `races.txt`), come `SHEET_TAB` vuoto in `S1`.
+- Come consegnato: verificato sul foglio reale: `brunello crossing` e `Chianti UTMB` sono celle con link e sono riconosciute dal testo visibile; il caso `Distanze` rinominato è coperto solo dai test unitari.
+- Come consegnato: `pnpm start` senza sottocomando stampa l'uso ed esce con 1; `fill` arriva con `S4`.
 
 ## Verification
 
@@ -38,16 +46,6 @@ Il match sul testo visibile della colonna Nome, letto con valori formattati, è 
 - Parsing delle date e ordine dentro le sezioni: `S4`.
 - Riparazione delle sezioni spezzate: licenza in `OUT-OF-SCOPE`.
 
-## Note di consegna
-
-- Il port `SheetReader` resta a righe grezze (`rows`): colonne e sezioni si ricavano in codice puro (`src/sheet/columns.ts`, `src/sheet/parseSheet.ts`), così il Layer CSV di `S4` deve solo produrre righe. La colonna mancante è quindi un `SheetColumnMissingError` alzato al primo parse del foglio, non alla costruzione del Layer: per `missing` l'effetto è lo stesso (nessun mancante stampato, exit 1).
-- Il modello del foglio porta già `columns`, `headerRow`, numero di riga e tutte le sei celle: `S4` e `S5` li consumano per la posizione, `missing` usa solo `cells.name`.
-- Gli avvisi sono valori (`SheetWarning`, `DuplicateName`) formattati dal comando o dal Layer; `main` installa un logger che scrive `avviso: …` su stderr senza timestamp, il default di Effect era pensato per servizi.
-- `parseRaceList` è una funzione pura, non uno Schema: `tech-choices.md` § Effect 4 aggiornato. Un `#` preceduto da spazi è comunque un commento.
-- `raceKey` mappa anche `ʼ` (U+02BC) su `'`, oltre a `‘` e `’`. Gli header sono cercati con la stessa normalizzazione e con il primo prefisso che matcha: con i sei header attuali è univoco, un futuro `Nome breve` prima di `Nome` non lo sarebbe.
-- `RACES_FILE` vuoto vale come assente (default `races.txt`), come `SHEET_TAB` vuoto in `S1`.
-- Verificato sul foglio reale: `brunello crossing` e `Chianti UTMB` sono celle con link e sono riconosciute dal testo visibile; il caso `Distanze` rinominato è coperto solo dai test unitari.
-- `pnpm start` senza sottocomando stampa l'uso ed esce con 1; `fill` arriva con `S4`.
 
 ## Open questions
 

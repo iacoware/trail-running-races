@@ -4,13 +4,12 @@
 
 **Sources:** `docs/goal.md`, `docs/concepts.md`, `docs/arch-choices.md`, `docs/tech-choices.md`, `fixtures/sheet.csv`.
 
-**Current state:** Consegnate S0 e S1: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, e `pnpm start` che stampa l'header del foglio reale attraverso il port `SheetReader`, con `Config` da env ed errori tagged al posto degli stack trace di `googleapis`. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
+**Current state:** Consegnate S0, S1 e S2: repository git su `main`, toolchain pnpm con Effect 4 `rc.112` e type stripping nativo di Node 24, chiave del service account in locale fuori da git, e `pnpm start missing` che stampa i nomi dell'elenco senza riga nel foglio reale attraverso i port `RaceList` e `SheetReader`, con colonne e sezioni ricavate dalla griglia in codice puro e il match sul testo visibile della colonna Nome verificato anche sulle celle con link; la promessa di `mancanti` è mantenuta. Lo script gira sulla macchina dell'autore, senza deploy e senza CI (`tech-choices.md` § Linguaggio): NOW finisce con l'autore che usa `fill` contro il foglio reale, e nessuna riga di rilascio segue.
 
 ## Themes
 
 | Theme | Promise | First validator |
 |---|---|---|
-| `mancanti` | Vedo quali gare dell'elenco mancano ancora nel foglio, senza interrogare l'agente. | `S2` |
 | `anteprima` | Vedo cosa `fill` inserirebbe (sezione, posizione, celle) senza toccare il foglio, anche senza credenziali Google partendo da un CSV esportato. | `S4` |
 | `inserimento` | Una gara aggiunta all'elenco compare nel foglio nella sezione della sua regione, in ordine di data, con nome linkato e celle compilate, senza che io cerchi nulla; rilanciare non fa nulla. | `S5` |
 | `da-verificare` | Una gara che l'agente non trova, o trova ambigua, finisce in coda a `Da verificare` con il motivo e non viene ricercata di nuovo finché non la cancello. | `S6` |
@@ -21,8 +20,7 @@
 
 | Id | Title | Theme | Kind | Size | Readiness | Executor | Depends on |
 |---|---|---|---|---|---|---|---|
-| S2 | [missing: i nomi mancanti dal foglio reale](slices/S2-missing-gare-mancanti.md) | `mancanti` | `product` | `small` | `ready` | `agent` | — |
-| S3 | [Scheda gara validata dall'agente per un nome](slices/S3-scheda-gara-dall-agente.md) | `inserimento` | `enabler` | `medium` | `ready` | `agent` | S2 |
+| S3 | [Scheda gara validata dall'agente per un nome](slices/S3-scheda-gara-dall-agente.md) | `inserimento` | `enabler` | `medium` | `ready` | `agent` | — |
 | S4 | [Piano di inserimento in dry run, anche da CSV](slices/S4-piano-dry-run-da-csv.md) | `anteprima` | `product` | `medium` | `ready` | `agent` | S3 |
 | S5 | [Riga della gara trovata inserita nel foglio](slices/S5-inserimento-nel-foglio.md) | `inserimento` | `product` | `medium` | `ready` | `agent` | S4 |
 | S6 | [Non trovata e ambigua parcheggiate in Da verificare](slices/S6-da-verificare.md) | `da-verificare` | `product` | `small` | `ready` | `agent` | S5 |
@@ -54,8 +52,6 @@
 - `anteprima, S4` — La grammatica delle date ha tre forme (`tech-choices.md` § Parser), non le due di `concepts.md` § Data di riferimento: l'intervallo a cavallo di mese è un intervallo.
 - `anteprima, S4` — `--dry-run` da solo legge il foglio reale, credenziali incluse; "senza richiedere credenziali" del goal si ottiene con `--sheet-csv`, che implica il dry run.
 - `anteprima, S4` — Nel dry run ogni posizione è calcolata contro il foglio così com'è stato letto, non contro le righe pianificate prima nello stesso run: due gare nuove nella stessa sezione possono indicare la stessa riga di destinazione.
-- `mancanti, S2` — La normalizzazione della chiave di `tech-choices.md` § Elenco gare (trim, lowercase, spazi collassati, NFC, apostrofi) si applica anche al testo visibile della colonna Nome, non solo ai nomi del file.
-- `mancanti, S2` — Le righe che seguono una riga vuota senza un header di sezione restano fuori da ogni sezione e producono un avviso; il match per nome le conta comunque come presenti.
 - `sezioni-speciali, S7` — La creazione di una sezione speciale e la riga gara che la richiede vanno nella stessa richiesta atomica, così un crash non lascia una sezione vuota.
 
 ## Open questions
