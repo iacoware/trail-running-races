@@ -1,9 +1,8 @@
 import { expect, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Option } from "effect"
-import { sheetConfig } from "./config.ts"
+import { raceListConfig, sheetConfig } from "./config.ts"
 
-const parse = (env: Record<string, string>) =>
-  sheetConfig.parse(ConfigProvider.fromUnknown(env))
+const parse = (env: Record<string, string>) => sheetConfig.parse(ConfigProvider.fromUnknown(env))
 
 const validEnv = { SHEET_ID: "sheet-1", GOOGLE_SERVICE_ACCOUNT_JSON: "./key.json" }
 
@@ -57,5 +56,31 @@ it.effect("reads GOOGLE_SERVICE_ACCOUNT_JSON as a file path otherwise", () =>
     const config = yield* parse(validEnv)
 
     expect(config.serviceAccount).toEqual({ _tag: "FilePath", path: "./key.json" })
+  }),
+)
+
+it.effect("defaults RACES_FILE to races.txt", () =>
+  Effect.gen(function* () {
+    const config = yield* raceListConfig.parse(ConfigProvider.fromUnknown({}))
+
+    expect(config.path).toBe("races.txt")
+  }),
+)
+
+it.effect("reads RACES_FILE when present", () =>
+  Effect.gen(function* () {
+    const config = yield* raceListConfig.parse(
+      ConfigProvider.fromUnknown({ RACES_FILE: "./gare.txt" }),
+    )
+
+    expect(config.path).toBe("./gare.txt")
+  }),
+)
+
+it.effect("falls back to races.txt when RACES_FILE is blank", () =>
+  Effect.gen(function* () {
+    const config = yield* raceListConfig.parse(ConfigProvider.fromUnknown({ RACES_FILE: "  " }))
+
+    expect(config.path).toBe("races.txt")
   }),
 )

@@ -16,3 +16,12 @@ export const sheetConfig = Config.all({
     Config.map(serviceAccountSource),
   ),
 })
+
+const DEFAULT_RACES_FILE = "races.txt"
+
+export const raceListConfig = Config.all({
+  path: Config.schema(Schema.Trim, "RACES_FILE").pipe(
+    Config.withDefault(""),
+    Config.map((path) => (path === "" ? DEFAULT_RACES_FILE : path)),
+  ),
+})
