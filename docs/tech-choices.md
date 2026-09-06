@@ -29,7 +29,7 @@ Tutto lo script è scritto con Effect 4, oggi release candidate: `effect` e `@ef
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | JSON della chiave (se inizia con `{`), oppure percorso al file |
 | `SHEET_ID` | id del foglio, dall'URL |
 | `SHEET_TAB` | nome del tab, default il primo |
-| `AGENT_CMD` | comando shell dell'agente, es. `codex exec`; default `claude -p --output-format text --allowedTools WebSearch,WebFetch --model sonnet --effort medium` |
+| `AGENT_CMD` | comando shell dell'agente; Codex headless: `codex exec --ephemeral --sandbox read-only -`; default `claude -p --output-format text --allowedTools WebSearch,WebFetch --model sonnet --effort medium` |
 | `AGENT_TIMEOUT` | timeout per chiamata in secondi, default 300 |
 | `RACES_FILE` | percorso dell'elenco, default `races.txt` |
 
