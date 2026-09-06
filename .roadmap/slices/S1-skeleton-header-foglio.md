@@ -36,6 +36,13 @@ Da un entry `.ts` senza build, Effect 4 rc con `Config` e Layer e `@googleapis/s
 - Il processo figlio dell'agente: `S3` è la riga che lo valida.
 - Qualsiasi scrittura sul foglio: `S5`.
 
+## Note di consegna
+
+- Il port `SheetReader` espone `rows` (tutte le righe del tab, un solo `values.get`) e `main` stampa la prima: è la forma che `S2` consuma, invece di un'operazione usa e getta sulla sola riga 1.
+- Il tab si risolve con un `spreadsheets.get` preliminare (titoli e flag `hidden`): default il primo tab visibile, e un `SHEET_TAB` inesistente dà `SheetTabNotFoundError` con i tab disponibili invece di un 400 generico. La stessa chiamata servirà a `S5` per l'id numerico del tab.
+- Il client JWT è quello di `google-auth-library` preso dal riesporto `auth` di `@googleapis/sheets`: la dipendenza diretta portava una seconda versione della libreria e un tipo `JWT` incompatibile con `sheets({ auth })`. `tech-choices.md` § Google Sheets aggiornato.
+- `pnpm start` carica `.env` se presente (`--env-file-if-exists`); le variabili già nell'ambiente prevalgono.
+
 ## Open questions
 
 - —
