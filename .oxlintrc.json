@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
+  "extends": ["./node_modules/@effect/tsgo/oxlint-presets/recommended.json"],
+  "ignorePatterns": ["node_modules", "fixtures"],
+  "rules": {
+    "effecttsgo/extends-native-error": "error",
+    "effecttsgo/global-error-in-effect-catch": "error",
+    "effecttsgo/global-error-in-effect-failure": "error",
+    "effecttsgo/unnecessary-fail-yieldable-error": "error",
+    "effecttsgo/catch-all-to-map-error": "error",
+    "effecttsgo/catch-unfailable-effect": "error",
+    "effecttsgo/schema-sync": "error",
+    "effecttsgo/schema-sync-in-effect": "error",
+    "effecttsgo/process-env": "error",
+    "effecttsgo/process-env-in-effect": "error",
+    "effecttsgo/effect-fn-opportunity": "error",
+    "effecttsgo/leaking-requirements": "error",
+    "effecttsgo/run-effect-inside-effect": "error"
+  }
+}

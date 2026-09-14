@@ -44,7 +44,7 @@ Classi di enforcement:
 | P15 | Unioni come `Data.taggedEnum`, mai letterali `_tag` (preferito) | misto | lint-sintattico | `Data.taggedEnum` | devia |
 | P16 | Option/Result/Exit via modulo, mai `_tag` | idioma | lint-sintattico | `Either` → `Result` | conforme |
 | P17 | `Effect.fn("nome")` per funzioni effettful | idioma | lint-sintattico | invariato | devia |
-| P18 | Niente effetti flottanti né `yield` senza `*` | idioma | lint-tipi | invariato | non verificato |
+| P18 | Niente effetti flottanti né `yield` senza `*` | idioma | lint-tipi | invariato | conforme (verificato con `oxlint`) |
 | P19 | Risorse con `acquireRelease`, `Effect.scoped` solo se serve | idioma | lint-tipi | `Layer.scoped` rimosso | conforme |
 | P20 | Concorrenza esplicita | idioma | solo-skill | invariato | conforme |
 | P21 | Log e output via Effect, niente `console` dentro gli effetti | idioma | lint-sintattico | invariato | devia (lieve) |
@@ -701,10 +701,7 @@ Fatti verificati su repo, CHANGELOG e npm:
   - warning: `globalErrorInEffectFailure`, `outdatedApi` (solo v4), `duplicatePackage`;
   - suggestion: `effectFnOpportunity`, `leakingRequirements`, `catchUnfailableEffect`, `catchAllToMapError`, `unnecessaryFailYieldableError`, `schemaSyncInEffect` (tsgo: v3 e v4);
   - off di default: `strictEffectProvide`.
-- **Non verificato**:
-  - il comportamento con `effect@4.0.0-rc.112`;
-  - la riuscita di `effect-tsgo patch` sul layout pnpm di questo repo;
-  - se la configurazione di esempio di tsgo lasci le diagnostiche spente finché non si configurano.
+- **Verificato in locale (2026-09-14)**: le diagnostiche funzionano con `effect@4.0.0-rc.112`; `effect-tsgo patch --oxlint` riesce sul layout pnpm di questo repo; il preset `recommended` attiva 98 regole (85 `warn`, 13 `error`) con `options.typeAware: true`, tutte con severità già impostata (nessuna resta spenta in attesa di configurazione).
 
 ### Integrazione ufficiale con oxlint
 
@@ -737,7 +734,53 @@ pnpm add -D @effect/tsgo oxlint oxlint-tsgolint
 
 `npx @effect/tsgo setup` fa tutto questo da solo. In VS Code o Cursor va poi selezionata la versione di TypeScript del workspace.
 
-Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su npm, e la seconda allinea il numero di versione a TypeScript `7.0.2`, quello installato qui. Non verificati in locale: il contenuto del preset `recommended`, quali regole attivi e con che severità, e il comportamento con `rc.112`.
+Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su npm, e la seconda allinea il numero di versione a TypeScript `7.0.2`, quello installato qui.
+
+**Attivato in questo repo il 2026-09-14** (`oxlint@1.82.0`, `@effect/tsgo@0.45.0`, `oxlint-tsgolint@7.0.2001`, script `lint: oxlint`):
+
+- la **patch è obbligatoria**: senza `effect-tsgo patch --oxlint`, `oxlint` rifiuta il preset con `Unknown plugin: 'effecttsgo'`. Il plugin non è caricabile da configurazione, sta nel binario patchato. Di conseguenza `prepare: effect-tsgo patch --oxlint` è in `package.json`; la patch sostituisce anche il `tsc` della piattaforma (annotato in `docs/tech-choices.md`);
+- nei file di configurazione i nomi delle regole sono **kebab-case con prefisso `effecttsgo/`** (`effecttsgo/floating-effect`), non i camelCase della documentazione (`floatingEffect`);
+- exit code: `error` → 1, solo `warning` → 0. Il lint non blocca finché le violazioni restano warning.
+
+### Copertura reale del preset, per pattern
+
+`coperto` = una violazione del pattern produce una diagnostica; `parziale` = solo alcune forme; `no` = serve una regola custom (passo 2 o 3). Severità: quella effettiva dopo gli `overrides` di `.oxlintrc.json`.
+
+| P | Copertura | Regole `effecttsgo` | Severità |
+|---|---|---|---|
+| P01 | parziale | `non-object-effect-service-type`, `generic-effect-services`, `missing-effect-context`, `missing-layer-context`, `class-self-mismatch` | error / warn |
+| P02 | no | — | — |
+| P03 | no | — | — |
+| P04 | parziale | `run-effect-inside-effect` | error (alzata) |
+| P05 | coperto | `global-error-in-effect-failure`, `global-error-in-effect-catch`, `extends-native-error`, `unknown-in-effect-catch` | error (alzate) / warn |
+| P06 | no | `redundant-schema-tag-identifier` (solo cosmetica) | warn |
+| P07 | coperto | `unnecessary-fail-yieldable-error`, `missing-return-yield-star` | error |
+| P08 | **no** | — (verificato: `Effect.tryPromise(() => …)` in forma thunk non è segnalato) | — |
+| P09 | coperto | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die` | error (alzate le prime due) / warn |
+| P10 | parziale | `prefer-schema-over-json`, `prefer-typed-schema-decoder`, `instance-of-schema` (l'`as` non è coperto) | warn |
+| P11 | coperto | `schema-sync`, `schema-sync-in-effect` | error (alzate) |
+| P12 | no | — | — |
+| P13 | parziale | `process-env`, `process-env-in-effect` (i nomi dei segreti non sono coperti) | error (alzate) |
+| P14 | no | `match-effect-to-match`, `option-match-to-from-option` (il `_tag ===` generico non è coperto) | warn |
+| P15 | no | `schema-struct-with-tag` (solo Schema) | warn |
+| P16 | no | `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none` (il `_tag` non è coperto) | warn |
+| P17 | parziale | `effect-fn-opportunity`, `effect-fn-implicit-any`, `effect-fn-iife`, `unnecessary-effect-gen` (il nome in `Effect.fn("…")` non è imposto) | error (alzata la prima) / warn |
+| P18 | coperto | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` | error |
+| P19 | parziale | `acquire-release-disposable`, `scope-in-layer-effect` | warn |
+| P20 | no | `all-of-map-to-for-each` | warn |
+| P21 | coperto | `global-console-in-effect`, `global-console` (più `global-date`, `global-random`, `global-fetch`, `global-timers`) | warn |
+| P22 | parziale | `floating-effect-in-vitest` | error |
+| P23 | no | — | — |
+| P24 | parziale | `async-function` | warn |
+| P25 | no | — | — |
+| P26 | no | — | — |
+| P27 | parziale | `leaking-requirements` (il canale errori chiuso a `never` non è coperto) | error (alzata) |
+
+Fuori catalogo ma utile: `outdated-api` (warn) segnala le API v3 residue, e `duplicate-package` le installazioni doppie di `effect`.
+
+Alzate a `error` in `.oxlintrc.json` perché a rumore zero sul codice attuale e corrispondenti a pattern da imporre: `extends-native-error`, `global-error-in-effect-catch`, `global-error-in-effect-failure`, `unnecessary-fail-yieldable-error`, `catch-all-to-map-error`, `catch-unfailable-effect`, `schema-sync`, `schema-sync-in-effect`, `process-env`, `process-env-in-effect`, `effect-fn-opportunity`, `leaking-requirements`, `run-effect-inside-effect`.
+
+Rumore attuale: 55 warning, 0 error. Per regola: `multiple-effect-provide` 26 (di cui 25 nei test), `async-function` 11 (tutti in `test/dryRun.test.ts`, che è volutamente non-Effect), `global-console` 5, `global-console-in-effect` 5 (P21), `node-builtin-import` 3, `new-promise` 2, `timeout-catch-tag-to-timeout-or-else` 1, `schema-number` 1, `global-timers` 1. Nessuna è stata corretta: le correzioni stanno in "Migrazioni da fare".
 
 ## Prossimi passi
 

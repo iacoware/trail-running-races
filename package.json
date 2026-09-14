@@ -7,13 +7,18 @@
     "node": ">=24"
   },
   "scripts": {
+    "prepare": "effect-tsgo patch --oxlint",
     "start": "node --env-file-if-exists=.env src/main.ts",
+    "lint": "oxlint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@effect/tsgo": "0.45.0",
     "@effect/vitest": "4.0.0-rc.112",
     "@types/node": "^24.13.3",
+    "oxlint": "1.82.0",
+    "oxlint-tsgolint": "7.0.2001",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },

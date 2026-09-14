@@ -71,3 +71,11 @@ Nessun database, nessuna cache locale delle ricerche, nessun test end-to-end con
 ## Toolchain
 
 `pnpm`. Unit test con Vitest 4 e `@effect/vitest@rc` (`it.effect` per i test di effetti, deroga alla regola "mai `it`"), co-locati con i sorgenti. `tsc --noEmit` come type check separato.
+
+### Lint Effect (`pnpm lint`)
+
+`oxlint` con le diagnostiche type-aware di `@effect/tsgo` (preset `recommended`), viste `oxlint-tsgolint` allineata a TS 7.0.2. Il lint è un comando separato, non un build step: la regola "niente build step, niente CI" resta valida.
+
+**Deroga esplicita**: `prepare: effect-tsgo patch --oxlint`. La patch è obbligatoria, non opzionale — senza di essa `oxlint` rifiuta il preset con `Unknown plugin: 'effecttsgo'`, perché il plugin vive nel binario, non in configurazione. Conseguenza accettata: a ogni `pnpm install` la patch **sostituisce il binario `tsc` della piattaforma** (ne conserva una copia `.original`) oltre ai binari di `oxlint` e `oxlint-tsgolint`. Verificato che `tsc --noEmit` e `vitest run` restano verdi dopo la patch. `compilerOptions.plugins` in `tsconfig.json` serve solo all'editor, con `diagnostics: false` per non duplicare ciò che dà già `oxlint`.
+
+Le violazioni a livello `error` fanno uscire `oxlint` con 1; i soli warning escono con 0. Copertura per pattern in `docs/effect-patterns.md`.

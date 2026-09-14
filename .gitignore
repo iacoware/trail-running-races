@@ -6,4 +6,5 @@ node_modules/
 /*.json
 !/package.json
 !/tsconfig.json
+!/.oxlintrc.json
 .DS_Store
