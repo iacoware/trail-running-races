@@ -47,20 +47,22 @@ Riverifica fatta dopo 1c (dettaglio in `docs/effect-patterns.md`):
 
 - **ancora da scrivere**: `error-handling-in-effect-fn-handler` (P25), `no-transport-types-in-generator` (P26), `boundary-entrypoint-shape` (P27, `leaking-requirements` non copre il canale errori), `try-object-form` (P08 — verificato: `Effect.tryPromise(() => …)` in forma thunk **non** è segnalato), `redacted-secret-names` (P13, i nomi dei segreti non sono coperti);
 - **ridimensionate**: `prefer-effect-fn` (P17) — `effect-fn-opportunity` copre la conversione, resta scoperto solo il nome in `Effect.fn("…")`; `single-style-per-function` (P24) — `async-function` copre la forma più comune; `service-port-shape-only` (P01) — coperta in parte da `non-object-effect-service-type` e `generic-effect-services`; `run-only-at-entry` (P04) — `run-effect-inside-effect` copre il caso pericoloso;
-- **non più necessarie**: `no-bare-error-in-effect` (P05, coperta da `global-error-in-effect-failure`/`-catch` + `extends-native-error`), `no-sync-decode-in-effect` (P11, coperta da `schema-sync*`), `no-process-env` (P13, coperta da `process-env*`), `return-yield-error` (P07, coperta da `unnecessary-fail-yieldable-error` + `missing-return-yield-star`), `no-console-in-effect` (P21, coperta da `global-console-in-effect`).
+- **non più necessarie**: `no-sync-decode-in-effect` (P11, coperta da `schema-sync*`), `no-process-env` (P13, coperta da `process-env*`), `return-yield-error` (P07, coperta da `unnecessary-fail-yieldable-error` + `missing-return-yield-star`), `no-console-in-effect` (P21, coperta da `global-console-in-effect`).
+
+Correzione del 2026-09-14, da prova negativa: **`no-bare-error-in-effect` (P05) serve ancora**, ridotta a due casi che il preset non vede — un `throw` dentro un generatore e `Effect.fail("stringa")` (`Effect.fail(new TypeError(…))` invece è segnalato). E **P09 ha un gap**: il catch-all senza parametro che ingoia non è coperto da nessuna regola del preset, quindi va aggiunta `no-parameterless-catch-all`, con allowlist per l'entry point; la discriminazione manuale su `_tag` dentro `Effect.catch` non è coperta dal preset ma è il bersaglio di `no-manual-effect-error-tag`, cioè arriva col passo 2.
+
+Checklist risultante, già potata di ciò che il preset copre:
 
 - [ ] `error-handling-in-effect-fn-handler` (P25) + `prefer-effect-fn` (P17), da cui dipende
 - [ ] `single-style-per-function` (P24)
 - [ ] `no-transport-types-in-generator` (P26), lista dei tipi come opzione
 - [ ] `boundary-entrypoint-shape` (P27)
 - [ ] `service-port-shape-only` (P01)
-- [ ] `no-bare-error-in-effect` (P05)
+- [ ] `no-bare-error-in-effect` (P05), ridotta a `throw` in generatore e `Effect.fail("stringa")`
+- [ ] `no-parameterless-catch-all` (P09), allowlist per l'entry point
 - [ ] `try-object-form`, con `Effect.promise` come warning (P08)
-- [ ] `no-sync-decode-in-effect` (P11)
-- [ ] `no-process-env` + `redacted-secret-names` (P13)
-- [ ] `run-only-at-entry` (P04, P22), allowlist `src/main.ts`
-- [ ] `return-yield-error` (P07)
-- [ ] `no-console-in-effect` (P21) — nota: `src/main.ts` e `src/testing/fakeAgent.ts` usano `console.*` legittimamente fuori dai generatori, ma `src/main.ts:34,52,83` sono dentro generatori o callback e verranno segnalati
+- [ ] `redacted-secret-names` (P13)
+- [ ] `run-only-at-entry` (P04, P22), allowlist `src/main.ts` — ridimensionata: `run-effect-inside-effect` copre già il caso pericoloso
 
 Ogni regola va scritta con il `RuleTester` di `oxlint/plugins-dev`, con casi valid e invalid, come in anti-slop.
 
@@ -101,3 +103,4 @@ Nessuna modifica a `src/` in questo piano.
 | 2026-09-14 | fuori passo 1 | helper `startingFrom`/`watching` in `fill.test.ts` | applicati a 11 + 7 siti; 4 siti irregolari lasciati espliciti perché la differenza è informativa. Scartato un `withDeps(...)` generico: accieca `multiple-effect-provide` e `layer-merge-all-with-dependencies` (dentro l'helper i layer sono parametri di tipo), non copre il caso `Layer.provide`, e aliasa un'API standard. Il file passa da 414 a 420 righe: il guadagno è nei nomi, non nella lunghezza |
 | 2026-09-14 | fuori passo 1 | ultimi 8 warning chiusi → **0 warning, 0 error** | output di programma su `Console.log`/`Console.error` (verificato: non fa scattare `global-console*`, ed è un `Context.Reference` sostituibile); `Effect.timeoutOrElse`; `Schema.Int`. Il `console.error` dentro `Logger.make` soppresso con `// oxlint-disable-next-line` motivato: è il sink del logger. La sintassi `// @effect-diagnostics-next-line` **non** funziona passando da oxlint |
 | 2026-09-14 | fuori passo 1 | regressione colta da `test/dryRun.test.ts` | `Effect.forEach(lines, Console.log)` stampava l'indice in coda a ogni riga: `forEach` passa `(item, index)` e `Console.log` è variadico. Serve la lambda esplicita |
+| 2026-09-14 | catalogo | potatura delle voci meccanizzate | collassate in tabella solo P07, P11, P18: copertura verificata e nessuna decisione residua. P21 tenuta come sezione pur essendo coperta, perché il messaggio della regola consiglia `Effect.log`, sbagliato per l'output di una CLI. **P05 e P09 corretti da `coperto` a `parziale`**: prova negativa mostra scoperti `throw` in generatore, `Effect.fail("stringa")`, il catch-all senza parametro e la discriminazione manuale su `_tag` |

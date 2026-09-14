@@ -57,6 +57,18 @@ Classi di enforcement:
 
 Totale: 20 `lint-sintattico`, 2 `lint-tipi`, 5 `solo-skill`.
 
+## Pattern interamente meccanizzati
+
+Questi tre non hanno più una sezione discorsiva: `pnpm lint` li segnala da sé, nel punto e nel momento giusto, e la prosa non aggiungeva nulla che il messaggio della regola non dica meglio. Resta qui solo ciò che il linter non può dire.
+
+| P | Regola | Regole `effecttsgo` | Cosa resta da sapere |
+|---|---|---|---|
+| P07 | Fallire con `return yield* new Err()`, non `yield* Effect.fail(new Err())` | `unnecessary-fail-yieldable-error` (error), `missing-return-yield-star` (error) | Il `return` serve a TypeScript per capire che il flusso si interrompe (`node_modules/effect/AGENTS.md`: "Always return when raising an error") |
+| P11 | Niente `decode*Sync` dentro codice Effect | `schema-sync`, `schema-sync-in-effect` (error) | Le varianti `*Sync` lanciano, quindi l'errore di decodifica diventa un difetto invece di arrivare nel canale errori. Fuori dagli effetti va `decodeUnknownResult` (`src/agent/parseAgentOutput.ts`) |
+| P18 | Niente effetti flottanti né `yield` senza `*` | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` (error) | Un Effect che nessuno esegue è un no-op silenzioso, tipicamente un log che non esce. Non verificabile senza type checker, quindi prima del passo 1 questa voce era l'unica del catalogo marcata "non verificato" |
+
+Il criterio per stare qui è stretto: copertura verificata con una prova negativa, e nessuna decisione residua. P21 resta una sezione a sé pur essendo coperto, perché il messaggio della regola consiglia `Effect.log`, che per l'output di una CLI è sbagliato: quale sostituto usare è una decisione che il linter non prende.
+
 ## Servizi e Layer
 
 ### P01 · Port come `Context.Service` solo shape
@@ -164,7 +176,7 @@ export class SheetTabNotFoundError extends Schema.TaggedError<SheetTabNotFoundEr
   - una `ClassDeclaration` che estende `Error` con una `PropertyDefinition` `_tag`;
   - un `ThrowStatement` dentro una funzione generatore passata a `Effect.gen`/`Effect.fn`.
 
-  In `lint-tipi` coprono lo stesso terreno `globalErrorInEffectFailure` (warning) ed `extendsNativeError` (off). La regola anti-slop `no-manual-tagged-construction` non vede i campi di classe.
+  Coperti dal preset: `global-error-in-effect-failure` e `global-error-in-effect-catch` (alzate a error), `extends-native-error`. **Verificato scoperto**: un `throw` dentro un generatore e `Effect.fail("stringa")` non danno alcuna diagnostica, mentre `Effect.fail(new TypeError(…))` sì. Sono i due casi che giustificano ancora una regola locale. La regola anti-slop `no-manual-tagged-construction` non vede i campi di classe.
 
 ### P06 · `Data.TaggedError` o `Schema.TaggedError` secondo il confine
 
@@ -194,24 +206,6 @@ export class UnparsableDateError extends Schema.TaggedError<UnparsableDateError>
 - **archivio**: coerente con la regola. `Schema.TaggedError` con `serialize()` per gli errori restituiti dalle server action (`packages/archivio-data/src/errors.ts:3-9`); `Data.TaggedError` per quelli locali (`apps/caveau/src/app/public/health/route.ts:51`). Il campo `cause` passa però da un `JSON.parse` dentro `ParseResult.succeed`, che lancia su input non valido (`packages/shared/src/effect.ts:41`).
 - **Questo repo**: ammesso ma non preferito. Tutti gli errori sono `Schema.TaggedError` e nessuno esce dal processo (`src/plan/errors.ts:3`, `src/agent/errors.ts:3`, `src/sheet/errors.ts`). Migrarli a `Data.TaggedError` è facoltativo; `Schema.Defect()` sul campo `cause` diventerebbe un tipo normale.
 - **Enforcement**: `solo-skill`. Dove passa il confine di processo non si deduce dalla sintassi, e comunque entrambe le forme sono ammesse.
-
-### P07 · Fallire con `return yield* new Err()`
-
-**Regola**: nel generatore si fallisce con `return yield* new XError({…})`, non con `yield* Effect.fail(new XError(…))`.
-
-**Perché**: gli errori tagged sono già Effect (yieldable). Il `return` fa capire a TypeScript che il flusso si interrompe (`AGENTS.md`: "Always return when raising an error").
-
-```ts
-// no
-yield* Effect.fail(new AgentProcessError({ race: name, message }))
-
-// sì
-return yield* new AgentProcessError({ race: name, message })
-```
-
-- **archivio**: `return yield* new NotFoundError(…)` (`packages/archivio-data/src/infra/collections/mongo-collections.ts:55`); `Effect.fail(new …)` quasi solo dentro le callback di `catchTag`.
-- **Questo repo**: conforme (`src/agent/process/ProcessAgent.ts:62`, `src/sheet/google/GoogleSheet.ts:68`).
-- **Enforcement**: `lint-sintattico`. Nei generatori passati a `Effect.gen`/`Effect.fn` si segnala uno `YieldExpression{delegate}` con argomento `Effect.fail(NewExpression)`, e un `ExpressionStatement` che contiene `yield* new …` senza `return`. In `lint-tipi` gli equivalenti sono `unnecessaryFailYieldableError` e `missingReturnYieldStar`.
 
 ### P08 · `tryPromise`/`try` in forma oggetto
 
@@ -259,7 +253,7 @@ Effect.catchTag(["ParseError", "ReservedPortError"], () => Effect.succeed(3000))
   - `handleErrors`: un dispatcher per `_tag` fatto a mano sopra `catchAll`, con `e as never` (`packages/shared/src/effect.ts:29,37`). È esaustivo per tipo, ma reinventa `catchTags`;
   - quattro `catchTag` che mappano sullo stesso errore, dove bastava un `mapError` (`packages/pimcore-data/src/infra/users/http-adapter.ts:23-34`).
 - **Questo repo**: conforme. `Effect.catch` compare solo al bordo (`src/main.ts:81`) e per convertire in `RaceOutcome` (`src/commands/fill.ts:90`).
-- **Enforcement**: `lint-sintattico`. `no-manual-effect-error-tag` di anti-slop copre i confronti su `_tag` dentro `Effect.catch`/`catchAll`/`catchIf`. In più va segnalato un `Effect.catch` la cui callback non ha parametri, fuori dall'allowlist dell'entry point. In `lint-tipi`: `catchUnfailableEffect`, `catchAllToMapError`.
+- **Enforcement**: `lint-sintattico`. Il preset copre le trasformazioni (`catch-all-to-map-error` e `catch-unfailable-effect`, alzate a error, più `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`). **Verificato scoperto**: il catch-all senza parametro che ingoia, e la discriminazione manuale su `_tag` dentro `Effect.catch` — quest'ultima è il bersaglio di `no-manual-effect-error-tag` di anti-slop (passo 2), il primo richiede una regola locale con allowlist per l'entry point.
 
 ## Confini e Schema
 
@@ -286,24 +280,6 @@ const parseObject = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unkn
   - conforme su `src/agent/parseAgentOutput.ts:6`, `src/sheet/google/GoogleSheet.ts:45` e `src/sheet/google/serviceAccountKey.ts:12`; nessun `as` oltre `as const`;
   - devia su `src/agent/extractJson.ts:5`, con `JSON.parse` in try/catch. Le API `Schema.decodeUnknownOption` e `Schema.fromJsonString` esistono in v4, ma la combinazione con `Schema.Unknown` non è stata eseguita.
 - **Enforcement**: `lint-sintattico`. Si segnala `JSON.parse`, e `TSAsExpression` diversa da `as const`; per le asserzioni anti-slop ha `require-safety-comment-for-type-assertion` e `no-chained-type-assertions`. In `lint-tipi`: `preferSchemaOverJson` e `unsafeEffectTypeAssertion` (entrambe off di default).
-
-### P11 · Niente `decode*Sync` dentro codice Effect
-
-**Regola**: dentro `Effect.gen`/`Effect.fn` si decodifica con `decodeUnknownEffect`. Le varianti `*Sync` lanciano eccezioni, quindi un errore di decodifica diventa un difetto.
-
-**Perché**: l'errore di decodifica deve arrivare nel canale errori, per poterlo mappare su un errore tagged.
-
-```ts
-// no
-const doc = Schema.decodeUnknownSync(RelationDocument)(raw)
-
-// sì
-const doc = yield* Schema.decodeUnknownEffect(RelationDocument)(raw)
-```
-
-- **archivio**: decoder `*Sync` usati dai repository (`packages/pimcore-data/src/infra/relations/mongo-relations.ts:18`, `packages/pimcore-data/src/infra/mongodb/models/objects.ts:95`).
-- **Questo repo**: conforme. Fuori dagli effetti si usa `decodeUnknownResult` (`src/agent/parseAgentOutput.ts:6`).
-- **Enforcement**: `lint-sintattico`. Si segnala `Schema.(decode|encode)\w*Sync` dentro una funzione generatore passata a `Effect.gen`/`Effect.fn`. In `lint-tipi`: `schemaSyncInEffect` (nel language service solo v3, in tsgo entrambe le versioni).
 
 ### P12 · HttpClient configurato in Layer
 
@@ -440,24 +416,6 @@ const outcomeFor = Effect.fn("outcomeFor")(function* (name: string) { … }, Eff
 - **archivio**: zero `Effect.fn`. Le funzioni sono arrow con `Effect.gen` più un wrapper di span fatto in casa (`packages/archivio-data/src/infra/collections/mongo-collections.ts:44-70`, `packages/shared/src/with-span.ts:25`).
 - **Questo repo**: conforme su `src/sheet/google/serviceAccountKey.ts:16,35`. Devia su `src/commands/fill.ts:53,71`, `src/agent/process/ProcessAgent.ts:48,81` e `src/commands/missing.ts:7`.
 - **Enforcement**: `lint-sintattico`. Si segnala un `VariableDeclarator` o una `Property` con valore `ArrowFunctionExpression` o `FunctionExpression` il cui corpo è (o ritorna soltanto) `Effect.gen(…)`. Si segnala anche `Effect.fn(…)(…).pipe(`. In `lint-tipi`: `effectFnOpportunity` (suggestion).
-
-### P18 · Niente effetti flottanti né `yield` senza `*`
-
-**Regola**: ogni Effect creato dentro un generatore va consumato con `yield*`, ritornato o assegnato; mai `yield` semplice, mai `Effect<Effect<…>>` ritornato dal generatore.
-
-**Perché**: un Effect che nessuno esegue è un no-op silenzioso, per esempio un log che non esce mai.
-
-```ts
-// no
-Effect.logWarning(describe(warning))
-
-// sì
-yield* Effect.logWarning(describe(warning))
-```
-
-- **archivio**: nessun caso trovato con grep; la ricerca non è esaustiva.
-- **Questo repo**: `grep` non trova `yield ` senza `*`. Gli effetti flottanti non si possono verificare senza type checker.
-- **Enforcement**: `lint-tipi` (`floatingEffect` e `missingStarInYieldEffectGen`, entrambe error; `returnEffectInGen`, suggestion). Un sottoinsieme è `lint-sintattico`: `YieldExpression` con `delegate === false` dentro un generatore passato a `Effect.gen`/`Effect.fn`.
 
 ### P19 · Risorse con `acquireRelease`, `Effect.scoped` solo se serve
 
@@ -752,11 +710,11 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 | P02 | no | — | — |
 | P03 | no | — | — |
 | P04 | parziale | `run-effect-inside-effect` | error (alzata) |
-| P05 | coperto | `global-error-in-effect-failure`, `global-error-in-effect-catch`, `extends-native-error`, `unknown-in-effect-catch` | error (alzate) / warn |
+| P05 | parziale | `global-error-in-effect-failure`, `global-error-in-effect-catch`, `extends-native-error`, `unknown-in-effect-catch`. Verificato scoperto: `throw` dentro un generatore e `Effect.fail("stringa")` (un `new TypeError` invece è segnalato) | error (alzate) / warn |
 | P06 | no | `redundant-schema-tag-identifier` (solo cosmetica) | warn |
 | P07 | coperto | `unnecessary-fail-yieldable-error`, `missing-return-yield-star` | error |
 | P08 | **no** | — (verificato: `Effect.tryPromise(() => …)` in forma thunk non è segnalato) | — |
-| P09 | coperto | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die` | error (alzate le prime due) / warn |
+| P09 | parziale | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die`. Verificato scoperto: il catch-all senza parametro che ingoia, e la discriminazione manuale su `_tag` dentro `Effect.catch` (quest'ultima è il bersaglio di `no-manual-effect-error-tag`, passo 2) | error (alzate le prime due) / warn |
 | P10 | parziale | `prefer-schema-over-json`, `prefer-typed-schema-decoder`, `instance-of-schema` (l'`as` non è coperto) | warn |
 | P11 | coperto | `schema-sync`, `schema-sync-in-effect` | error (alzate) |
 | P12 | no | — | — |
@@ -797,21 +755,21 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 
 ## Prossimi passi
 
-1. **oxlint + tsgo**: seguire l'integrazione ufficiale sopra (`@effect/tsgo`, `oxlint`, `oxlint-tsgolint`, `.oxlintrc.json` che estende il preset `recommended`, `prepare: effect-tsgo patch --oxlint`), più uno script `lint`. Da qui arrivano già, type-aware, le diagnostiche di P18 e P19 e buona parte di P05, P07, P11 e P17. Primo passo: installare, lanciare `oxlint` sul repo e leggere cosa segnala il preset. Solo ciò che resta scoperto giustifica una regola custom.
+1. ~~**oxlint + tsgo**~~ **fatto**: vedi "Attivato in questo repo" sopra. `pnpm lint` è a 0 warning, 0 error. La patch è risultata obbligatoria, non opzionale.
 2. **Vendoring anti-slop**: copiare `src/effect/` in `tools/oxlint/anti-slop-effect/` e attivare `no-manual-effect-error-tag`, `no-manual-tag-comparison` e `prefer-effect-match`. Poi correggere gli 8 punti di P14.
-3. **Plugin locale** `tools/oxlint/effect-local/`, solo per ciò che il preset ufficiale non copre, da riverificare dopo il passo 1. In quest'ordine di valore:
+3. **Plugin locale** `tools/oxlint/effect-local/`, solo per ciò che il preset non copre. Lista potata dopo il passo 1, in ordine di valore:
    1. `error-handling-in-effect-fn-handler` (P25), insieme a `prefer-effect-fn` (P17), da cui dipende;
    2. `single-style-per-function` (P24);
    3. `no-transport-types-in-generator` (P26), con la lista dei tipi di trasporto come opzione;
    4. `boundary-entrypoint-shape` (P27);
    5. `service-port-shape-only` (P01);
-   6. `no-bare-error-in-effect` (P05);
-   7. `try-object-form`, con `Effect.promise` come warning (P08);
-   8. `no-sync-decode-in-effect` (P11);
-   9. `no-process-env` e `redacted-secret-names` (P13);
-   10. `run-only-at-entry` (P04, P22);
-   11. `return-yield-error` (P07);
-   12. `no-console-in-effect` (P21).
+   6. `no-bare-error-in-effect` (P05), ridotta a `throw` in generatore e `Effect.fail("stringa")`;
+   7. `no-parameterless-catch-all` (P09), con allowlist per l'entry point;
+   8. `try-object-form`, con `Effect.promise` come warning (P08);
+   9. `redacted-secret-names` (P13);
+   10. `run-only-at-entry` (P04, P22), ridimensionata.
+
+   Cadute perché coperte dal preset: `no-sync-decode-in-effect` (P11), `no-process-env` (P13), `return-yield-error` (P07), `no-console-in-effect` (P21).
 
    Ogni regola va scritta con il `RuleTester` di `oxlint/plugins-dev`, come in anti-slop.
 4. **tsgo fuori da oxlint**: se l'integrazione del passo 1 non funziona su `rc.112`, il ripiego è `effect-tsgo diagnostics --project tsconfig.json` come script separato, senza patch, con `floatingEffect`, `missingStarInYieldEffectGen`, `globalErrorInEffectFailure`, `effectFnOpportunity` e `leakingRequirements` (P18, P19).
