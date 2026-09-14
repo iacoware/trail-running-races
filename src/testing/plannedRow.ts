@@ -1,5 +1,6 @@
 import { Option } from "effect"
 import type { PlannedRow } from "../plan/planRow.ts"
+import { SectionAction } from "../plan/targetSection.ts"
 
 const DEFAULTS: PlannedRow = {
   name: "Gara Nuova",
@@ -7,7 +8,7 @@ const DEFAULTS: PlannedRow = {
   section: "Toscana",
   row: 4,
   after: Option.some("Brunello Crossing"),
-  sectionAction: { _tag: "UseExistingSection" },
+  sectionAction: SectionAction.UseExistingSection(),
   columns: { name: 0, date: 1, place: 2, fromFlorence: 3, type: 4, distances: 5 },
   cells: {
     name: "Gara Nuova",

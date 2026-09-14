@@ -1,4 +1,4 @@
-import { Result } from "effect"
+import { Data, Result } from "effect"
 import { COLUMN_KEYS, cellsOf, resolveColumns, type Cells, type Columns } from "./columns.ts"
 import type { SheetColumnMissingError } from "./errors.ts"
 import type { Row } from "./SheetReader.ts"
@@ -14,7 +14,11 @@ export type Section = {
   readonly races: ReadonlyArray<RaceRow>
 }
 
-export type SheetWarning = { readonly _tag: "RowsOutsideSection"; readonly firstRow: number }
+export type SheetWarning = Data.TaggedEnum<{
+  RowsOutsideSection: { readonly firstRow: number }
+}>
+
+export const SheetWarning = Data.taggedEnum<SheetWarning>()
 
 export type Sheet = {
   readonly columns: Columns
@@ -37,44 +41,52 @@ const hasOnlyName = (cells: Cells) =>
 // section and are only reported.
 type MutableSection = { name: string; headerRow: number; races: Array<RaceRow> }
 
-type Cursor =
-  | { readonly _tag: "AfterSeparator" }
-  | { readonly _tag: "InSection"; readonly section: MutableSection }
-  | { readonly _tag: "Orphans" }
+type Cursor = Data.TaggedEnum<{
+  AfterSeparator: object
+  InSection: { readonly section: MutableSection }
+  Orphans: object
+}>
+
+const Cursor = Data.taggedEnum<Cursor>()
 
 const readSections = (columns: Columns, rows: ReadonlyArray<Row>) => {
   const sections: Array<MutableSection> = []
   const orphans: Array<RaceRow> = []
   const warnings: Array<SheetWarning> = []
-  let cursor: Cursor = { _tag: "AfterSeparator" }
+  let cursor: Cursor = Cursor.AfterSeparator()
 
   rows.forEach((row, index) => {
     if (index === 0) return
     const rowNumber = index + 1
     if (isBlankRow(row)) {
-      cursor = { _tag: "AfterSeparator" }
+      cursor = Cursor.AfterSeparator()
       return
     }
     const cells = cellsOf(columns, row)
-    switch (cursor._tag) {
-      case "AfterSeparator":
+    cursor = Cursor.$match(cursor, {
+      AfterSeparator: () => {
         if (hasOnlyName(cells)) {
-          const section = { name: cells.name.trim(), headerRow: rowNumber, races: [] }
+          const section: MutableSection = {
+            name: cells.name.trim(),
+            headerRow: rowNumber,
+            races: [],
+          }
           sections.push(section)
-          cursor = { _tag: "InSection", section }
-        } else {
-          warnings.push({ _tag: "RowsOutsideSection", firstRow: rowNumber })
-          orphans.push({ row: rowNumber, cells })
-          cursor = { _tag: "Orphans" }
+          return Cursor.InSection({ section })
         }
-        return
-      case "InSection":
-        cursor.section.races.push({ row: rowNumber, cells })
-        return
-      case "Orphans":
+        warnings.push(SheetWarning.RowsOutsideSection({ firstRow: rowNumber }))
         orphans.push({ row: rowNumber, cells })
-        return
-    }
+        return Cursor.Orphans()
+      },
+      InSection: (current) => {
+        current.section.races.push({ row: rowNumber, cells })
+        return current
+      },
+      Orphans: (current) => {
+        orphans.push({ row: rowNumber, cells })
+        return current
+      },
+    })
   })
 
   return { sections, orphans, warnings }

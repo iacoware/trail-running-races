@@ -1,4 +1,4 @@
-import { Effect, Option, Result, Stream } from "effect"
+import { Data, Effect, Option, Result, Stream } from "effect"
 import { Agent } from "../agent/Agent.ts"
 import type { AgentError } from "../agent/errors.ts"
 import type { FoundRace } from "../agent/RaceCard.ts"
@@ -16,24 +16,22 @@ import { SheetReader } from "../sheet/SheetReader.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
 import { missingIn } from "./missing.ts"
 
-export type RaceOutcome =
-  | { readonly _tag: "Filled"; readonly name: string; readonly row: PlannedRow }
-  | { readonly _tag: "NotFound"; readonly name: string }
-  | {
-      readonly _tag: "Ambiguous"
-      readonly name: string
-      readonly candidates: ReadonlyArray<string>
-    }
-  | {
-      readonly _tag: "Failed"
-      readonly name: string
-      readonly error:
-        | AgentError
-        | PlanError
-        | SheetColumnMissingError
-        | SheetReadError
-        | SheetWriteError
-    }
+export type RaceOutcome = Data.TaggedEnum<{
+  Filled: { readonly name: string; readonly row: PlannedRow }
+  NotFound: { readonly name: string }
+  Ambiguous: { readonly name: string; readonly candidates: ReadonlyArray<string> }
+  Failed: {
+    readonly name: string
+    readonly error:
+      | AgentError
+      | PlanError
+      | SheetColumnMissingError
+      | SheetReadError
+      | SheetWriteError
+  }
+}>
+
+export const RaceOutcome = Data.taggedEnum<RaceOutcome>()
 
 // `--only` narrows the candidates to one name, even one absent from the list, but a race
 // already in the sheet is never searched: the presence check always runs.
@@ -62,7 +60,7 @@ const insert = (plannedFor: (sheet: Sheet) => Result.Result<PlannedRow, PlanErro
 
 const writeFound = (name: string, race: FoundRace) =>
   insert((sheet) => planRow(sheet, name, race)).pipe(
-    Effect.map((row) => ({ _tag: "Filled", name, row }) as const),
+    Effect.map((row) => RaceOutcome.Filled({ name, row })),
   )
 
 const park = (name: string, outcome: "non_trovata" | "ambigua") =>
@@ -74,20 +72,20 @@ const outcomeFor = (
   Effect.gen(function* () {
     const agent = yield* Agent
     const card = yield* Effect.result(agent.search(name))
-    if (Result.isFailure(card)) return { _tag: "Failed", name, error: card.failure } as const
+    if (Result.isFailure(card)) return RaceOutcome.Failed({ name, error: card.failure })
     switch (card.success.esito) {
       case "non_trovata":
         yield* park(name, card.success.esito)
-        return { _tag: "NotFound", name } as const
+        return RaceOutcome.NotFound({ name })
       case "ambigua":
         yield* park(name, card.success.esito)
-        return { _tag: "Ambiguous", name, candidates: card.success.candidati } as const
+        return RaceOutcome.Ambiguous({ name, candidates: card.success.candidati })
       case "trovata":
         return yield* writeFound(name, card.success)
     }
   }).pipe(
     // One race in error never stops the run: it is reported and the next race is searched.
-    Effect.catch((error) => Effect.succeed({ _tag: "Failed", name, error } as const)),
+    Effect.catch((error) => Effect.succeed(RaceOutcome.Failed({ name, error }))),
   )
 
 export const fill = (options: { readonly only: Option.Option<string> }) =>

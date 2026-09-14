@@ -6,8 +6,8 @@
   "rules": {
     "anti-slop-effect/no-manual-effect-error-tag": "error",
     "anti-slop-effect/prefer-effect-match": "error",
-    "anti-slop-effect/no-manual-tag-comparison": "warn",
-    "anti-slop-effect/no-manual-tagged-construction": "warn",
+    "anti-slop-effect/no-manual-tag-comparison": "error",
+    "anti-slop-effect/no-manual-tagged-construction": "error",
     "effecttsgo/extends-native-error": "error",
     "effecttsgo/global-error-in-effect-catch": "error",
     "effecttsgo/global-error-in-effect-failure": "error",

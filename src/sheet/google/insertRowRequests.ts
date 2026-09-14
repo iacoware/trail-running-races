@@ -1,6 +1,7 @@
 import type { sheets_v4 } from "@googleapis/sheets"
 import { Option } from "effect"
 import type { PlannedRow } from "../../plan/planRow.ts"
+import { SectionAction } from "../../plan/targetSection.ts"
 import { COLUMN_KEYS, type Columns } from "../columns.ts"
 
 const WRITTEN_FIELDS = "userEnteredValue,textFormatRuns"
@@ -59,8 +60,9 @@ const createSectionRequests = (
   sheetId: number,
   planned: PlannedRow,
 ): ReadonlyArray<sheets_v4.Schema$Request> => {
-  if (planned.sectionAction._tag !== "CreateSection") return []
-  const { separatorRow, headerRow, trailingSeparator } = planned.sectionAction
+  const action = planned.sectionAction
+  if (!SectionAction.$is("CreateSection")(action)) return []
+  const { separatorRow, headerRow, trailingSeparator } = action
   const index = separatorRow - 1
   const insertedRows = trailingSeparator ? 4 : 3
 
@@ -94,7 +96,7 @@ export const insertRowRequests = (
   sheetId: number,
   planned: PlannedRow,
 ): ReadonlyArray<sheets_v4.Schema$Request> => {
-  if (planned.sectionAction._tag === "CreateSection") {
+  if (SectionAction.$is("CreateSection")(planned.sectionAction)) {
     return createSectionRequests(sheetId, planned)
   }
   const index = planned.row - 1

@@ -1,10 +1,7 @@
-import type { RaceOutcome } from "./fill.ts"
+import { RaceOutcome } from "./fill.ts"
 
-const withTag = <T extends RaceOutcome["_tag"]>(
-  outcomes: ReadonlyArray<RaceOutcome>,
-  tag: T,
-): ReadonlyArray<Extract<RaceOutcome, { _tag: T }>> =>
-  outcomes.filter((outcome): outcome is Extract<RaceOutcome, { _tag: T }> => outcome._tag === tag)
+const withTag = <T extends RaceOutcome["_tag"]>(outcomes: ReadonlyArray<RaceOutcome>, tag: T) =>
+  outcomes.filter(RaceOutcome.$is(tag))
 
 const count = (label: string, lines: ReadonlyArray<string>) => [
   `${label}: ${lines.length}`,
@@ -44,4 +41,4 @@ export const summaryLines = (
 
 // Only an error is worth a failing exit code: a race not found or ambiguous is a result.
 export const hasErrors = (outcomes: ReadonlyArray<RaceOutcome>) =>
-  outcomes.some((outcome) => outcome._tag === "Failed")
+  outcomes.some(RaceOutcome.$is("Failed"))

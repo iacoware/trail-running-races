@@ -356,7 +356,7 @@ outcomes.some(Predicate.isTagged("Failed"))
   - devia su `src/plan/planRow.ts:44,53`, `src/sheet/print/PrintSheetWriter.ts:20` e `src/sheet/google/insertRowRequests.ts:62,97`;
   - filtri per `_tag` in `src/commands/summary.ts:7,47`;
   - `switch` senza guardia di esaustività in `src/sheet/parseSheet.ts:59` (se resta `switch`: `default: return absurd(cursor)`, con `absurd` da `effect/Function`).
-- **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` di anti-slop è attiva (a `warn`, 10 punti da migrare) senza modifiche: segnala anche gli `switch` completi su `_tag`, ed è voluto, perché la via preferita è `$match` o `Match`. `prefer-effect-match` copre le catene di ternari.
+- **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` di anti-slop è attiva (a `error`, rumore zero) senza modifiche: segnala anche gli `switch` completi su `_tag`, ed è voluto, perché la via preferita è `$match` o `Match`. `prefer-effect-match` copre le catene di ternari.
 
 ### P15 · Varianti costruite con costruttori, non letterali `_tag`
 
@@ -375,7 +375,7 @@ return SectionTarget.MissingSpecialSection({ name, action })
 
 - **archivio**: letterali `_tag` solo come pattern di `Match.when`, che la regola anti-slop esenta.
 - **Questo repo**: letterali in `src/config.ts:10`, `src/commands/fill.ts:65,77,81,84,90`, `src/plan/targetSection.ts:51-79`, `src/sheet/parseSheet.ts:49-68`, e nelle fixture di test (`src/plan/planRow.test.ts:108`, `src/config.test.ts:50`).
-- **Enforcement**: `lint-sintattico`. `no-manual-tagged-construction` di anti-slop è attiva a `warn`, senza modifiche, spenta su `**/*.test.ts` e `src/testing/**`, dove il letterale resta comodo e innocuo: restano 18 punti in `src/`. Da fare: portare a `Data.taggedEnum` le sei unioni `ServiceAccountSource`, `RaceOutcome`, `SectionTarget`, `SectionAction`, `Cursor` e `SheetWarning`.
+- **Enforcement**: `lint-sintattico`. `no-manual-tagged-construction` di anti-slop è attiva a `error`, senza modifiche, spenta su `**/*.test.ts` e `src/testing/**`, dove il letterale resta comodo e innocuo. Le sei unioni sono migrate: `src/` è a zero violazioni. Da fare: portare a `Data.taggedEnum` le sei unioni `ServiceAccountSource`, `RaceOutcome`, `SectionTarget`, `SectionAction`, `Cursor` e `SheetWarning`.
 
 ### P16 · Option/Result/Exit via modulo, mai `_tag`
 
@@ -636,8 +636,8 @@ Compatibilità verificata: `@oxlint/plugins` `1.82.0` (allineato a `oxlint`, non
 |---|---|---|---|
 | `no-manual-effect-error-tag` | `_tag ==/===/!=/!==` letterale o `switch` su `_tag`, solo nella funzione passata direttamente a `Effect.catch`/`catchAll`/`catchIf`; su `x.reason._tag` suggerisce `catchReason` | entrambe; `catchAll` esiste solo in v3 e non disturba | **error** (P09); rumore zero, verificata con prova negativa |
 | `prefer-effect-match` | catena di almeno 2 ternari sulla stessa espressione (per testo) confrontata con letterali | agnostica | **error** (P14); rumore zero, verificata con prova negativa |
-| `no-manual-tag-comparison` | stessi confronti e `switch`, ovunque tranne nei catch-all | agnostica | **warn** (P14, P16): 10 punti da migrare (7 in `src/` non-test, 3 in `fill.test.ts`) |
-| `no-manual-tagged-construction` | object literal con `_tag` letterale, esente solo come argomento diretto di `Match.when`/`Match.not` | agnostica | **warn** (P15), spenta su `**/*.test.ts` e `src/testing/**` come previsto: 18 punti restanti in `targetSection.ts` (6), `parseSheet.ts` (5), `fill.ts` (5), `config.ts` (2) |
+| `no-manual-tag-comparison` | stessi confronti e `switch`, ovunque tranne nei catch-all | agnostica | **error** (P14, P16); i 10 punti iniziali sono stati migrati |
+| `no-manual-tagged-construction` | object literal con `_tag` letterale, esente solo come argomento diretto di `Match.when`/`Match.not` | agnostica | **error** (P15), spenta su `**/*.test.ts` e `src/testing/**` come previsto: i 18 punti in `src/` sono stati migrati |
 | `no-service-constructor-imports` | import nominati `/^make[A-Z]/` da percorsi relativi, test esclusi | agnostica, euristica di naming | vendorizzata ma **non attivata**: qui nessun `make*` e gli adapter si importano come namespace; P01 va scritta a parte |
 
 Tutte spente su `tools/**`, dove i casi di test delle regole contengono di proposito le forme vietate.
@@ -723,9 +723,9 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 | P11 | coperto | `schema-sync`, `schema-sync-in-effect` | error (alzate) |
 | P12 | no | — | — |
 | P13 | parziale | `process-env`, `process-env-in-effect` (i nomi dei segreti non sono coperti) | error (alzate) |
-| P14 | coperto | preset: `match-effect-to-match`, `option-match-to-from-option`; il `_tag ===`/`switch` generico da `anti-slop-effect/no-manual-tag-comparison`, le catene di ternari da `anti-slop-effect/prefer-effect-match` | warn / error (`prefer-effect-match`) |
-| P15 | coperto | preset: `schema-struct-with-tag` (solo Schema); i letterali `_tag` da `anti-slop-effect/no-manual-tagged-construction`, spenta su test e fixture | warn |
-| P16 | coperto | preset: `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none`; il `_tag` da `anti-slop-effect/no-manual-tag-comparison` | warn |
+| P14 | coperto | preset: `match-effect-to-match`, `option-match-to-from-option`; il `_tag ===`/`switch` generico da `anti-slop-effect/no-manual-tag-comparison`, le catene di ternari da `anti-slop-effect/prefer-effect-match` | warn / error (le due anti-slop) |
+| P15 | coperto | preset: `schema-struct-with-tag` (solo Schema); i letterali `_tag` da `anti-slop-effect/no-manual-tagged-construction`, spenta su test e fixture | warn / error (l'anti-slop) |
+| P16 | coperto | preset: `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none`; il `_tag` da `anti-slop-effect/no-manual-tag-comparison` | warn / error (l'anti-slop) |
 | P17 | parziale | `effect-fn-opportunity`, `effect-fn-implicit-any`, `effect-fn-iife`, `unnecessary-effect-gen` (il nome in `Effect.fn("…")` non è imposto) | error (alzata la prima) / warn |
 | P18 | coperto | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` | error |
 | P19 | parziale | `acquire-release-disposable`, `scope-in-layer-effect` | warn |
@@ -760,7 +760,7 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 ## Prossimi passi
 
 1. ~~**oxlint + tsgo**~~ **fatto**: vedi "Attivato in questo repo" sopra. `pnpm lint` è a 0 warning, 0 error. La patch è risultata obbligatoria, non opzionale.
-2. ~~**Vendoring anti-slop**~~ **fatto** (2026-09-14): `tools/oxlint/anti-slop-effect/`, quattro regole su cinque attive. Restano da migrare i 10 punti di `no-manual-tag-comparison` (P14/P16) e i 18 di `no-manual-tagged-construction` (P15), entrambe a `warn`: sono nella sezione "Migrazioni da fare", non nel tooling.
+2. ~~**Vendoring anti-slop**~~ **fatto** (2026-09-14): `tools/oxlint/anti-slop-effect/`, quattro regole su cinque attive, **tutte a `error`**. Le 28 violazioni iniziali sono state chiuse migrando le sei unioni di P15 a `Data.taggedEnum`.
 3. **Plugin locale** `tools/oxlint/effect-local/`, solo per ciò che il preset non copre. Lista potata dopo il passo 1, in ordine di valore:
    1. `error-handling-in-effect-fn-handler` (P25), insieme a `prefer-effect-fn` (P17), da cui dipende;
    2. `single-style-per-function` (P24);
@@ -801,7 +801,7 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 
 Ordine consigliato, una volta attivo il lint:
 
-1. Portare a `Data.taggedEnum` le sei unioni di P15. Questo risolve da solo buona parte dei punti di P14, perché `$match` sostituisce ternari e `switch`.
+1. ~~Portare a `Data.taggedEnum` le sei unioni di P15~~ **fatto** (2026-09-14): `ServiceAccountSource`, `Cursor`, `SheetWarning`, `SectionAction`, `SectionTarget`, `RaceOutcome`. Come previsto ha chiuso anche tutti i punti di P14/P16: `$match` ha sostituito lo `switch` di `parseSheet` e i ternari di `planRow`, `$is` i confronti di `summary`, `insertRowRequests`, `PrintSheetWriter` e `fill.test.ts`.
 2. Coprire con `Match` i punti rimasti, cioè quelli su unioni che non sono `taggedEnum` (`src/agent/RaceCard.ts`, che viene da Schema).
 3. `Config.redacted` per il service account (P13).
 4. `Effect.fn` sulle funzioni effettful con nome (P17), spostando nel secondo argomento i catch oggi appesi con `.pipe` (P25): `src/commands/fill.ts:88-90` e `src/agent/process/ProcessAgent.ts:68-93`.

@@ -1,4 +1,4 @@
-import { Option, Result } from "effect"
+import { Data, Option, Result } from "effect"
 import type { FoundRace } from "../agent/RaceCard.ts"
 import { parseDate, type DayOfYear } from "../dates/parseDate.ts"
 import type { Cells, Columns } from "../sheet/columns.ts"
@@ -8,9 +8,9 @@ import { formatCells } from "./formatCells.ts"
 import { insertionAt } from "./insertionAt.ts"
 import {
   reviewSection,
+  SectionTarget,
   targetSection,
   type SectionAction,
-  type SectionTarget,
 } from "./targetSection.ts"
 
 export type PlannedRow = {
@@ -32,7 +32,7 @@ const reviewMessage: Readonly<Record<ReviewOutcome, string>> = {
 }
 
 const missingSectionPosition = (
-  target: Extract<SectionTarget, { readonly _tag: "MissingSpecialSection" }>,
+  target: Data.TaggedEnum.Value<SectionTarget, "MissingSpecialSection">,
 ) => ({
   section: target.name,
   row: target.action.headerRow + 1,
@@ -41,27 +41,29 @@ const missingSectionPosition = (
 })
 
 const positionIn = (target: SectionTarget, start: DayOfYear) =>
-  target._tag === "ExistingSection"
-    ? {
-        section: target.section.name,
-        ...insertionAt(target.section, start),
-        sectionAction: target.action,
-      }
-    : missingSectionPosition(target)
+  SectionTarget.$match(target, {
+    ExistingSection: (existing) => ({
+      section: existing.section.name,
+      ...insertionAt(existing.section, start),
+      sectionAction: existing.action,
+    }),
+    MissingSpecialSection: missingSectionPosition,
+  })
 
-const reviewPositionIn = (target: SectionTarget) => {
-  if (target._tag === "MissingSpecialSection") {
-    return missingSectionPosition(target)
-  }
-  const previous = target.section.races.at(-1)
-  return {
-    section: target.section.name,
-    row: (previous?.row ?? target.section.headerRow) + 1,
-    after:
-      previous === undefined ? Option.none<string>() : Option.some(previous.cells.name.trim()),
-    sectionAction: target.action,
-  }
-}
+const reviewPositionIn = (target: SectionTarget) =>
+  SectionTarget.$match(target, {
+    ExistingSection: (existing) => {
+      const previous = existing.section.races.at(-1)
+      return {
+        section: existing.section.name,
+        row: (previous?.row ?? existing.section.headerRow) + 1,
+        after:
+          previous === undefined ? Option.none<string>() : Option.some(previous.cells.name.trim()),
+        sectionAction: existing.action,
+      }
+    },
+    MissingSpecialSection: missingSectionPosition,
+  })
 
 // Every position is computed against the sheet as it was read, not against the rows planned
 // earlier in the same run: two new races in one section can name the same target row.

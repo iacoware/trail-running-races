@@ -1,5 +1,6 @@
 import { Console, Effect, Layer, Option } from "effect"
 import type { PlannedRow } from "../../plan/planRow.ts"
+import { SectionAction } from "../../plan/targetSection.ts"
 import { COLUMN_HEADERS, COLUMN_KEYS } from "../columns.ts"
 import { SheetWriter } from "../SheetWriter.ts"
 
@@ -17,12 +18,13 @@ const position = (planned: PlannedRow) =>
   })
 
 const sectionCreation = (planned: PlannedRow) =>
-  planned.sectionAction._tag === "UseExistingSection"
-    ? []
-    : [
-        `crea ${planned.section}: riga vuota ${planned.sectionAction.separatorRow}, ` +
-          `intestazione in grassetto ${planned.sectionAction.headerRow}`,
-      ]
+  SectionAction.$match(planned.sectionAction, {
+    UseExistingSection: () => [],
+    CreateSection: ({ separatorRow, headerRow }) => [
+      `crea ${planned.section}: riga vuota ${separatorRow}, ` +
+        `intestazione in grassetto ${headerRow}`,
+    ],
+  })
 
 export const describePlan = (planned: PlannedRow): ReadonlyArray<string> => [
   `== ${planned.name}`,

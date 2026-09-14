@@ -1,3 +1,4 @@
+import { Data } from "effect"
 import type { Region } from "../agent/RaceCard.ts"
 import { raceKey } from "../races/raceKey.ts"
 import type { Section, Sheet } from "../sheet/parseSheet.ts"
@@ -8,28 +9,26 @@ export const REVIEW_SECTION = "Da verificare"
 
 const SPECIAL_SECTIONS = [REST_OF_ITALY, ABROAD, REVIEW_SECTION] as const
 
-type UseExistingSection = { readonly _tag: "UseExistingSection" }
+export type SectionAction = Data.TaggedEnum<{
+  UseExistingSection: object
+  CreateSection: {
+    readonly separatorRow: number
+    readonly headerRow: number
+    readonly trailingSeparator: boolean
+  }
+}>
 
-type CreateSection = {
-  readonly _tag: "CreateSection"
-  readonly separatorRow: number
-  readonly headerRow: number
-  readonly trailingSeparator: boolean
-}
+export const SectionAction = Data.taggedEnum<SectionAction>()
 
-export type SectionAction = UseExistingSection | CreateSection
+type UseExistingSection = Data.TaggedEnum.Value<SectionAction, "UseExistingSection">
+type CreateSection = Data.TaggedEnum.Value<SectionAction, "CreateSection">
 
-export type SectionTarget =
-  | {
-      readonly _tag: "ExistingSection"
-      readonly section: Section
-      readonly action: UseExistingSection
-    }
-  | {
-      readonly _tag: "MissingSpecialSection"
-      readonly name: string
-      readonly action: CreateSection
-    }
+export type SectionTarget = Data.TaggedEnum<{
+  ExistingSection: { readonly section: Section; readonly action: UseExistingSection }
+  MissingSpecialSection: { readonly name: string; readonly action: CreateSection }
+}>
+
+export const SectionTarget = Data.taggedEnum<SectionTarget>()
 
 // Hyphens and spaces are interchangeable in a section name, so `Emilia Romagna` and
 // `Emilia-Romagna` name the same section.
@@ -47,16 +46,14 @@ const missingSpecial = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): 
   const separatorRow =
     following === undefined ? sheet.lastRow + 1 : Math.max(2, following.headerRow - 1)
 
-  return {
-    _tag: "MissingSpecialSection",
+  return SectionTarget.MissingSpecialSection({
     name,
-    action: {
-      _tag: "CreateSection",
+    action: SectionAction.CreateSection({
       separatorRow,
       headerRow: separatorRow + 1,
       trailingSeparator: followsHeader,
-    },
-  }
+    }),
+  })
 }
 
 const sectionTarget = (
@@ -66,7 +63,7 @@ const sectionTarget = (
   const section = named(sheet, name)
   return section === undefined
     ? missingSpecial(sheet, name)
-    : { _tag: "ExistingSection", section, action: { _tag: "UseExistingSection" } }
+    : SectionTarget.ExistingSection({ section, action: SectionAction.UseExistingSection() })
 }
 
 export const reviewSection = (sheet: Sheet): SectionTarget => sectionTarget(sheet, REVIEW_SECTION)
@@ -76,7 +73,10 @@ export const reviewSection = (sheet: Sheet): SectionTarget => sectionTarget(shee
 export const targetSection = (sheet: Sheet, region: Region): SectionTarget => {
   const own = named(sheet, region)
   if (own !== undefined) {
-    return { _tag: "ExistingSection", section: own, action: { _tag: "UseExistingSection" } }
+    return SectionTarget.ExistingSection({
+      section: own,
+      action: SectionAction.UseExistingSection(),
+    })
   }
   return sectionTarget(sheet, region === ABROAD ? ABROAD : REST_OF_ITALY)
 }

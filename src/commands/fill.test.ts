@@ -4,12 +4,13 @@ import { Agent } from "../agent/Agent.ts"
 import { AgentTimeout } from "../agent/errors.ts"
 import type { FoundRace, RaceCard } from "../agent/RaceCard.ts"
 import type { PlannedRow } from "../plan/planRow.ts"
+import { SectionAction } from "../plan/targetSection.ts"
 import { RaceList } from "../races/RaceList.ts"
 import { SheetApiError } from "../sheet/errors.ts"
 import { SheetReader } from "../sheet/SheetReader.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
 import { captureLogs } from "../testing/captureLogs.ts"
-import { fill } from "./fill.ts"
+import { fill, RaceOutcome } from "./fill.ts"
 
 const header = ["Nome", "Data (+ o -)", "Luogo", "Da FI", "Tipo", "Distanze"]
 
@@ -63,7 +64,7 @@ const insertingSheet = (...rows: Array<Array<string>>) => {
       SheetWriter.of({
         insert: (planned) =>
           Effect.sync(() => {
-            if (planned.sectionAction._tag === "CreateSection") {
+            if (SectionAction.$is("CreateSection")(planned.sectionAction)) {
               current.splice(
                 planned.sectionAction.separatorRow - 1,
                 0,
@@ -307,7 +308,7 @@ test("plans a second race against the special section created by the first", () 
       ),
     )
 
-    const filled = results.filter((outcome) => outcome._tag === "Filled")
+    const filled = results.filter(RaceOutcome.$is("Filled"))
     expect(filled.map((outcome) => [outcome.row.row, outcome.row.sectionAction._tag])).toEqual([
       [6, "CreateSection"],
       [7, "UseExistingSection"],
@@ -370,7 +371,7 @@ test("plans the second race of a section against the row the first one just took
       ),
     )
 
-    const rows = results.map((outcome) => (outcome._tag === "Filled" ? outcome.row.row : 0))
+    const rows = results.map((outcome) => (RaceOutcome.$is("Filled")(outcome) ? outcome.row.row : 0))
     expect(rows).toEqual([4, 5])
   }).pipe(
     startingFrom(
