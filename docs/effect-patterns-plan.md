@@ -32,10 +32,13 @@ Le violazioni segnalate vanno **riportate, non corrette** in questo passo: le co
 
 ## Passo 2 — vendoring anti-slop
 
-- [ ] **2a** Copiare `src/effect/` di `dmmulroy/anti-slop` (commit `c44ef22`, MIT) in `tools/oxlint/anti-slop-effect/`, conservando la licenza e aggiungendo un `README.md` con origine e commit.
-- [ ] **2b** Verificare compatibilità della versione di `oxlint` installata con `@oxlint/plugins` `1.78.0` (anti-slop pinna quella; la minima supportata non è dichiarata).
-- [ ] **2c** Attivare `no-manual-effect-error-tag` (P09), `no-manual-tag-comparison` (P14, P16), `prefer-effect-match` (P14).
-- [ ] **2d** `no-manual-tagged-construction` (P15): attivarla **escludendo `*.test.ts` e fixture**; se il rumore è alto, tenerla `warn` finché le sei unioni di P15 non sono migrate.
+- [x] **2a** Copiato `src/effect/` di `dmmulroy/anti-slop` (commit `c44ef22`, HEAD del repo, MIT) in `tools/oxlint/anti-slop-effect/`, file invariati, con `LICENSE` e `README.md` (origine, commit, istruzioni di aggiornamento).
+- [x] **2b** Installato `@oxlint/plugins@1.82.0`, allineato a `oxlint` invece del `1.78.0` dell'upstream: i cinque `RuleTester` upstream passano. Il plugin JS si carica anche sull'`oxlint` **patchato** da `effect-tsgo`, via `jsPlugins` in `.oxlintrc.json` — non era scontato, dato che al passo 1 il preset non era caricabile da configurazione.
+- [x] **2c** `no-manual-effect-error-tag` (P09) e `prefer-effect-match` (P14) a **error**: rumore zero, entrambe verificate con prova negativa. `no-manual-tag-comparison` (P14, P16) a **warn**: 10 violazioni reali (7 in `src/` non-test, 3 in `fill.test.ts`), che sono migrazioni, fuori da questo piano.
+- [x] **2d** `no-manual-tagged-construction` (P15) a **warn**, spenta su `**/*.test.ts` e `src/testing/**` (25 dei 44 punti venivano da lì). Restano 18 punti: `targetSection.ts` 6, `parseSheet.ts` 5, `fill.ts` 5, `config.ts` 2. `warn` finché le sei unioni di P15 non sono migrate, come previsto.
+- [x] **2e** (non previsto) Tutte le regole spente su `tools/**`: i casi di test delle regole contengono di proposito le forme vietate. Vitest raccoglieva i `*.test.ts` vendorizzati e falliva con "No test suite found": esclusi in `vitest.config.ts` (nuovo) ed eseguiti da `pnpm test:lint-rules` (`node --test`), a cui `pnpm test` ora incatena. `tsconfig.json` include `tools/**/*.ts`: typecheck verde.
+
+`no-service-constructor-imports` è vendorizzata ma non attivata, come deciso nel catalogo: qui non esistono `make*` esportati.
 
 Violazioni attese oggi in `src/` (da grep): `_tag ===` in `src/plan/planRow.ts:44,53`, `src/commands/summary.ts:7,47`, `src/sheet/google/insertRowRequests.ts:97`, `src/sheet/print/PrintSheetWriter.ts:20`, più 3 in `src/commands/fill.test.ts`; `switch (cursor._tag)` in `src/sheet/parseSheet.ts:59`.
 
@@ -68,9 +71,10 @@ Ogni regola va scritta con il `RuleTester` di `oxlint/plugins-dev`, con casi val
 
 ## File toccati
 
-- `package.json` (devDependencies + script `lint`)
+- `package.json` (devDependencies + script `lint`, `test:lint-rules`)
 - `.oxlintrc.json` (nuovo)
-- `tsconfig.json` (blocco `plugins` per l'editor)
+- `vitest.config.ts` (nuovo, esclude `tools/**`)
+- `tsconfig.json` (blocco `plugins` per l'editor, `include` di `tools/**/*.ts`)
 - `tools/oxlint/anti-slop-effect/**` (vendoring), `tools/oxlint/effect-local/**` (nuovo)
 - `docs/effect-patterns.md` (copertura reale), `docs/tech-choices.md` (solo se si applica la patch)
 - questo file (checklist e Registro)
@@ -103,4 +107,11 @@ Nessuna modifica a `src/` in questo piano.
 | 2026-09-14 | fuori passo 1 | helper `startingFrom`/`watching` in `fill.test.ts` | applicati a 11 + 7 siti; 4 siti irregolari lasciati espliciti perché la differenza è informativa. Scartato un `withDeps(...)` generico: accieca `multiple-effect-provide` e `layer-merge-all-with-dependencies` (dentro l'helper i layer sono parametri di tipo), non copre il caso `Layer.provide`, e aliasa un'API standard. Il file passa da 414 a 420 righe: il guadagno è nei nomi, non nella lunghezza |
 | 2026-09-14 | fuori passo 1 | ultimi 8 warning chiusi → **0 warning, 0 error** | output di programma su `Console.log`/`Console.error` (verificato: non fa scattare `global-console*`, ed è un `Context.Reference` sostituibile); `Effect.timeoutOrElse`; `Schema.Int`. Il `console.error` dentro `Logger.make` soppresso con `// oxlint-disable-next-line` motivato: è il sink del logger. La sintassi `// @effect-diagnostics-next-line` **non** funziona passando da oxlint |
 | 2026-09-14 | fuori passo 1 | regressione colta da `test/dryRun.test.ts` | `Effect.forEach(lines, Console.log)` stampava l'indice in coda a ogni riga: `forEach` passa `(item, index)` e `Console.log` è variadico. Serve la lambda esplicita |
+| 2026-09-14 | passo 2 | clone di `anti-slop` | HEAD = `c44ef22`, cioè il commit del piano; `src/effect/` dipende solo da `@oxlint/plugins` e `oxlint/plugins-dev`, nessun file da `src/shared` o `src/vendor` |
+| 2026-09-14 | passo 2 | `@oxlint/plugins@1.82.0` + `jsPlugins` su oxlint patchato | funziona; le regole compaiono come `anti-slop-effect/<nome>` |
+| 2026-09-14 | passo 2 | RuleTester upstream con `node --test` | 5/5 verdi; verificato che il RuleTester fallisce davvero (caso `valid` rotto ad arte → `AssertionError`), quindi il silenzio è un pass reale |
+| 2026-09-14 | passo 2 | primo `pnpm lint` con le 4 regole a error | 54 diagnostiche: `no-manual-tagged-construction` 44 (25 nei test), `no-manual-tag-comparison` 10, le altre due zero |
+| 2026-09-14 | passo 2 | severità finali | 28 warning, 0 error, exit 0. Le due regole a rumore zero restano error |
+| 2026-09-14 | passo 2 | prova negativa (file temporaneo, poi rimosso) | `no-manual-effect-error-tag`, `prefer-effect-match` e `no-manual-tagged-construction` scattano tutte. `no-manual-tag-comparison` **non** scatta dentro `Effect.catch`: è voluto, lì il bersaglio è `no-manual-effect-error-tag` |
+| 2026-09-14 | passo 2 | `pnpm typecheck` (con `tools/` incluso) e `pnpm test` | verdi: tsc 0 errori, 177 test Vitest + 5 RuleTester |
 | 2026-09-14 | catalogo | potatura delle voci meccanizzate | collassate in tabella solo P07, P11, P18: copertura verificata e nessuna decisione residua. P21 tenuta come sezione pur essendo coperta, perché il messaggio della regola consiglia `Effect.log`, sbagliato per l'output di una CLI. **P05 e P09 corretti da `coperto` a `parziale`**: prova negativa mostra scoperti `throw` in generatore, `Effect.fail("stringa")`, il catch-all senza parametro e la discriminazione manuale su `_tag` |

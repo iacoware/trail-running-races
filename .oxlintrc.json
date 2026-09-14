@@ -2,7 +2,12 @@
   "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
   "extends": ["./node_modules/@effect/tsgo/oxlint-presets/recommended.json"],
   "ignorePatterns": ["node_modules", "fixtures"],
+  "jsPlugins": ["./tools/oxlint/anti-slop-effect/index.ts"],
   "rules": {
+    "anti-slop-effect/no-manual-effect-error-tag": "error",
+    "anti-slop-effect/prefer-effect-match": "error",
+    "anti-slop-effect/no-manual-tag-comparison": "warn",
+    "anti-slop-effect/no-manual-tagged-construction": "warn",
     "effecttsgo/extends-native-error": "error",
     "effecttsgo/global-error-in-effect-catch": "error",
     "effecttsgo/global-error-in-effect-failure": "error",
@@ -26,6 +31,19 @@
         "effecttsgo/node-builtin-import": "off",
         "effecttsgo/global-console": "off",
         "effecttsgo/global-timers": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "src/testing/**"],
+      "rules": {
+        "anti-slop-effect/no-manual-tagged-construction": "off"
+      }
+    },
+    {
+      "files": ["tools/**"],
+      "rules": {
+        "anti-slop-effect/no-manual-tag-comparison": "off",
+        "anti-slop-effect/no-manual-tagged-construction": "off"
       }
     }
   ]

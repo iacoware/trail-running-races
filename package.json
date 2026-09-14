@@ -11,11 +11,13 @@
     "start": "node --env-file-if-exists=.env src/main.ts",
     "lint": "oxlint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run && pnpm test:lint-rules",
+    "test:lint-rules": "node --test tools/oxlint/**/rules/*.test.ts"
   },
   "devDependencies": {
     "@effect/tsgo": "0.45.0",
     "@effect/vitest": "4.0.0-rc.112",
+    "@oxlint/plugins": "1.82.0",
     "@types/node": "^24.13.3",
     "oxlint": "1.82.0",
     "oxlint-tsgolint": "7.0.2001",

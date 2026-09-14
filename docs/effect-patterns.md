@@ -356,7 +356,7 @@ outcomes.some(Predicate.isTagged("Failed"))
   - devia su `src/plan/planRow.ts:44,53`, `src/sheet/print/PrintSheetWriter.ts:20` e `src/sheet/google/insertRowRequests.ts:62,97`;
   - filtri per `_tag` in `src/commands/summary.ts:7,47`;
   - `switch` senza guardia di esaustività in `src/sheet/parseSheet.ts:59` (se resta `switch`: `default: return absurd(cursor)`, con `absurd` da `effect/Function`).
-- **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` di anti-slop si adotta senza modifiche: segnala anche gli `switch` completi su `_tag`, ed è voluto, perché la via preferita è `$match` o `Match`. `prefer-effect-match` copre le catene di ternari.
+- **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` di anti-slop è attiva (a `warn`, 10 punti da migrare) senza modifiche: segnala anche gli `switch` completi su `_tag`, ed è voluto, perché la via preferita è `$match` o `Match`. `prefer-effect-match` copre le catene di ternari.
 
 ### P15 · Varianti costruite con costruttori, non letterali `_tag`
 
@@ -375,7 +375,7 @@ return SectionTarget.MissingSpecialSection({ name, action })
 
 - **archivio**: letterali `_tag` solo come pattern di `Match.when`, che la regola anti-slop esenta.
 - **Questo repo**: letterali in `src/config.ts:10`, `src/commands/fill.ts:65,77,81,84,90`, `src/plan/targetSection.ts:51-79`, `src/sheet/parseSheet.ts:49-68`, e nelle fixture di test (`src/plan/planRow.test.ts:108`, `src/config.test.ts:50`).
-- **Enforcement**: `lint-sintattico`. Si adotta `no-manual-tagged-construction` di anti-slop, che funziona su v4 così com'è, escludendo `*.test.ts` e le fixture, dove il letterale resta comodo e innocuo. Da fare: portare a `Data.taggedEnum` le sei unioni `ServiceAccountSource`, `RaceOutcome`, `SectionTarget`, `SectionAction`, `Cursor` e `SheetWarning`.
+- **Enforcement**: `lint-sintattico`. `no-manual-tagged-construction` di anti-slop è attiva a `warn`, senza modifiche, spenta su `**/*.test.ts` e `src/testing/**`, dove il letterale resta comodo e innocuo: restano 18 punti in `src/`. Da fare: portare a `Data.taggedEnum` le sei unioni `ServiceAccountSource`, `RaceOutcome`, `SectionTarget`, `SectionAction`, `Cursor` e `SheetWarning`.
 
 ### P16 · Option/Result/Exit via modulo, mai `_tag`
 
@@ -628,17 +628,21 @@ const runBoundary = (effect: Effect.Effect<Response, never, never>) => Effect.ru
 
 ## Regole anti-slop
 
-Le regole stanno nel plugin `anti-slop-effect` (`src/effect/index.ts`). Il pacchetto non è pubblicato su npm: si copia `src/` nel repo, con licenza MIT. Il repo di anti-slop pinna `oxlint` e `@oxlint/plugins` `1.78.0`; la versione minima supportata non è dichiarata. Nessuna regola usa informazioni di tipo o risolve gli alias d'import (`Effect as E` sfugge), e nessuna ha opzioni.
+Le regole stanno nel plugin `anti-slop-effect`. Il pacchetto non è pubblicato su npm: **vendorizzato il 2026-09-14** in `tools/oxlint/anti-slop-effect/` (commit `c44ef22`, MIT, file invariati; origine e istruzioni di aggiornamento nel suo `README.md`), caricato da `.oxlintrc.json` con `jsPlugins`. Nessuna regola usa informazioni di tipo o risolve gli alias d'import (`Effect as E` sfugge), e nessuna ha opzioni.
 
-| Regola | Cosa rileva | v3 / v4 | Decisione |
+Compatibilità verificata: `@oxlint/plugins` `1.82.0` (allineato a `oxlint`, non il `1.78.0` dell'upstream); i cinque `RuleTester` upstream passano, eseguiti da `pnpm test:lint-rules` con `node --test`. Sono esclusi da Vitest in `vitest.config.ts`, che altrimenti li raccoglieva e falliva con "No test suite found".
+
+| Regola | Cosa rileva | v3 / v4 | Stato (2026-09-14) |
 |---|---|---|---|
-| `no-manual-effect-error-tag` | `_tag ==/===/!=/!==` letterale o `switch` su `_tag`, solo nella funzione passata direttamente a `Effect.catch`/`catchAll`/`catchIf`; su `x.reason._tag` suggerisce `catchReason` | entrambe; `catchAll` esiste solo in v3 e non disturba | adotta così com'è (P09) |
-| `no-manual-tag-comparison` | stessi confronti e `switch`, ovunque tranne nei catch-all | agnostica | adotta (P14, P16); oggi segnala 8 punti in `src/` |
-| `no-manual-tagged-construction` | object literal con `_tag` letterale, esente solo come argomento diretto di `Match.when`/`Match.not` | agnostica | da decidere (P15); se adottata, ignorare `*.test.ts` |
-| `no-service-constructor-imports` | import nominati `/^make[A-Z]/` da percorsi relativi, test esclusi | agnostica, euristica di naming | salta: qui nessun `make*` e gli adapter si importano come namespace; P01 va scritta a parte |
-| `prefer-effect-match` | catena di almeno 2 ternari sulla stessa espressione (per testo) confrontata con letterali | agnostica | adotta, costo zero, rendimento basso |
+| `no-manual-effect-error-tag` | `_tag ==/===/!=/!==` letterale o `switch` su `_tag`, solo nella funzione passata direttamente a `Effect.catch`/`catchAll`/`catchIf`; su `x.reason._tag` suggerisce `catchReason` | entrambe; `catchAll` esiste solo in v3 e non disturba | **error** (P09); rumore zero, verificata con prova negativa |
+| `prefer-effect-match` | catena di almeno 2 ternari sulla stessa espressione (per testo) confrontata con letterali | agnostica | **error** (P14); rumore zero, verificata con prova negativa |
+| `no-manual-tag-comparison` | stessi confronti e `switch`, ovunque tranne nei catch-all | agnostica | **warn** (P14, P16): 10 punti da migrare (7 in `src/` non-test, 3 in `fill.test.ts`) |
+| `no-manual-tagged-construction` | object literal con `_tag` letterale, esente solo come argomento diretto di `Match.when`/`Match.not` | agnostica | **warn** (P15), spenta su `**/*.test.ts` e `src/testing/**` come previsto: 18 punti restanti in `targetSection.ts` (6), `parseSheet.ts` (5), `fill.ts` (5), `config.ts` (2) |
+| `no-service-constructor-imports` | import nominati `/^make[A-Z]/` da percorsi relativi, test esclusi | agnostica, euristica di naming | vendorizzata ma **non attivata**: qui nessun `make*` e gli adapter si importano come namespace; P01 va scritta a parte |
 
-Limiti noti, dalla lettura del codice (i test non sono stati eseguiti):
+Tutte spente su `tools/**`, dove i casi di test delle regole contengono di proposito le forme vietate.
+
+Limiti noti, dalla lettura del codice:
 - non rilevano gli handler passati per nome, i confronti dentro funzioni annidate nell'handler o `?._tag`;
 - `no-manual-tag-comparison` segnala anche i `_tag` di librerie non Effect e i confronti dentro `catchTag`.
 
@@ -714,14 +718,14 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 | P06 | no | `redundant-schema-tag-identifier` (solo cosmetica) | warn |
 | P07 | coperto | `unnecessary-fail-yieldable-error`, `missing-return-yield-star` | error |
 | P08 | **no** | — (verificato: `Effect.tryPromise(() => …)` in forma thunk non è segnalato) | — |
-| P09 | parziale | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die`. Verificato scoperto: il catch-all senza parametro che ingoia, e la discriminazione manuale su `_tag` dentro `Effect.catch` (quest'ultima è il bersaglio di `no-manual-effect-error-tag`, passo 2) | error (alzate le prime due) / warn |
+| P09 | parziale | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die`; la discriminazione manuale su `_tag` dentro `Effect.catch` è ora coperta da `anti-slop-effect/no-manual-effect-error-tag`. Resta scoperto il catch-all senza parametro che ingoia | error (alzate le prime due) / warn |
 | P10 | parziale | `prefer-schema-over-json`, `prefer-typed-schema-decoder`, `instance-of-schema` (l'`as` non è coperto) | warn |
 | P11 | coperto | `schema-sync`, `schema-sync-in-effect` | error (alzate) |
 | P12 | no | — | — |
 | P13 | parziale | `process-env`, `process-env-in-effect` (i nomi dei segreti non sono coperti) | error (alzate) |
-| P14 | no | `match-effect-to-match`, `option-match-to-from-option` (il `_tag ===` generico non è coperto) | warn |
-| P15 | no | `schema-struct-with-tag` (solo Schema) | warn |
-| P16 | no | `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none` (il `_tag` non è coperto) | warn |
+| P14 | coperto | preset: `match-effect-to-match`, `option-match-to-from-option`; il `_tag ===`/`switch` generico da `anti-slop-effect/no-manual-tag-comparison`, le catene di ternari da `anti-slop-effect/prefer-effect-match` | warn / error (`prefer-effect-match`) |
+| P15 | coperto | preset: `schema-struct-with-tag` (solo Schema); i letterali `_tag` da `anti-slop-effect/no-manual-tagged-construction`, spenta su test e fixture | warn |
+| P16 | coperto | preset: `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none`; il `_tag` da `anti-slop-effect/no-manual-tag-comparison` | warn |
 | P17 | parziale | `effect-fn-opportunity`, `effect-fn-implicit-any`, `effect-fn-iife`, `unnecessary-effect-gen` (il nome in `Effect.fn("…")` non è imposto) | error (alzata la prima) / warn |
 | P18 | coperto | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` | error |
 | P19 | parziale | `acquire-release-disposable`, `scope-in-layer-effect` | warn |
@@ -747,7 +751,7 @@ I 26 `multiple-effect-provide` sono stati corretti: `e.pipe(Effect.provide(A), E
 
 Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per i layer costanti del file, ma qui i fake sono factory che chiudono su un array mutabile dichiarato dentro il test (`searched`, `written`, `current`): sono per-test per costruzione, e solo `tuscany` è condiviso — e nemmeno da tutti i test. Per lo stesso motivo un `ManagedRuntime` condiviso non è applicabile: dovrebbe essere ricostruito a ogni test, e farebbe perdere i test services di `it.effect`.
 
-**Rumore attuale: 0 warning, 0 error.** Gli ultimi 8 sono stati chiusi così:
+**Rumore del preset: 0 warning, 0 error.** Gli ultimi 8 sono stati chiusi così:
 
 - 5 `global-console-in-effect` + 1 `global-console`: output di programma portato su `Console.log`/`Console.error`. Non era né logging (`Effect.log` decora le righe con timestamp e livello, inaccettabile per una CLI) né un aggiramento della regola: `Console` è un `Context.Reference`, quindi l'output diventa sostituibile nei test. La sola eccezione è il `console.error` dentro `Logger.make`, soppresso con `// oxlint-disable-next-line effecttsgo/global-console` e una motivazione: è il sink del logger. Verificato che la sintassi del language service (`// @effect-diagnostics-next-line`) **non** funziona passando da oxlint; serve quella di oxlint;
 - `timeout-catch-tag-to-timeout-or-else` in `ProcessAgent.ts`: `Effect.timeout` + `catchTag("TimeoutError")` sostituiti da `Effect.timeoutOrElse({ duration, orElse })`, così `TimeoutError` non entra più nel canale errori per essere subito ricatturato;
@@ -756,7 +760,7 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 ## Prossimi passi
 
 1. ~~**oxlint + tsgo**~~ **fatto**: vedi "Attivato in questo repo" sopra. `pnpm lint` è a 0 warning, 0 error. La patch è risultata obbligatoria, non opzionale.
-2. **Vendoring anti-slop**: copiare `src/effect/` in `tools/oxlint/anti-slop-effect/` e attivare `no-manual-effect-error-tag`, `no-manual-tag-comparison` e `prefer-effect-match`. Poi correggere gli 8 punti di P14.
+2. ~~**Vendoring anti-slop**~~ **fatto** (2026-09-14): `tools/oxlint/anti-slop-effect/`, quattro regole su cinque attive. Restano da migrare i 10 punti di `no-manual-tag-comparison` (P14/P16) e i 18 di `no-manual-tagged-construction` (P15), entrambe a `warn`: sono nella sezione "Migrazioni da fare", non nel tooling.
 3. **Plugin locale** `tools/oxlint/effect-local/`, solo per ciò che il preset non copre. Lista potata dopo il passo 1, in ordine di valore:
    1. `error-handling-in-effect-fn-handler` (P25), insieme a `prefer-effect-fn` (P17), da cui dipende;
    2. `single-style-per-function` (P24);
