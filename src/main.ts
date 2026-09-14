@@ -1,5 +1,5 @@
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect, Layer, Logger, Option, Result, Stream } from "effect"
+import { Console, Effect, Layer, Logger, Option, Result, Stream } from "effect"
 import * as ProcessAgent from "./agent/process/ProcessAgent.ts"
 import { fill } from "./commands/fill.ts"
 import { parseFillArgs } from "./commands/fillArgs.ts"
@@ -19,19 +19,20 @@ const USAGE =
 const stderrLogger = Logger.layer([
   Logger.make<unknown, void>(({ logLevel, message }) => {
     const label = logLevel === "Warn" ? "avviso" : logLevel.toLowerCase()
+    // oxlint-disable-next-line effecttsgo/global-console -- this is the sink the Logger writes to
     console.error(`${label}: ${String(message)}`)
   }),
 ])
 
 const usageError = (message: string) =>
-  Effect.sync(() => {
-    console.error(`${message}\n${USAGE}`)
+  Effect.gen(function* () {
+    yield* Console.error(`${message}\n${USAGE}`)
     process.exitCode = 1
   })
 
 const printMissing = Effect.gen(function* () {
   const names = yield* missing
-  for (const name of names) console.log(name)
+  for (const name of names) yield* Console.log(name)
 }).pipe(Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.layer)))
 
 // `--sheet-csv` reads a local export and needs no Google credentials; `--dry-run` alone
@@ -49,7 +50,7 @@ const fillWith = <E, R>(
 ) =>
   Effect.gen(function* () {
     const outcomes = yield* Stream.runCollect(fill({ only }))
-    for (const line of summaryLines(outcomes, filled)) console.log(line)
+    for (const line of summaryLines(outcomes, filled)) yield* Console.log(line)
     if (hasErrors(outcomes)) process.exitCode = 1
   }).pipe(Effect.provide(Layer.mergeAll(FileRaceList.layer, sheet, ProcessAgent.layer)))
 
@@ -78,8 +79,8 @@ NodeRuntime.runMain(
     Effect.provide(Layer.mergeAll(NodeServices.layer, stderrLogger)),
     // Expected failures are reported as one tagged line; only defects reach runMain's reporter.
     Effect.catch((error) =>
-      Effect.sync(() => {
-        console.error(`${error._tag}: ${error.message}`)
+      Effect.gen(function* () {
+        yield* Console.error(`${error._tag}: ${error.message}`)
         process.exitCode = 1
       }),
     ),

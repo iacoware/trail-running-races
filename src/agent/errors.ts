@@ -2,7 +2,7 @@ import { Schema } from "effect"
 
 export class AgentTimeout extends Schema.TaggedError<AgentTimeout>()("AgentTimeout", {
   race: Schema.String,
-  seconds: Schema.Number,
+  seconds: Schema.Int,
   message: Schema.String,
 }) {}
 

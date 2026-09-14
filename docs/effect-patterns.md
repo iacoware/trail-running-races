@@ -47,7 +47,7 @@ Classi di enforcement:
 | P18 | Niente effetti flottanti né `yield` senza `*` | idioma | lint-tipi | invariato | conforme (verificato con `oxlint`) |
 | P19 | Risorse con `acquireRelease`, `Effect.scoped` solo se serve | idioma | lint-tipi | `Layer.scoped` rimosso | conforme |
 | P20 | Concorrenza esplicita | idioma | solo-skill | invariato | conforme |
-| P21 | Log e output via Effect, niente `console` dentro gli effetti | idioma | lint-sintattico | invariato | devia (lieve) |
+| P21 | Log e output via Effect, niente `console` dentro gli effetti | idioma | lint-sintattico | invariato | conforme (`Console`; una deroga motivata) |
 | P22 | Test con `@effect/vitest` e fake come Layer | idioma | lint-sintattico | `layer(...)`, `it.effect` | conforme |
 | P23 | Guard runtime con `Predicate` | idioma | lint-sintattico | invariato | conforme |
 | P24 | Uno stile solo per funzione: o Effect o async/await | locale | lint-sintattico | invariato | conforme |
@@ -511,8 +511,8 @@ Effect.gen(function* () { yield* Effect.forEach(yield* missing, (name) => Consol
 ```
 
 - **archivio**: conforme su `packages/shared/src/with-error-logging.ts:9,43` (`tapError` + `logError` + `annotateLogs`). Devia su `apps/caveau/src/app/public/health/route.ts:42` (`console.error` nella `catch` di `tryPromise`).
-- **Questo repo**: conforme su `src/races/file/FileRaceList.ts:12`, `src/sheet/readSheet.ts:17` e `src/sheet/print/PrintSheetWriter.ts:39`. Devia in modo lieve su `src/main.ts:34,52` (`console.log` nel generatore).
-- **Enforcement**: `lint-sintattico`. Si segnala `console.*` dentro un generatore passato a `Effect.gen`/`Effect.fn`, o dentro la callback `catch` di `tryPromise`/`try`. In `lint-tipi`, la famiglia `global*` (Console…) è off di default.
+- **Questo repo**: conforme. L'output di programma passa da `Console.log`/`Console.error` (`src/main.ts`, `src/sheet/print/PrintSheetWriter.ts`), che è un `Context.Reference` sostituibile nei test e non decora le righe come farebbe `Effect.log`. Unica deroga, con `// oxlint-disable-next-line` motivato: il `console.error` dentro `Logger.make` in `src/main.ts`, che **è** il sink del logger — chiedergli di usare un logger sarebbe circolare.
+- **Enforcement**: `lint-sintattico`, coperto dal preset con `global-console-in-effect` e `global-console` (verificato: `Console.log`/`Console.error` non fanno scattare la regola, `console.log` sì). Attenzione: `Console.log` è variadico e `Effect.forEach` passa l'indice, quindi `Effect.forEach(lines, Console.log)` stampa l'indice in coda a ogni riga — serve la lambda esplicita.
 
 ### P22 · Test con `@effect/vitest` e fake come Layer
 
@@ -789,7 +789,11 @@ I 26 `multiple-effect-provide` sono stati corretti: `e.pipe(Effect.provide(A), E
 
 Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per i layer costanti del file, ma qui i fake sono factory che chiudono su un array mutabile dichiarato dentro il test (`searched`, `written`, `current`): sono per-test per costruzione, e solo `tuscany` è condiviso — e nemmeno da tutti i test. Per lo stesso motivo un `ManagedRuntime` condiviso non è applicabile: dovrebbe essere ricostruito a ogni test, e farebbe perdere i test services di `it.effect`.
 
-Rumore attuale: 8 warning, 0 error. `global-console-in-effect` 5 e `global-console` 1 (P21: è output di programma, non logging — `Effect.log` aggiungerebbe timestamp e livello all'output della CLI), più `timeout-catch-tag-to-timeout-or-else` 1 e `schema-number` 1, le due sole violazioni ancora da correggere, che stanno in "Migrazioni da fare".
+**Rumore attuale: 0 warning, 0 error.** Gli ultimi 8 sono stati chiusi così:
+
+- 5 `global-console-in-effect` + 1 `global-console`: output di programma portato su `Console.log`/`Console.error`. Non era né logging (`Effect.log` decora le righe con timestamp e livello, inaccettabile per una CLI) né un aggiramento della regola: `Console` è un `Context.Reference`, quindi l'output diventa sostituibile nei test. La sola eccezione è il `console.error` dentro `Logger.make`, soppresso con `// oxlint-disable-next-line effecttsgo/global-console` e una motivazione: è il sink del logger. Verificato che la sintassi del language service (`// @effect-diagnostics-next-line`) **non** funziona passando da oxlint; serve quella di oxlint;
+- `timeout-catch-tag-to-timeout-or-else` in `ProcessAgent.ts`: `Effect.timeout` + `catchTag("TimeoutError")` sostituiti da `Effect.timeoutOrElse({ duration, orElse })`, così `TimeoutError` non entra più nel canale errori per essere subito ricatturato;
+- `schema-number` in `agent/errors.ts`: `seconds: Schema.Number` → `Schema.Int`. Il valore nasce da `config.ts` con `isInt()` e `> 0`, ed era l'unico `Schema.Number` nudo del repo (`RaceCard.ts` già usava `Int`/`Finite`).
 
 ## Prossimi passi
 

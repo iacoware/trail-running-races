@@ -80,16 +80,15 @@ export const layer = Layer.effect(
 
     const search = (name: string) =>
       run(name).pipe(
-        Effect.timeout(Duration.seconds(timeoutSeconds)),
-        Effect.catchTag(
-          "TimeoutError",
-          () =>
+        Effect.timeoutOrElse({
+          duration: Duration.seconds(timeoutSeconds),
+          orElse: () =>
             new AgentTimeout({
               race: name,
               seconds: timeoutSeconds,
               message: `agente senza risposta entro ${timeoutSeconds}s`,
             }),
-        ),
+        }),
       )
 
     return Agent.of({ search })

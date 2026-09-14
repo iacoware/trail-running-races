@@ -1,4 +1,4 @@
-import { Effect, Layer, Option } from "effect"
+import { Console, Effect, Layer, Option } from "effect"
 import type { PlannedRow } from "../../plan/planRow.ts"
 import { COLUMN_HEADERS, COLUMN_KEYS } from "../columns.ts"
 import { SheetWriter } from "../SheetWriter.ts"
@@ -34,9 +34,7 @@ export const describePlan = (planned: PlannedRow): ReadonlyArray<string> => [
 export const layer = Layer.succeed(
   SheetWriter,
   SheetWriter.of({
-    insert: (planned) =>
-      Effect.sync(() => {
-        for (const line of describePlan(planned)) console.log(line)
-      }),
+    // Console.log is variadic and Effect.forEach passes the index, so the lambda is required.
+    insert: (planned) => Effect.forEach(describePlan(planned), (line) => Console.log(line)),
   }),
 )
