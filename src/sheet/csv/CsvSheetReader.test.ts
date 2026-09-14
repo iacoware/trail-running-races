@@ -1,11 +1,11 @@
 import { NodeServices } from "@effect/platform-node"
 import { expect, it } from "@effect/vitest"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 import { readSheet } from "../readSheet.ts"
 import * as CsvSheetReader from "./CsvSheetReader.ts"
 
 const readFrom = (path: string) =>
-  readSheet.pipe(Effect.provide(CsvSheetReader.layer(path)), Effect.provide(NodeServices.layer))
+  readSheet.pipe(Effect.provide(Layer.provide(CsvSheetReader.layer(path), NodeServices.layer)))
 
 it.effect("reads the exported sheet with its sections and multi-line cells", () =>
   Effect.gen(function* () {

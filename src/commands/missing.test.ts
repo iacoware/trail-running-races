@@ -19,8 +19,12 @@ it.effect("returns the list names that have no race row in the sheet, in list or
 
     expect(names).toEqual(["Nuova Gara", "Altra Gara"])
   }).pipe(
-    Effect.provide(listOf("Nuova Gara", "chianti utmb", "Altra Gara")),
-    Effect.provide(sheetWith(["Toscana"], ["Chianti UTMB", "18-21 marzo"])),
+    Effect.provide(
+      Layer.mergeAll(
+        listOf("Nuova Gara", "chianti utmb", "Altra Gara"),
+        sheetWith(["Toscana"], ["Chianti UTMB", "18-21 marzo"]),
+      ),
+    ),
   ),
 )
 
@@ -35,8 +39,9 @@ it.effect("warns about rows outside every section but still counts them as prese
     expect(logs[0]).toContain("Warn")
     expect(logs[0]).toContain("fuori da ogni sezione")
   }).pipe(
-    Effect.provide(listOf("Orfana")),
-    Effect.provide(sheetWith(["Toscana"], [], ["Orfana", "2 maggio"])),
+    Effect.provide(
+      Layer.mergeAll(listOf("Orfana"), sheetWith(["Toscana"], [], ["Orfana", "2 maggio"])),
+    ),
   ),
 )
 
@@ -46,11 +51,13 @@ it.effect("fails with SheetColumnMissingError when a header column is missing", 
 
     expect(error._tag).toBe("SheetColumnMissingError")
   }).pipe(
-    Effect.provide(listOf("Nuova Gara")),
     Effect.provide(
-      Layer.succeed(
-        SheetReader,
-        SheetReader.of({ rows: Effect.succeed([["Nome", "Data", "Luogo", "Da FI", "Tipo"]]) }),
+      Layer.mergeAll(
+        listOf("Nuova Gara"),
+        Layer.succeed(
+          SheetReader,
+          SheetReader.of({ rows: Effect.succeed([["Nome", "Data", "Luogo", "Da FI", "Tipo"]]) }),
+        ),
       ),
     ),
   ),

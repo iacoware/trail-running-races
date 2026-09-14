@@ -89,14 +89,24 @@ const tuscany = sheetWith(
   ["Chianti UTMB", "18-21 marzo"],
 )
 
+// The world a run starts from: the race list plus the sheet it reads.
+const startingFrom = <ROut, E>(names: ReadonlyArray<string>, sheet: Layer.Layer<ROut, E>) =>
+  Effect.provide(Layer.mergeAll(listOf(...names), sheet))
+
+// What the test observes: the agent's answers and the rows the writer receives.
+const watching = (
+  searched: Array<string>,
+  answers: Record<string, RaceCard>,
+  written: Array<PlannedRow>,
+) => Effect.provide(Layer.mergeAll(agentAnswering(searched, answers), writerInto(written)))
+
 test("plans a row for every found race and hands it to the writer", () =>
   Effect.gen(function* () {
     const searched: Array<string> = []
     const written: Array<PlannedRow> = []
 
     const results = yield* outcomes(Option.none()).pipe(
-      Effect.provide(agentAnswering(searched, { "Garfagnana Epic Trail": found() })),
-      Effect.provide(writerInto(written)),
+      watching(searched, { "Garfagnana Epic Trail": found() }, written),
     )
 
     expect(searched).toEqual(["Garfagnana Epic Trail"])
@@ -104,7 +114,7 @@ test("plans a row for every found race and hands it to the writer", () =>
     expect(results).toEqual([
       { _tag: "Filled", name: "Garfagnana Epic Trail", row: written[0] },
     ])
-  }).pipe(Effect.provide(listOf("Garfagnana Epic Trail", "Chianti UTMB")), Effect.provide(tuscany)),
+  }).pipe(startingFrom(["Garfagnana Epic Trail", "Chianti UTMB"], tuscany)),
 )
 
 test("parks not found and ambiguous races at the end of Da verificare", () =>
@@ -112,13 +122,14 @@ test("parks not found and ambiguous races at the end of Da verificare", () =>
     const written: Array<PlannedRow> = []
 
     const results = yield* outcomes(Option.none()).pipe(
-      Effect.provide(
-        agentAnswering([], {
+      watching(
+        [],
+        {
           "Gara Assente": notFound,
           "Gara Doppia": { esito: "ambigua", candidati: ["2024", "2025"] },
-        }),
+        },
+        written,
       ),
-      Effect.provide(writerInto(written)),
     )
 
     expect(written).toEqual([
@@ -176,8 +187,8 @@ test("parks not found and ambiguous races at the end of Da verificare", () =>
       { _tag: "Ambiguous", name: "Gara Doppia", candidates: ["2024", "2025"] },
     ])
   }).pipe(
-    Effect.provide(listOf("Gara Assente", "Gara Doppia")),
-    Effect.provide(
+    startingFrom(
+      ["Gara Assente", "Gara Doppia"],
       sheetWith(
         ["Toscana"],
         ["Brunello Crossing", "20-21 febbraio"],
@@ -194,16 +205,15 @@ test("appends an unresolved race after the last row in Da verificare", () =>
     const written: Array<PlannedRow> = []
 
     yield* outcomes(Option.none()).pipe(
-      Effect.provide(agentAnswering([], { "Gara Assente": notFound })),
-      Effect.provide(writerInto(written)),
+      watching([], { "Gara Assente": notFound }, written),
     )
 
     expect(written.map((row) => [row.row, row.after])).toEqual([
       [7, Option.some("Gara già da controllare")],
     ])
   }).pipe(
-    Effect.provide(listOf("Gara Assente")),
-    Effect.provide(
+    startingFrom(
+      ["Gara Assente"],
       sheetWith(
         ["Toscana"],
         ["Brunello Crossing", "20-21 febbraio"],
@@ -220,16 +230,14 @@ test("creates Da verificare when parking the first unresolved race", () =>
     const written: Array<PlannedRow> = []
 
     const results = yield* outcomes(Option.none()).pipe(
-      Effect.provide(agentAnswering([], { "Gara Assente": notFound })),
-      Effect.provide(writerInto(written)),
+      watching([], { "Gara Assente": notFound }, written),
     )
 
     expect(results.map((outcome) => outcome._tag)).toEqual(["NotFound"])
     expect(written[0]?.section).toBe("Da verificare")
     expect(written[0]?.sectionAction._tag).toBe("CreateSection")
   }).pipe(
-    Effect.provide(listOf("Gara Assente")),
-    Effect.provide(sheetWith(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])),
+    startingFrom(["Gara Assente"], sheetWith(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])),
   ),
 )
 
@@ -244,14 +252,16 @@ test("skips a parked race on the next run until its row is removed", () => {
     expect(second).toEqual([])
     expect(searched).toEqual(["Gara Assente"])
   }).pipe(
-    Effect.provide(listOf("Gara Assente")),
-    Effect.provide(agentAnswering(searched, { "Gara Assente": notFound })),
     Effect.provide(
-      insertingSheet(
-        ["Toscana"],
-        ["Brunello Crossing", "20-21 febbraio"],
-        [],
-        ["Da verificare"],
+      Layer.mergeAll(
+        listOf("Gara Assente"),
+        agentAnswering(searched, { "Gara Assente": notFound }),
+        insertingSheet(
+          ["Toscana"],
+          ["Brunello Crossing", "20-21 febbraio"],
+          [],
+          ["Da verificare"],
+        ),
       ),
     ),
   )
@@ -263,14 +273,13 @@ test("keeps searching the next race after one fails, reporting the tagged error"
     const written: Array<PlannedRow> = []
 
     const results = yield* outcomes(Option.none()).pipe(
-      Effect.provide(agentAnswering(searched, { "Gara Buona": found() })),
-      Effect.provide(writerInto(written)),
+      watching(searched, { "Gara Buona": found() }, written),
     )
 
     expect(searched).toEqual(["Gara Rotta", "Gara Buona"])
     expect(results.map((outcome) => outcome._tag)).toEqual(["Failed", "Filled"])
     expect(written).toHaveLength(1)
-  }).pipe(Effect.provide(listOf("Gara Rotta", "Gara Buona")), Effect.provide(tuscany)),
+  }).pipe(startingFrom(["Gara Rotta", "Gara Buona"], tuscany)),
 )
 
 test("creates Estero when a foreign race first needs it", () =>
@@ -278,14 +287,13 @@ test("creates Estero when a foreign race first needs it", () =>
     const written: Array<PlannedRow> = []
 
     const results = yield* outcomes(Option.none()).pipe(
-      Effect.provide(agentAnswering([], { "Gara Francese": found({ regione: "Estero" }) })),
-      Effect.provide(writerInto(written)),
+      watching([], { "Gara Francese": found({ regione: "Estero" }) }, written),
     )
 
     expect(results.map((outcome) => outcome._tag)).toEqual(["Filled"])
     expect(written[0]?.section).toBe("Estero")
     expect(written[0]?.sectionAction._tag).toBe("CreateSection")
-  }).pipe(Effect.provide(listOf("Gara Francese")), Effect.provide(tuscany)),
+  }).pipe(startingFrom(["Gara Francese"], tuscany)),
 )
 
 test("plans a second race against the special section created by the first", () =>
@@ -305,8 +313,8 @@ test("plans a second race against the special section created by the first", () 
       [7, "UseExistingSection"],
     ])
   }).pipe(
-    Effect.provide(listOf("Prima Francese", "Seconda Francese")),
-    Effect.provide(
+    startingFrom(
+      ["Prima Francese", "Seconda Francese"],
       insertingSheet(["Toscana"], ["Brunello Crossing", "20-21 febbraio"]),
     ),
   ),
@@ -317,15 +325,14 @@ test("with --only searches that name even when it is absent from the list", () =
     const searched: Array<string> = []
 
     const results = yield* outcomes(Option.some("Fuori Elenco")).pipe(
-      Effect.provide(agentAnswering(searched, { "Fuori Elenco": notFound })),
-      Effect.provide(writerInto([])),
+      watching(searched, { "Fuori Elenco": notFound }, []),
     )
 
     expect(searched).toEqual(["Fuori Elenco"])
     expect(results).toHaveLength(1)
   }).pipe(
-    Effect.provide(listOf("Gara Nuova")),
-    Effect.provide(
+    startingFrom(
+      ["Gara Nuova"],
       sheetWith(
         ["Toscana"],
         ["Brunello Crossing", "20-21 febbraio"],
@@ -343,15 +350,13 @@ test("with --only does not invoke the agent for a race already in the sheet and 
     const logs: Array<string> = []
 
     const results = yield* outcomes(Option.some("chianti utmb")).pipe(
-      Effect.provide(agentAnswering(searched)),
-      Effect.provide(writerInto([])),
-      Effect.provide(captureLogs(logs)),
+      Effect.provide(Layer.mergeAll(agentAnswering(searched), writerInto([]), captureLogs(logs))),
     )
 
     expect(searched).toEqual([])
     expect(results).toEqual([])
     expect(logs).toEqual(['Info: "chianti utmb" è già nel foglio, agente non invocato'])
-  }).pipe(Effect.provide(listOf("Gara Nuova")), Effect.provide(tuscany)),
+  }).pipe(startingFrom(["Gara Nuova"], tuscany)),
 )
 
 test("plans the second race of a section against the row the first one just took", () =>
@@ -368,8 +373,8 @@ test("plans the second race of a section against the row the first one just took
     const rows = results.map((outcome) => (outcome._tag === "Filled" ? outcome.row.row : 0))
     expect(rows).toEqual([4, 5])
   }).pipe(
-    Effect.provide(listOf("Prima Nuova", "Seconda Nuova")),
-    Effect.provide(
+    startingFrom(
+      ["Prima Nuova", "Seconda Nuova"],
       insertingSheet(
         ["Toscana"],
         ["Brunello Crossing", "20-21 febbraio"],
@@ -400,15 +405,14 @@ test("reports the write error of one race and keeps inserting the next one", () 
 
     const results = yield* outcomes(Option.none()).pipe(
       Effect.provide(
-        agentAnswering([], { "Gara Rifiutata": found(), "Gara Buona": found() }),
+        Layer.mergeAll(
+          agentAnswering([], { "Gara Rifiutata": found(), "Gara Buona": found() }),
+          failing,
+        ),
       ),
-      Effect.provide(failing),
     )
 
     expect(results.map((outcome) => outcome._tag)).toEqual(["Failed", "Filled"])
     expect(written.map((row) => row.name)).toEqual(["Gara Buona"])
-  }).pipe(
-    Effect.provide(listOf("Gara Rifiutata", "Gara Buona")),
-    Effect.provide(tuscany),
-  ),
+  }).pipe(startingFrom(["Gara Rifiutata", "Gara Buona"], tuscany)),
 )

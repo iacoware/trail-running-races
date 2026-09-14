@@ -782,7 +782,14 @@ Alzate a `error` in `.oxlintrc.json` perché a rumore zero sul codice attuale e 
 
 Cinque regole del preset non guardano il contesto Effect — scattano su qualunque `async function`, `new Promise`, import di builtin Node, `console` o `setTimeout`, anche dove Effect non è coinvolto (le varianti `-in-effect` invece sì). Producevano 21 warning su due file che non sono codice Effect: `test/dryRun.test.ts`, che lancia la CLI come processo figlio, e `src/testing/fakeAgent.ts`, script standalone usato come `AGENT_CMD` nei test. Spente lì con un `overrides` in `.oxlintrc.json`, invariate altrove: `async-function`, `new-promise`, `node-builtin-import`, `global-console`, `global-timers`.
 
-Rumore attuale: 34 warning, 0 error. Per regola: `multiple-effect-provide` 26 (di cui 25 nei test; tutti layer senza dipendenze, quindi l'hazard della doppia costruzione non si materializza), `global-console-in-effect` 5 e `global-console` 1 (P21: è output di programma, non logging — `Effect.log` aggiungerebbe timestamp e livello all'output della CLI), `timeout-catch-tag-to-timeout-or-else` 1 e `schema-number` 1, le due sole violazioni da correggere. Nessuna è stata corretta: le correzioni stanno in "Migrazioni da fare".
+I 26 `multiple-effect-provide` sono stati corretti: `e.pipe(Effect.provide(A), Effect.provide(B))` fornisce `B` anche alla **costruzione** di `A`, quindi una dipendenza comune viene costruita due volte (la memoizzazione vale dentro un solo `provide`). Sostituiti da un unico `provide`, scegliendo il combinatore in base alla relazione fra i layer:
+
+- layer indipendenti → `Layer.mergeAll(A, B)`, che accumula i requirements in `RIn` senza risolverli (`Layer<in ROut, out E, out RIn>`: `ROut` contravariante, `RIn` covariante). Così `src/main.ts` e tutti i fake dei test, che sono `Layer.succeed`;
+- layer con dipendenza → `Layer.provide(A, B)`. È il caso di `src/sheet/csv/CsvSheetReader.test.ts`: `CsvSheetReader.layer(path)` richiede `FileSystem`, quindi lì `mergeAll` non compila. La regola `layer-merge-all-with-dependencies` copre l'errore inverso.
+
+Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per i layer costanti del file, ma qui i fake sono factory che chiudono su un array mutabile dichiarato dentro il test (`searched`, `written`, `current`): sono per-test per costruzione, e solo `tuscany` è condiviso — e nemmeno da tutti i test. Per lo stesso motivo un `ManagedRuntime` condiviso non è applicabile: dovrebbe essere ricostruito a ogni test, e farebbe perdere i test services di `it.effect`.
+
+Rumore attuale: 8 warning, 0 error. `global-console-in-effect` 5 e `global-console` 1 (P21: è output di programma, non logging — `Effect.log` aggiungerebbe timestamp e livello all'output della CLI), più `timeout-catch-tag-to-timeout-or-else` 1 e `schema-number` 1, le due sole violazioni ancora da correggere, che stanno in "Migrazioni da fare".
 
 ## Prossimi passi
 

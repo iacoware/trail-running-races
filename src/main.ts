@@ -75,8 +75,7 @@ const run = ([subcommand, ...args]: ReadonlyArray<string>) => {
 
 NodeRuntime.runMain(
   run(process.argv.slice(2)).pipe(
-    Effect.provide(NodeServices.layer),
-    Effect.provide(stderrLogger),
+    Effect.provide(Layer.mergeAll(NodeServices.layer, stderrLogger)),
     // Expected failures are reported as one tagged line; only defects reach runMain's reporter.
     Effect.catch((error) =>
       Effect.sync(() => {
