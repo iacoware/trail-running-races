@@ -780,7 +780,9 @@ Fuori catalogo ma utile: `outdated-api` (warn) segnala le API v3 residue, e `dup
 
 Alzate a `error` in `.oxlintrc.json` perché a rumore zero sul codice attuale e corrispondenti a pattern da imporre: `extends-native-error`, `global-error-in-effect-catch`, `global-error-in-effect-failure`, `unnecessary-fail-yieldable-error`, `catch-all-to-map-error`, `catch-unfailable-effect`, `schema-sync`, `schema-sync-in-effect`, `process-env`, `process-env-in-effect`, `effect-fn-opportunity`, `leaking-requirements`, `run-effect-inside-effect`.
 
-Rumore attuale: 55 warning, 0 error. Per regola: `multiple-effect-provide` 26 (di cui 25 nei test), `async-function` 11 (tutti in `test/dryRun.test.ts`, che è volutamente non-Effect), `global-console` 5, `global-console-in-effect` 5 (P21), `node-builtin-import` 3, `new-promise` 2, `timeout-catch-tag-to-timeout-or-else` 1, `schema-number` 1, `global-timers` 1. Nessuna è stata corretta: le correzioni stanno in "Migrazioni da fare".
+Cinque regole del preset non guardano il contesto Effect — scattano su qualunque `async function`, `new Promise`, import di builtin Node, `console` o `setTimeout`, anche dove Effect non è coinvolto (le varianti `-in-effect` invece sì). Producevano 21 warning su due file che non sono codice Effect: `test/dryRun.test.ts`, che lancia la CLI come processo figlio, e `src/testing/fakeAgent.ts`, script standalone usato come `AGENT_CMD` nei test. Spente lì con un `overrides` in `.oxlintrc.json`, invariate altrove: `async-function`, `new-promise`, `node-builtin-import`, `global-console`, `global-timers`.
+
+Rumore attuale: 34 warning, 0 error. Per regola: `multiple-effect-provide` 26 (di cui 25 nei test; tutti layer senza dipendenze, quindi l'hazard della doppia costruzione non si materializza), `global-console-in-effect` 5 e `global-console` 1 (P21: è output di programma, non logging — `Effect.log` aggiungerebbe timestamp e livello all'output della CLI), `timeout-catch-tag-to-timeout-or-else` 1 e `schema-number` 1, le due sole violazioni da correggere. Nessuna è stata corretta: le correzioni stanno in "Migrazioni da fare".
 
 ## Prossimi passi
 

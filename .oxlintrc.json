@@ -16,5 +16,17 @@
     "effecttsgo/effect-fn-opportunity": "error",
     "effecttsgo/leaking-requirements": "error",
     "effecttsgo/run-effect-inside-effect": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["test/dryRun.test.ts", "src/testing/fakeAgent.ts"],
+      "rules": {
+        "effecttsgo/async-function": "off",
+        "effecttsgo/new-promise": "off",
+        "effecttsgo/node-builtin-import": "off",
+        "effecttsgo/global-console": "off",
+        "effecttsgo/global-timers": "off"
+      }
+    }
+  ]
 }
