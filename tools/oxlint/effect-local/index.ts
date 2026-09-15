@@ -8,6 +8,7 @@ import { noInlineYieldStarRule } from "./rules/no-inline-yield-star.ts"
 import { noNestedMatchRule } from "./rules/no-nested-match.ts"
 import { noParameterlessCatchAllRule } from "./rules/no-parameterless-catch-all.ts"
 import { noProvideOnDefinitionRule } from "./rules/no-provide-on-definition.ts"
+import { noRedundantReturnTypeRule } from "./rules/no-redundant-return-type.ts"
 import { noTransportTypesInGeneratorRule } from "./rules/no-transport-types-in-generator.ts"
 import { preferEffectFnRule } from "./rules/prefer-effect-fn.ts"
 import { provideNamedLayerRule } from "./rules/provide-named-layer.ts"
@@ -29,6 +30,7 @@ const effectLocalPlugin = eslintCompatPlugin({
         "no-nested-match": noNestedMatchRule,
         "no-parameterless-catch-all": noParameterlessCatchAllRule,
         "no-provide-on-definition": noProvideOnDefinitionRule,
+        "no-redundant-return-type": noRedundantReturnTypeRule,
         "no-transport-types-in-generator": noTransportTypesInGeneratorRule,
         "prefer-effect-fn": preferEffectFnRule,
         "provide-named-layer": provideNamedLayerRule,

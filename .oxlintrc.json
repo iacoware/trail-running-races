@@ -15,6 +15,7 @@
         "effect-local/no-nested-match": "warn",
         "effect-local/no-parameterless-catch-all": "error",
         "effect-local/no-provide-on-definition": "error",
+        "effect-local/no-redundant-return-type": "warn",
         "effect-local/no-transport-types-in-generator": "error",
         "effect-local/prefer-effect-fn": "warn",
         "effect-local/provide-named-layer": "error",
@@ -78,6 +79,12 @@
             "rules": {
                 "anti-slop-effect/no-manual-tagged-construction": "off",
                 "effecttsgo/strict-effect-provide": "off"
+            }
+        },
+        {
+            "files": ["tools/oxlint/anti-slop-effect/**"],
+            "rules": {
+                "effect-local/no-redundant-return-type": "off"
             }
         },
         {
