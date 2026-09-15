@@ -53,9 +53,13 @@ Classi di enforcement:
 | P24 | Uno stile solo per funzione: o Effect o async/await                                                 | locale | lint-sintattico | invariato                                                      | conforme                                  |
 | P25 | Successo nel generatore, errori nel secondo argomento di `Effect.fn`                                | locale | lint-sintattico | invariato                                                      | devia                                     |
 | P26 | Niente tipi di trasporto nel generatore                                                             | locale | lint-sintattico | invariato                                                      | n/a                                       |
-| P27 | Entry point con canale errori chiuso a `never`                                                      | misto  | lint-sintattico | invariato                                                      | devia                                     |
+| P27 | Entry point con canale errori chiuso a `never`                                                      | misto  | lint-sintattico | invariato                                                      | conforme                                  |
+| P28 | Wiring separato: layer con nome, `provide` solo nel dispatch                                        | locale | lint-sintattico | invariato                                                      | conforme                                  |
+| P29 | Input interpretato in un tagged enum prima del dispatch                                             | locale | solo-skill      | invariato                                                      | conforme                                  |
+| P30 | Guard clause invece di match annidati                                                               | locale | lint-sintattico | invariato                                                      | conforme                                  |
+| P31 | Nome a ciò che ha significato o si ripete, inline il resto                                          | locale | solo-skill      | invariato                                                      | conforme                                  |
 
-Totale: 20 `lint-sintattico`, 2 `lint-tipi`, 5 `solo-skill`.
+Totale: 22 `lint-sintattico`, 2 `lint-tipi`, 7 `solo-skill`.
 
 ## Pattern interamente meccanizzati
 
@@ -151,7 +155,7 @@ NodeRuntime.runMain(run(process.argv.slice(2)).pipe(Effect.provide(NodeServices.
 ```
 
 - **archivio**: `ManagedRuntime` + `runEffect` al bordo Next.js (`apps/caveau/src/common/runtime-server.ts:99,130`). Fanno eccezione `Effect.runPromise` ad hoc che salta runtime e `Logger.json` (`apps/caveau/src/app/public/health/route.ts:12`) e `runPromise` nei test (`apps/config-editor/src/features/auth/session.test.ts:12`).
-- **Questo repo**: conforme (`src/main.ts:92`).
+- **Questo repo**: conforme (`src/main.ts:76`).
 - **Enforcement**: `lint-sintattico`. Si segnala una `CallExpression` `Effect.run*`, `NodeRuntime.runMain` o `ManagedRuntime.make` fuori da una allowlist di file (`src/main.ts`).
 
 ## Errori
@@ -263,7 +267,7 @@ Effect.catchTag(["ParseError", "ReservedPortError"], () => Effect.succeed(3000))
     - catch-all che ingoia (`apps/caveau/src/features/config/api-config.ts:46`);
     - `handleErrors`: un dispatcher per `_tag` fatto a mano sopra `catchAll`, con `e as never` (`packages/shared/src/effect.ts:29,37`). È esaustivo per tipo, ma reinventa `catchTags`;
     - quattro `catchTag` che mappano sullo stesso errore, dove bastava un `mapError` (`packages/pimcore-data/src/infra/users/http-adapter.ts:23-34`).
-- **Questo repo**: conforme. `Effect.catch` compare solo al bordo (`src/main.ts:95`) e per convertire in `RaceFillResult` (`src/commands/fill.ts:87`).
+- **Questo repo**: conforme. `Effect.catch` compare solo al bordo (`src/main.ts:79`) e per convertire in `RaceFillResult` (`src/commands/fill.ts:87`).
 - **Enforcement**: `lint-sintattico`. Il preset copre le trasformazioni (`catch-all-to-map-error` e `catch-unfailable-effect`, alzate a error, più `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`). **Verificato scoperto**: il catch-all senza parametro che ingoia, e la discriminazione manuale su `_tag` dentro `Effect.catch` — quest'ultima è il bersaglio di `no-manual-effect-error-tag` di anti-slop (passo 2), il primo richiede una regola locale con allowlist per l'entry point.
 
 ## Confini e Schema
@@ -403,7 +407,7 @@ Option.match(sheetCsv, { onNone: () => GoogleSheet.readerLayer, onSome: CsvSheet
 ```
 
 - **archivio**: conforme (`packages/archivio-data/src/infra/collections/mongo-collections.ts:55` con `O.isNone`, `packages/shared/src/action-result.ts:24` con `Either.match`).
-- **Questo repo**: conforme (`src/main.ts:62`, `src/commands/fill.ts:39,73`, `src/sheet/google/GoogleSheet.ts:67`).
+- **Questo repo**: conforme (`src/main.ts:42,66`, `src/commands/fill.ts:39,73`, `src/sheet/google/GoogleSheet.ts:67`).
 - **v4**: `Either` non esiste più. Le corrispondenze sono `Effect.either` → `Effect.result`, `Either.match` → `Result.match` (`onFailure`/`onSuccess`), `Schema.decodeUnknownEither` → `decodeUnknownResult`.
 - **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` copre già i letterali `Some`/`None`/`Success`/`Failure`/`Left`/`Right`; l'accesso a `.value` senza narrowing lo blocca già tsc.
 
@@ -424,7 +428,7 @@ const outcomeFor = Effect.fn("outcomeFor")(function* (name: string) { … }, Eff
 ```
 
 - **archivio**: zero `Effect.fn`. Le funzioni sono arrow con `Effect.gen` più un wrapper di span fatto in casa (`packages/archivio-data/src/infra/collections/mongo-collections.ts:44-70`, `packages/shared/src/with-span.ts:25`).
-- **Questo repo**: conforme (2026-09-15). `Effect.fn` in `src/sheet/google/serviceAccountKey.ts:16,35`, `src/commands/fill.ts:41,50,69`, `src/commands/missing.ts:7`, `src/agent/process/ProcessAgent.ts:48` e `src/main.ts:29,39`. I combinatori prima appesi con `.pipe` sono pipeable di `Effect.fn` e ricevono gli argomenti della funzione: `(effect, name) => effect.pipe(Effect.catch…)`. Dove il combinatore è l'unica cosa che distingue due funzioni, come i Layer di `fillSheet` e `planFill` in `src/main.ts`, restano arrow che applicano `.pipe` a un `Effect.fn` condiviso (`printFillSummary`), non a un `Effect.gen`.
+- **Questo repo**: conforme (2026-09-15). `Effect.fn` in `src/sheet/google/serviceAccountKey.ts:16,35`, `src/commands/fill.ts:41,50,69`, `src/commands/missing.ts:7`, `src/agent/process/ProcessAgent.ts:48` e `src/main.ts:28,55`. I combinatori prima appesi con `.pipe` sono pipeable di `Effect.fn` e ricevono gli argomenti della funzione: `(effect, name) => effect.pipe(Effect.catch…)`. Dove il combinatore è l'unica cosa che distingue due funzioni, come i Layer con nome `fillLayer` e `planLayer` in `src/main.ts`, il `.pipe(Effect.provide(…))` si applica nel dispatch a un `Effect.fn` condiviso (`printFillSummary`), non a un `Effect.gen`.
 - **Enforcement**: `lint-sintattico`. Si segnala un `VariableDeclarator` o una `Property` con valore `ArrowFunctionExpression` o `FunctionExpression` il cui corpo è (o ritorna soltanto) `Effect.gen(…)`. Si segnala anche `Effect.fn(…)(…).pipe(`. In `lint-tipi`: `effectFnOpportunity` (suggestion).
 
 ### P19 · Risorse con `acquireRelease`, `Effect.scoped` solo se serve
@@ -646,8 +650,95 @@ const runBoundary = (effect: Effect.Effect<Response, never, never>) => Effect.ru
 ```
 
 - **inloco**: `fe5bcf9` lasciava `UnknownException`, `HttpApiDecodeError` e `ConfigError` fuori dal `catchTags`, e quei fallimenti uscivano come 500 di Next. `c3c5ab1` chiude il canale e lo dichiara.
-- **Questo repo**: devia in modo lieve. `src/main.ts:92` esegue `NodeRuntime.runMain` su un effetto già ripulito da `Effect.catch`, ma il tipo non è dichiarato: aggiungere `satisfies Effect.Effect<void, never>` renderebbe l'invariante verificata da `tsc`.
+- **Questo repo**: conforme (commit `1a6c0e7`). `src/main.ts:76` esegue `NodeRuntime.runMain` su un effetto ripulito da `Effect.catch` e dichiarato con `satisfies Effect.Effect<void, never>` (`src/main.ts:85`), quindi l'invariante è verificata da `tsc`.
 - **Enforcement**: `lint-sintattico` per la forma (l'entry point è solo `run*` con `satisfies` o l'helper); la garanzia vera la dà `tsc`.
+
+## Euristiche di design
+
+I quattro pattern seguenti nascono dal refactoring di `src/main.ts` del 2026-09-15. Il file mescolava in poche righe tre responsabilità: il programma, il wiring dei Layer e il dispatch degli argomenti. `Effect.provide` compariva sia sulla definizione dei programmi sia dentro funzioni annidate, i Layer erano espressioni inline ripetute, e il ramo `fill` interpretava di nuovo i propri argomenti dentro un `Result.match`. Sono euristiche di design più che idiomi di Effect, ma sono scritte in termini di Effect e le regole non contengono percorsi di progetto: sono pensate per essere estratte in una libreria.
+
+### P28 · Wiring separato: layer con nome, `provide` solo nel dispatch
+
+**Regola**: i programmi (`Effect.gen`, `Effect.fn`) non fanno `provide`. I Layer di un'applicazione sono valori con un nome (`fillLayer`, `planLayer(sheetCsv)`), dichiarati una volta nell'entry point. `Effect.provide` compare solo nell'entry point, dove il dispatch associa ogni programma al suo Layer, e riceve sempre un nome, non una composizione inline.
+
+**Perché**: un programma che fornisce i propri Layer non può più essere collegato ad adapter diversi da chi lo chiama. Un Layer inline non si riusa e nasconde quali adapter sceglie un ramo. Il `provide` unico in cima resta l'ideale, ma non sempre è possibile: i Layer vengono costruiti quando li fornisci, quindi un Layer unico con tutti i servizi costruirebbe adapter che il comando non usa (qui `ProcessAgent` e le credenziali Google in scrittura per `missing`). Quando i rami richiedono Layer diversi, serve un `provide` per ramo, tutti nello stesso punto.
+
+```ts
+// no
+const printMissing = Effect.gen(function* () { ... }).pipe(
+    Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.readerLayer)),
+)
+
+// sì
+const missingLayer = Layer.mergeAll(FileRaceList.layer, GoogleSheet.readerLayer)
+const printMissing = Effect.gen(function* () { ... })
+// nel dispatch
+Missing: () => printMissing.pipe(Effect.provide(missingLayer)),
+```
+
+- **Questo repo**: conforme dal 2026-09-15. Layer in `src/main.ts:26,33-48`, dispatch in `src/main.ts:64`.
+- **Enforcement**: `lint-sintattico` per la forma, `lint-tipi` per la posizione:
+    - `effect-local/provide-named-layer` (error): l'argomento di `Effect.provide` è `Layer.*(…)`, un ternario, un `&&`/`||` o un `match`;
+    - `effect-local/no-provide-on-definition` (error): `Effect.provide` applicato a `Effect.gen(…)` o a `Effect.fn(…)(…)`, con `.pipe`, come pipeable di `Effect.fn` o in forma data-first;
+    - `effecttsgo/strict-effect-provide` (error, dal preset `antipattern`): `Effect.provide` con un Layer fuori dall'entry point. Usa i tipi, quindi distingue un Layer da un `Context`; l'entry point si dichiara spegnendola negli `overrides`. Sostituisce una regola `provide-only-at-entry` che era stata pianificata.
+    - Tutte e tre sono spente su `**/*.test.ts` e `src/testing/**`: nei test `it.effect(…, () => Effect.gen(…).pipe(Effect.provide(fakes)))` è la forma idiomatica (P22), e i fake sono factory diverse per ogni test.
+
+### P29 · Input interpretato in un tagged enum prima del dispatch
+
+**Regola**: l'input esterno (argomenti della CLI, richiesta) si interpreta per intero in un `Data.taggedEnum` prima del dispatch, compresi il sottocomando e le regole che derivano un caso da un altro. Il dispatch è un solo `$match`, con un ramo per ogni azione, tutti allo stesso livello.
+
+**Perché**: se un ramo del dispatch interpreta di nuovo una parte dell'input, il dispatch perde simmetria e annida un secondo livello di scelta. Con l'enum le decisioni diventano dati testabili senza eseguire effetti, e aggiungere un caso fa fallire il type check del `$match`. Qui la regola "`--sheet-csv` implica il dry run" è diventata la scelta tra `Plan` e `Fill`, invece di un booleano letto nel dispatch.
+
+```ts
+// no
+case "fill":
+    return Result.match(parseFillArgs(args), {
+        onFailure: usageError,
+        onSuccess: ({ dryRun, only, sheetCsv }) => (dryRun ? planFill(only, sheetCsv) : fillSheet(only)),
+    })
+
+// sì
+type CliCommand = Data.TaggedEnum<{ Missing: {}; Fill: { ... }; Plan: { ... } }>
+return CliCommand.$match(parsed.success, { Missing: ..., Fill: ..., Plan: ... })
+```
+
+- **Questo repo**: conforme dal 2026-09-15 (`src/commands/cliArgs.ts`).
+- **Enforcement**: `solo-skill`. Capire che un ramo interpreta di nuovo l'input richiede di conoscere l'intento del codice; `no-nested-match` (P30) prende solo la forma annidata più evidente.
+
+### P30 · Guard clause invece di match annidati
+
+**Regola**: quando un match ha un caso di uscita (fallimento del parsing, assenza) e uno che prosegue, il caso di uscita è una guard clause con `return` anticipato (`Result.isFailure`, `Option.isNone`), e il resto della funzione è l'happy path al primo livello. Un handler di un match non contiene un altro match né un ternario.
+
+**Perché**: due livelli di scelta annidati nascondono quale ramo è quello normale. `Result.match` resta adatto quando entrambi i rami sono espressioni brevi che producono un valore.
+
+```ts
+// no
+const run = (argv: ReadonlyArray<string>) =>
+    Result.match(parseArgs(argv), {
+        onFailure: usageError,
+        onSuccess: CliCommand.$match({ ... }),
+    })
+
+// sì
+const run = (argv: ReadonlyArray<string>) => {
+    const parsed = parseArgs(argv)
+    if (Result.isFailure(parsed)) return usageError(parsed.failure)
+
+    return CliCommand.$match(parsed.success, { ... })
+}
+```
+
+- **Questo repo**: conforme dal 2026-09-15 (`src/main.ts:64`).
+- **Enforcement**: `lint-sintattico`, `effect-local/no-nested-match` (warn): un handler di `Option`/`Result`/`Exit`/`Either.match`, `$match` o `Match.valueTags` che è a sua volta un match data-last, o che restituisce un match o un ternario. Rumore zero sul codice attuale (5 `Option.match` e i `$match` in `src/`); resta `warn` finché non è provata su una codebase più grande. Non vede `if` dentro gli handler, catene `Match.value`/`Match.type`, né match annidati più in profondità del valore restituito.
+
+### P31 · Nome a ciò che ha significato o si ripete, inline il resto
+
+**Regola**: si dà un nome a un valore quando ha un significato di dominio o di wiring (un Layer, un comando) o quando si ripete. Un'espressione singola e breve, usata una volta, resta inline: i rami del `$match` di `run` chiamano direttamente `printFillSummary(...).pipe(Effect.provide(...))` invece di passare per `fillSheet`/`planFill`.
+
+**Perché**: un nome in più è un salto in più per chi legge. Vale la pena solo se il nome dice qualcosa che l'espressione non dice, o se evita di ripetere la stessa composizione.
+
+- **Questo repo**: conforme dal 2026-09-15; eliminati `fillSheet`, `planFill` e `runFill`, aggiunti `missingLayer`, `fillLayer`, `planLayer` e `platformLayer`.
+- **Enforcement**: `solo-skill`. La parte meccanizzabile, i Layer composti inline, è coperta da `provide-named-layer` (P28).
 
 ## Regole anti-slop
 
@@ -680,7 +771,7 @@ Limiti noti, dalla lettura del codice:
 | `error-handling-in-effect-fn-handler` | P25      | `Effect.catch*`, `either`, `result`, `exit`, `match*`, `sandbox` dentro un generatore di `Effect.gen`/`Effect.fn`, anche in callback annidate; esenti i pipeable di un `Effect.fn` annidato             | **warn**, 2 punti                                                                                         |
 | `single-style-per-function`           | P24      | `async`, `await`, `.then(` in una funzione che usa `Effect.*` (esclusi gli `Effect.run*`)                                                                                                               | error, rumore zero                                                                                        |
 | `no-transport-types-in-generator`     | P26      | `new T(…)`, `T.metodo(…)` o `T(…)` dentro un generatore Effect (callback annidate comprese, pipeable di `Effect.fn` esenti), con `T` nell'opzione `transportTypes` (default `Response`, `NextResponse`) | error, rumore zero (n/a in una CLI)                                                                       |
-| `boundary-entrypoint-shape`           | P27      | `Effect.runPromise`/`runSync`/`runFork`/`runCallback` e `runMain` il cui argomento non è `satisfies Effect.Effect<A, never>` né un parametro con quel tipo                                              | **warn**, 1 punto (`src/main.ts:92`)                                                                      |
+| `boundary-entrypoint-shape`           | P27      | `Effect.runPromise`/`runSync`/`runFork`/`runCallback` e `runMain` il cui argomento non è `satisfies Effect.Effect<A, never>` né un parametro con quel tipo                                              | **warn**, rumore zero dal 2026-09-15                                                                      |
 | `service-port-shape-only`             | P01      | secondo argomento di `Context.Service<…>()(id, opts)`, `static layer`/`Default` sul port, `Effect.Service`/`Context.Tag`/`Context.GenericTag`                                                           | error, rumore zero                                                                                        |
 | `no-bare-error-in-effect`             | P05      | `throw` direttamente nel generatore; `Effect.fail` con letterale o template                                                                                                                             | error, rumore zero                                                                                        |
 | `no-parameterless-catch-all`          | P09      | `Effect.catch`/`catchAll`/`catchCause`/`catchEager` con handler senza parametri                                                                                                                         | error, rumore zero                                                                                        |
@@ -688,6 +779,9 @@ Limiti noti, dalla lettura del codice:
 | `no-effect-promise`                   | P08      | `Effect.promise` fuori dal rilascio di `acquireRelease`/`acquireUseRelease`/`addFinalizer`                                                                                                              | warn, rumore zero                                                                                         |
 | `redacted-secret-names`               | P13      | nome letterale in `Config.*` che finisce per `KEY`/`SECRET`/`TOKEN`/`PASSWORD`/`CREDENTIAL(S)`/`_JSON`, fuori da `Config.redacted` e `Schema.Redacted*`                                                 | **warn**, 1 punto (`src/config.ts:20`)                                                                    |
 | `run-only-at-entry`                   | P04, P22 | riferimenti a `Effect.run*`, `NodeRuntime.runMain`, `ManagedRuntime.make`                                                                                                                               | error, spenta su `src/main.ts`                                                                            |
+| `provide-named-layer`                 | P28      | argomento di `Effect.provide` composto inline: `Layer.*(…)`, ternario, `&&`/`                                                                                                                           |                                                                                                           | `, `match`/`$match` | error, rumore zero dopo il refactoring di `src/main.ts`; spenta nei test |
+| `no-provide-on-definition`            | P28      | `Effect.provide` su `Effect.gen(…)`/`Effect.fn(…)(…)`: con `.pipe`, come pipeable di `Effect.fn` o data-first                                                                                           | error, rumore zero in `src/`; spenta nei test (17 punti idiomatici di P22)                                |
+| `no-nested-match`                     | P30      | handler di `Option`/`Result`/`Exit`/`Either.match`, `$match` o `Match.valueTags` che è un match data-last o restituisce un match o un ternario                                                          | **warn**, rumore zero; prova negativa sul `src/main.ts` precedente                                        |
 
 ## Language service
 
@@ -780,10 +874,14 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 | P25 | coperto   | nessuna del preset; `effect-local/error-handling-in-effect-fn-handler`                                                                                                                                                                                                                                                                                                                                                                | warn                            |
 | P26 | coperto   | nessuna del preset; `effect-local/no-transport-types-in-generator` (il `return` anticipato di un valore di dominio che segnala un errore resta scoperto)                                                                                                                                                                                                                                                                              | error                           |
 | P27 | coperto   | `leaking-requirements`; la forma dell'entry point da `effect-local/boundary-entrypoint-shape`                                                                                                                                                                                                                                                                                                                                         | error / warn                    |
+| P28 | coperto   | `strict-effect-provide` (dal preset `antipattern`); la forma da `effect-local/provide-named-layer` e `effect-local/no-provide-on-definition`                                                                                                                                                                                                                                                                                          | error                           |
+| P29 | no        | —                                                                                                                                                                                                                                                                                                                                                                                                                                     | —                               |
+| P30 | parziale  | nessuna del preset; `effect-local/no-nested-match`                                                                                                                                                                                                                                                                                                                                                                                    | warn                            |
+| P31 | parziale  | nessuna del preset; i Layer inline da `effect-local/provide-named-layer`                                                                                                                                                                                                                                                                                                                                                              | error                           |
 
 Fuori catalogo ma utile: `outdated-api` (warn) segnala le API v3 residue, e `duplicate-package` le installazioni doppie di `effect`.
 
-Alzate a `error` in `.oxlintrc.json` perché a rumore zero sul codice attuale e corrispondenti a pattern da imporre: `extends-native-error`, `global-error-in-effect-catch`, `global-error-in-effect-failure`, `unnecessary-fail-yieldable-error`, `catch-all-to-map-error`, `catch-unfailable-effect`, `schema-sync`, `schema-sync-in-effect`, `process-env`, `process-env-in-effect`, `effect-fn-opportunity`, `leaking-requirements`, `run-effect-inside-effect`.
+Alzate a `error` in `.oxlintrc.json` perché a rumore zero sul codice attuale e corrispondenti a pattern da imporre: `extends-native-error`, `global-error-in-effect-catch`, `global-error-in-effect-failure`, `unnecessary-fail-yieldable-error`, `catch-all-to-map-error`, `catch-unfailable-effect`, `schema-sync`, `schema-sync-in-effect`, `process-env`, `process-env-in-effect`, `effect-fn-opportunity`, `leaking-requirements`, `run-effect-inside-effect`. Aggiunta dal preset `antipattern`, dove è `warn`: `strict-effect-provide` (P28), spenta su `src/main.ts` e nei test.
 
 Cinque regole del preset non guardano il contesto Effect — scattano su qualunque `async function`, `new Promise`, import di builtin Node, `console` o `setTimeout`, anche dove Effect non è coinvolto (le varianti `-in-effect` invece sì). Producevano 21 warning su due file che non sono codice Effect: `test/dryRun.test.ts`, che lancia la CLI come processo figlio, e `src/testing/fakeAgent.ts`, script standalone usato come `AGENT_CMD` nei test. Spente lì con un `overrides` in `.oxlintrc.json`, invariate altrove: `async-function`, `new-promise`, `node-builtin-import`, `global-console`, `global-timers`.
 
@@ -835,4 +933,4 @@ Ordine consigliato, una volta attivo il lint:
 2. Coprire con `Match` i punti rimasti, cioè quelli su unioni che non sono `taggedEnum` (`src/agent/RaceCard.ts`, che viene da Schema).
 3. `Config.redacted` per il service account (P13).
 4. ~~`Effect.fn` sulle funzioni effettful con nome (P17), spostando nel secondo argomento i catch oggi appesi con `.pipe` (P25)~~ **fatto** (2026-09-15) per P17 e per il `catchTag` di `ProcessAgent`. Resta P25 su `src/commands/fill.ts:72`: `Effect.result` dentro il generatore di `fillRace`.
-5. `satisfies Effect.Effect<void, never>` sull'effetto passato a `runMain` in `src/main.ts:92` (P27).
+5. ~~`satisfies Effect.Effect<void, never>` sull'effetto passato a `runMain` (P27)~~ **fatto** (commit `1a6c0e7`, `src/main.ts:85`).

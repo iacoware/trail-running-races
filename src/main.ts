@@ -2,8 +2,8 @@ import { NodeRuntime, NodeServices } from "@effect/platform-node"
 import { Console, Effect, Layer, Logger, Option, Result, Stream } from "effect"
 
 import * as ProcessAgent from "./agent/process/ProcessAgent.ts"
+import { CliCommand, parseArgs } from "./commands/cliArgs.ts"
 import { fill } from "./commands/fill.ts"
-import { parseFillArgs } from "./commands/fillArgs.ts"
 import { missing } from "./commands/missing.ts"
 import { hasErrors, summaryLines, type FilledLabel } from "./commands/summary.ts"
 import * as FileRaceList from "./races/file/FileRaceList.ts"
@@ -23,15 +23,34 @@ const stderrLogger = Logger.layer([
     }),
 ])
 
+const platformLayer = Layer.mergeAll(NodeServices.layer, stderrLogger)
+
 const usageError = Effect.fn("usageError")(function* (message: string) {
     yield* Console.error(`${message}\n${USAGE}`)
     process.exitCode = 1
 })
 
+const missingLayer = Layer.mergeAll(FileRaceList.layer, GoogleSheet.readerLayer)
+
+const fillLayer = Layer.mergeAll(FileRaceList.layer, GoogleSheet.layer, ProcessAgent.layer)
+
+// `--sheet-csv` reads a local export and needs no Google credentials; `--dry-run` alone
+// reads the real sheet.
+const planLayer = (sheetCsv: Option.Option<string>) =>
+    Layer.mergeAll(
+        FileRaceList.layer,
+        Option.match(sheetCsv, {
+            onNone: () => GoogleSheet.readerLayer,
+            onSome: CsvSheetReader.layer,
+        }),
+        PrintSheetWriter.layer,
+        ProcessAgent.layer,
+    )
+
 const printMissing = Effect.gen(function* () {
     const names = yield* missing
     for (const name of names) yield* Console.log(name)
-}).pipe(Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.readerLayer)))
+})
 
 const printFillSummary = Effect.fn("printFillSummary")(function* (
     only: Option.Option<string>,
@@ -42,49 +61,21 @@ const printFillSummary = Effect.fn("printFillSummary")(function* (
     if (hasErrors(results)) process.exitCode = 1
 })
 
-const fillSheet = (only: Option.Option<string>) =>
-    printFillSummary(only, "inserite").pipe(
-        Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.layer, ProcessAgent.layer)),
-    )
+const run = (argv: ReadonlyArray<string>) => {
+    const parsed = parseArgs(argv)
+    if (Result.isFailure(parsed)) return usageError(parsed.failure)
 
-// `--sheet-csv` reads a local export and needs no Google credentials; `--dry-run` alone
-// reads the real sheet.
-const planFill = (only: Option.Option<string>, sheetCsv: Option.Option<string>) =>
-    printFillSummary(only, "pianificate").pipe(
-        Effect.provide(
-            Layer.mergeAll(
-                FileRaceList.layer,
-                Option.match(sheetCsv, {
-                    onNone: () => GoogleSheet.readerLayer,
-                    onSome: CsvSheetReader.layer,
-                }),
-                PrintSheetWriter.layer,
-                ProcessAgent.layer,
-            ),
-        ),
-    )
-
-const runFill = (args: ReadonlyArray<string>) =>
-    Result.match(parseFillArgs(args), {
-        onFailure: usageError,
-        onSuccess: ({ dryRun, only, sheetCsv }) =>
-            dryRun ? planFill(only, sheetCsv) : fillSheet(only),
+    return CliCommand.$match(parsed.success, {
+        Missing: () => printMissing.pipe(Effect.provide(missingLayer)),
+        Fill: ({ only }) => printFillSummary(only, "inserite").pipe(Effect.provide(fillLayer)),
+        Plan: ({ only, sheetCsv }) =>
+            printFillSummary(only, "pianificate").pipe(Effect.provide(planLayer(sheetCsv))),
     })
-
-const run = ([subcommand, ...args]: ReadonlyArray<string>) => {
-    switch (subcommand) {
-        case "missing":
-            return printMissing
-        case "fill":
-            return runFill(args)
-        default:
-            return usageError(`sottocomando mancante o sconosciuto: ${subcommand ?? ""}`.trim())
-    }
 }
 
 NodeRuntime.runMain(
     run(process.argv.slice(2)).pipe(
-        Effect.provide(Layer.mergeAll(NodeServices.layer, stderrLogger)),
+        Effect.provide(platformLayer),
         Effect.catch((error) =>
             Effect.gen(function* () {
                 yield* Console.error(`${error._tag}: ${error.message}`)

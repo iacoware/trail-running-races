@@ -11,9 +11,12 @@
         "effect-local/error-handling-in-effect-fn-handler": "warn",
         "effect-local/no-bare-error-in-effect": "error",
         "effect-local/no-effect-promise": "warn",
+        "effect-local/no-nested-match": "warn",
         "effect-local/no-parameterless-catch-all": "error",
+        "effect-local/no-provide-on-definition": "error",
         "effect-local/no-transport-types-in-generator": "error",
         "effect-local/prefer-effect-fn": "warn",
+        "effect-local/provide-named-layer": "error",
         "effect-local/redacted-secret-names": "warn",
         "effect-local/run-only-at-entry": "error",
         "effect-local/service-port-shape-only": "error",
@@ -35,13 +38,15 @@
         "effecttsgo/process-env-in-effect": "error",
         "effecttsgo/effect-fn-opportunity": "error",
         "effecttsgo/leaking-requirements": "error",
-        "effecttsgo/run-effect-inside-effect": "error"
+        "effecttsgo/run-effect-inside-effect": "error",
+        "effecttsgo/strict-effect-provide": "error"
     },
     "overrides": [
         {
             "files": ["src/main.ts"],
             "rules": {
-                "effect-local/run-only-at-entry": "off"
+                "effect-local/run-only-at-entry": "off",
+                "effecttsgo/strict-effect-provide": "off"
             }
         },
         {
@@ -57,7 +62,10 @@
         {
             "files": ["**/*.test.ts", "src/testing/**"],
             "rules": {
-                "anti-slop-effect/no-manual-tagged-construction": "off"
+                "anti-slop-effect/no-manual-tagged-construction": "off",
+                "effecttsgo/strict-effect-provide": "off",
+                "effect-local/provide-named-layer": "off",
+                "effect-local/no-provide-on-definition": "off"
             }
         },
         {
