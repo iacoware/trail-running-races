@@ -46,20 +46,24 @@ const positionIn = (target: SectionTarget, start: DayOfYear) =>
         MissingSpecialSection: missingSectionPosition,
     })
 
+const endOfExistingSection = (
+    existing: Data.TaggedEnum.Value<SectionTarget, "ExistingSection">,
+) => {
+    const previous = existing.section.races.at(-1)
+    return {
+        section: existing.section.name,
+        row: (previous?.row ?? existing.section.headerRow) + 1,
+        after:
+            previous === undefined
+                ? Option.none<string>()
+                : Option.some(previous.cells.name.trim()),
+        sectionAction: existing.action,
+    }
+}
+
 const reviewPositionIn = (target: SectionTarget) =>
     SectionTarget.$match(target, {
-        ExistingSection: (existing) => {
-            const previous = existing.section.races.at(-1)
-            return {
-                section: existing.section.name,
-                row: (previous?.row ?? existing.section.headerRow) + 1,
-                after:
-                    previous === undefined
-                        ? Option.none<string>()
-                        : Option.some(previous.cells.name.trim()),
-                sectionAction: existing.action,
-            }
-        },
+        ExistingSection: endOfExistingSection,
         MissingSpecialSection: missingSectionPosition,
     })
 

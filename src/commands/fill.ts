@@ -31,16 +31,18 @@ export const RaceFillResult = Data.taggedEnum<RaceFillResult>()
 
 // `--only` narrows the candidates to one name, even one absent from the list, but a race
 // already in the sheet is never searched: the presence check always runs.
+const onlyCandidate = Effect.fn("onlyCandidate")(function* (sheet: Sheet, name: string) {
+    const wanted = missingRaces([name], sheet)
+    if (wanted.length === 0) {
+        yield* Effect.logInfo(`"${name}" è già nel foglio, agente non invocato`)
+    }
+    return wanted
+})
+
 const candidates = (sheet: Sheet, only: Option.Option<string>) =>
     Option.match(only, {
         onNone: () => missingIn(sheet),
-        onSome: Effect.fn("onlyCandidate")(function* (name: string) {
-            const wanted = missingRaces([name], sheet)
-            if (wanted.length === 0) {
-                yield* Effect.logInfo(`"${name}" è già nel foglio, agente non invocato`)
-            }
-            return wanted
-        }),
+        onSome: (name) => onlyCandidate(sheet, name),
     })
 
 const insert = Effect.fn("insert")(function* (
