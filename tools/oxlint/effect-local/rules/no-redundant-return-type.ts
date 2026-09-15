@@ -2,49 +2,15 @@ import { defineRule, type ESTree, type SourceCode } from "@oxlint/plugins"
 
 import { nearestFunction, type FunctionNode } from "../shared/effect-ast.ts"
 
-const branchesOf = (expression: ESTree.Node): ReadonlyArray<ESTree.Node> =>
-    expression.type === "ConditionalExpression"
-        ? [...branchesOf(expression.consequent), ...branchesOf(expression.alternate)]
-        : [expression]
+// `Effect.Effect`, `Stream.Stream`, `Layer.Layer`: the types that carry error and requirement
+// channels collected from everything they call.
+const channelModules = new Set(["Effect", "Stream", "Layer"])
 
-// Checked against the annotation, an object literal gets excess property errors that an
-// inferred type would skip.
-const returnsOnlyObjectLiterals = (branches: ReadonlyArray<ESTree.Node>) =>
-    branches.length > 0 && branches.every((branch) => branch.type === "ObjectExpression")
-
-// Without type information, branches built differently (`Result.fail` and `Result.succeed`,
-// two error classes) stand in for an inferred union that the annotation folds into one type.
-const returnsDifferentShapes = (branches: ReadonlyArray<ESTree.Node>, sourceCode: SourceCode) => {
-    const shapeOf = (branch: ESTree.Node) => {
-        if (branch.type === "CallExpression" || branch.type === "NewExpression") {
-            return `${branch.type} ${sourceCode.getText(branch.callee)}`
-        }
-        const isAbsent =
-            (branch.type === "Identifier" && branch.name === "undefined") ||
-            (branch.type === "Literal" && branch.value === null)
-        return isAbsent ? "absent" : branch.type
-    }
-    return new Set(branches.map(shapeOf)).size > 1
-}
-
-// Inference widens `'Italia'` to `string` and `[]` to `never[]`: here the annotation is the type.
-const isWidened = (branch: ESTree.Node) =>
-    (branch.type === "Literal" &&
-        (typeof branch.value === "string" || typeof branch.value === "number")) ||
-    (branch.type === "TemplateLiteral" && branch.expressions.length === 0) ||
-    (branch.type === "ArrayExpression" && branch.elements.length === 0)
-
-// Inference types an array literal as a mutable array: `ReadonlyArray` there is a choice.
-const isReadonlyArrayOfLiterals = (
-    annotation: ESTree.TSType,
-    branches: ReadonlyArray<ESTree.Node>,
-) =>
-    ((annotation.type === "TSTypeReference" &&
-        annotation.typeName.type === "Identifier" &&
-        annotation.typeName.name === "ReadonlyArray") ||
-        (annotation.type === "TSTypeOperator" && annotation.operator === "readonly")) &&
-    branches.length > 0 &&
-    branches.every((branch) => branch.type === "ArrayExpression")
+const isChannelType = (node: ESTree.TSTypeReference) =>
+    node.typeName.type === "TSQualifiedName" &&
+    node.typeName.left.type === "Identifier" &&
+    channelModules.has(node.typeName.left.name) &&
+    node.typeName.right.name === node.typeName.left.name
 
 const isInside = (node: ESTree.Node, ancestor: ESTree.Node) => {
     for (let current = node.parent; current; current = current.parent) {
@@ -53,17 +19,39 @@ const isInside = (node: ESTree.Node, ancestor: ESTree.Node) => {
     return false
 }
 
+const branchesOf = (expression: ESTree.Node): ReadonlyArray<ESTree.Node> =>
+    expression.type === "ConditionalExpression"
+        ? [...branchesOf(expression.consequent), ...branchesOf(expression.alternate)]
+        : [expression]
+
+// Without type information, branches built differently (`Effect.succeed` and `Effect.fail`)
+// stand in for an inferred union of effects that the annotation folds into one type.
+const returnsDifferentShapes = (branches: ReadonlyArray<ESTree.Node>, sourceCode: SourceCode) => {
+    const shapeOf = (branch: ESTree.Node) =>
+        branch.type === "CallExpression" || branch.type === "NewExpression"
+            ? `${branch.type} ${sourceCode.getText(branch.callee)}`
+            : branch.type
+    return new Set(branches.map(shapeOf)).size > 1
+}
+
 // TypeScript cannot infer the return type of a function that calls itself: it falls back to
 // `any` and asks for the annotation.
 const isRecursive = (node: FunctionNode, sourceCode: SourceCode) => {
     const declaration = node.type === "FunctionDeclaration" ? node : node.parent
-    if (declaration?.type !== "FunctionDeclaration" && declaration?.type !== "VariableDeclarator") {
-        return false
-    }
+    const name =
+        declaration?.type === "FunctionDeclaration"
+            ? declaration.id?.name
+            : declaration?.type === "VariableDeclarator" && declaration.id.type === "Identifier"
+              ? declaration.id.name
+              : undefined
+    if (declaration === null || name === undefined) return false
+    // The declared variables of a function declaration include its parameters.
     return sourceCode
         .getDeclaredVariables(declaration)
-        .some((variable) =>
-            variable.references.some((reference) => isInside(reference.identifier, node)),
+        .some(
+            (variable) =>
+                variable.name === name &&
+                variable.references.some((reference) => isInside(reference.identifier, node)),
         )
 }
 
@@ -72,16 +60,17 @@ export const noRedundantReturnTypeRule = defineRule({
         type: "suggestion",
         docs: {
             description:
-                "Let inference type what a function returns: an annotation that repeats it has to be fixed by hand on every refactoring.",
+                "Let inference type a function returning an Effect: its error and requirement channels change with every callee.",
         },
         hasSuggestions: true,
         messages: {
             redundantReturnType:
-                "Remove the return type annotation: inference already produces this type.",
+                "Remove the return type annotation: error and requirement channels follow the callees, so inference keeps them up to date.",
             removeReturnType: "Remove the return type annotation.",
         },
     },
     createOnce(context) {
+        const annotated = new Set<FunctionNode>()
         const returned = new Map<FunctionNode, Array<ESTree.Node>>()
 
         const collect = (node: ESTree.ReturnStatement) => {
@@ -93,20 +82,12 @@ export const noRedundantReturnTypeRule = defineRule({
         const check = (node: FunctionNode) => {
             const statements = returned.get(node) ?? []
             returned.delete(node)
-            if (!node.returnType || node.returnType.typeAnnotation.type === "TSTypePredicate") {
-                return
-            }
+            if (!annotated.delete(node) || !node.returnType) return
             const expressions =
                 node.body?.type === "BlockStatement" ? statements : node.body ? [node.body] : []
-            const branches = expressions.flatMap(branchesOf)
-            if (returnsOnlyObjectLiterals(branches)) return
-            if (returnsDifferentShapes(branches, context.sourceCode)) return
-            if (branches.some(isWidened)) return
-            if (isReadonlyArrayOfLiterals(node.returnType.typeAnnotation, branches)) return
+            if (returnsDifferentShapes(expressions.flatMap(branchesOf), context.sourceCode)) return
             if (isRecursive(node, context.sourceCode)) return
             const { returnType } = node
-            // A suggestion, not a fix: the inferred type can still differ in ways the heuristics
-            // above miss, so each removal waits for the typecheck.
             context.report({
                 node: returnType,
                 messageId: "redundantReturnType",
@@ -120,6 +101,12 @@ export const noRedundantReturnTypeRule = defineRule({
         }
 
         return {
+            TSTypeReference(node) {
+                const fn = nearestFunction(node)
+                if (fn?.returnType && isChannelType(node) && isInside(node, fn.returnType)) {
+                    annotated.add(fn)
+                }
+            },
             ReturnStatement: collect,
             "ArrowFunctionExpression:exit": check,
             "FunctionDeclaration:exit": check,
