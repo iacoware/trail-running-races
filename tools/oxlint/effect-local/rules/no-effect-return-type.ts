@@ -55,7 +55,7 @@ const isRecursive = (node: FunctionNode, sourceCode: SourceCode) => {
         )
 }
 
-export const noRedundantReturnTypeRule = defineRule({
+export const noEffectReturnTypeRule = defineRule({
     meta: {
         type: "suggestion",
         docs: {
@@ -64,7 +64,7 @@ export const noRedundantReturnTypeRule = defineRule({
         },
         hasSuggestions: true,
         messages: {
-            redundantReturnType:
+            effectReturnType:
                 "Remove the return type annotation: error and requirement channels follow the callees, so inference keeps them up to date.",
             removeReturnType: "Remove the return type annotation.",
         },
@@ -90,7 +90,7 @@ export const noRedundantReturnTypeRule = defineRule({
             const { returnType } = node
             context.report({
                 node: returnType,
-                messageId: "redundantReturnType",
+                messageId: "effectReturnType",
                 suggest: [
                     {
                         messageId: "removeReturnType",

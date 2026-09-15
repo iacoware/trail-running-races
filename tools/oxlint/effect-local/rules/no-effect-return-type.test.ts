@@ -1,10 +1,10 @@
 import { RuleTester } from "oxlint/plugins-dev"
 
-import { noRedundantReturnTypeRule } from "./no-redundant-return-type.ts"
+import { noEffectReturnTypeRule } from "./no-effect-return-type.ts"
 
 new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } }).run(
-    "no-redundant-return-type",
-    noRedundantReturnTypeRule,
+    "no-effect-return-type",
+    noEffectReturnTypeRule,
     {
         valid: [
             "const next = (count: number): number => count + 1",
@@ -20,7 +20,7 @@ new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } }).run(
                 code: "const readSheet = (id: string): Effect.Effect<Sheet, SheetReadError, SheetReader> => reader.read(id)",
                 errors: [
                     {
-                        messageId: "redundantReturnType",
+                        messageId: "effectReturnType",
                         suggestions: [
                             {
                                 messageId: "removeReturnType",
@@ -32,19 +32,19 @@ new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } }).run(
             },
             {
                 code: "const races = (list: RaceList): Stream.Stream<Race, AgentError, Agent> => Stream.fromIterable(list.names).pipe(Stream.mapEffect(search))",
-                errors: [{ messageId: "redundantReturnType" }],
+                errors: [{ messageId: "effectReturnType" }],
             },
             {
                 code: "const fallback = (name: string): Option.Option<Effect.Effect<Race, AgentError>> => Option.map(cached(name), Effect.succeed)",
-                errors: [{ messageId: "redundantReturnType" }],
+                errors: [{ messageId: "effectReturnType" }],
             },
             {
                 code: "const searcher = (agent: Agent): ((name: string) => Effect.Effect<Race, AgentError> | Effect.Effect<Race, never>) => (name) => agent.search(name)",
-                errors: [{ messageId: "redundantReturnType" }],
+                errors: [{ messageId: "effectReturnType" }],
             },
             {
                 code: "function sheetLayer(id: string): Layer.Layer<SheetReader, never, HttpClient> { return Layer.effect(SheetReader, readerFor(id)) }",
-                errors: [{ messageId: "redundantReturnType" }],
+                errors: [{ messageId: "effectReturnType" }],
             },
         ],
     },
