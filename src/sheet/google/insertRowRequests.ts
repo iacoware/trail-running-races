@@ -40,11 +40,7 @@ const sectionHeaderValues = (planned: PlannedRow) => {
   return values
 }
 
-const bold = (
-  sheetId: number,
-  row: number,
-  value: boolean,
-): sheets_v4.Schema$Request => ({
+const bold = (sheetId: number, row: number, value: boolean): sheets_v4.Schema$Request => ({
   repeatCell: {
     range: {
       sheetId,

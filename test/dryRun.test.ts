@@ -73,9 +73,7 @@ test("sends a sectionless region to Resto di Italia and a foreign race to Estero
 })
 
 test("creates missing Estero between Resto di Italia and Da verificare", async () => {
-  const run = await dryRunOnEdited(["Gara Francese"], (csv) =>
-    csv.replace(/^Estero,+\r?\n/m, ""),
-  )
+  const run = await dryRunOnEdited(["Gara Francese"], (csv) => csv.replace(/^Estero,+\r?\n/m, ""))
 
   expect(run.stdout).toContain("crea Estero: riga vuota 9, intestazione in grassetto 10")
   expect(run.stdout).toContain("Estero, riga 11, in testa alla sezione")

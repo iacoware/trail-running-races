@@ -11,7 +11,10 @@ new RuleTester().run("service-port-shape-only", servicePortShapeOnlyRule, {
       code: 'export class Agent extends Context.Service<Agent, { readonly search: (name: string) => Effect.Effect<RaceCard> }>()("app/Agent") {}',
     },
     { filename, code: "class Counter extends Base { static layer = 1 }" },
-    { filename, code: 'const Retries = Context.Reference<number>("app/Retries", { defaultValue: () => 3 })' },
+    {
+      filename,
+      code: 'const Retries = Context.Reference<number>("app/Retries", { defaultValue: () => 3 })',
+    },
   ],
   invalid: [
     {

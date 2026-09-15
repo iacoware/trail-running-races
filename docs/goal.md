@@ -24,14 +24,14 @@ Dato un periodo dell'anno, voglio sapere quali gare sono fattibili e vicine a qu
 
 ## Formato del foglio
 
-| Colonna | Contenuto |
-|---|---|
-| Nome | nome gara, come link al sito ufficiale |
-| Data (+ o -) | testo indicativo, es. `18-21 marzo`, `2 maggio` |
-| Luogo | comune o comuni |
-| Da FI | tempo in auto da Firenze, stimato, es. `~2h` |
-| Tipo | `Trail`, `Sky`, … |
-| Distanze | una riga per percorso: `17.5km 750m+`, con suffisso `, camminata` se non competitiva. Esclusi i percorsi per bambini e le non competitive sotto i 5km |
+| Colonna      | Contenuto                                                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nome         | nome gara, come link al sito ufficiale                                                                                                                |
+| Data (+ o -) | testo indicativo, es. `18-21 marzo`, `2 maggio`                                                                                                       |
+| Luogo        | comune o comuni                                                                                                                                       |
+| Da FI        | tempo in auto da Firenze, stimato, es. `~2h`                                                                                                          |
+| Tipo         | `Trail`, `Sky`, …                                                                                                                                     |
+| Distanze     | una riga per percorso: `17.5km 750m+`, con suffisso `, camminata` se non competitiva. Esclusi i percorsi per bambini e le non competitive sotto i 5km |
 
 Le gare sono raggruppate in **sezioni per regione**: una riga con il solo nome della regione (in grassetto, ma lo script la riconosce dalla struttura), seguita dalle gare ordinate per data, seguita da una riga vuota. Le sezioni regionali le crei tu a mano: lo script non ne aggiunge. Sezioni speciali create su richiesta in fondo al foglio, in quest'ordine: `Resto di Italia` (regione italiana senza sezione propria), `Estero` e `Da verificare` (gara non trovata o ambigua).
 
@@ -52,4 +52,3 @@ Le righe "non trovata" e "ambigua" contano come presenti: al run successivo veng
 ## Fuori scope, per ora
 
 - Sottocomandi futuri: `sort` (riordina per data) e `update` (sovrascrive informazioni esistenti).
-

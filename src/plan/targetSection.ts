@@ -41,7 +41,9 @@ const specialIndex = (name: string) =>
   SPECIAL_SECTIONS.findIndex((section) => sectionKey(section) === sectionKey(name))
 
 const missingSpecial = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): SectionTarget => {
-  const following = sheet.sections.find((section) => specialIndex(section.name) > specialIndex(name))
+  const following = sheet.sections.find(
+    (section) => specialIndex(section.name) > specialIndex(name),
+  )
   const followsHeader = following?.headerRow === 2
   const separatorRow =
     following === undefined ? sheet.lastRow + 1 : Math.max(2, following.headerRow - 1)
@@ -56,10 +58,7 @@ const missingSpecial = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): 
   })
 }
 
-const sectionTarget = (
-  sheet: Sheet,
-  name: (typeof SPECIAL_SECTIONS)[number],
-): SectionTarget => {
+const sectionTarget = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): SectionTarget => {
   const section = named(sheet, name)
   return section === undefined
     ? missingSpecial(sheet, name)

@@ -5,11 +5,7 @@ import type { FoundRace } from "../agent/RaceCard.ts"
 import type { PlanError } from "../plan/errors.ts"
 import { missingRaces } from "../races/missingRaces.ts"
 import { planReviewRow, planRow, type PlannedRow } from "../plan/planRow.ts"
-import type {
-  SheetColumnMissingError,
-  SheetReadError,
-  SheetWriteError,
-} from "../sheet/errors.ts"
+import type { SheetColumnMissingError, SheetReadError, SheetWriteError } from "../sheet/errors.ts"
 import type { Sheet } from "../sheet/parseSheet.ts"
 import { readSheet, readSheetQuietly } from "../sheet/readSheet.ts"
 import { SheetReader } from "../sheet/SheetReader.ts"

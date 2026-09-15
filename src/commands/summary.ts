@@ -1,7 +1,9 @@
 import { RaceFillResult } from "./fill.ts"
 
-const withTag = <T extends RaceFillResult["_tag"]>(results: ReadonlyArray<RaceFillResult>, tag: T) =>
-  results.filter(RaceFillResult.$is(tag))
+const withTag = <T extends RaceFillResult["_tag"]>(
+  results: ReadonlyArray<RaceFillResult>,
+  tag: T,
+) => results.filter(RaceFillResult.$is(tag))
 
 const count = (label: string, lines: ReadonlyArray<string>) => [
   `${label}: ${lines.length}`,

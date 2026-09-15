@@ -6,12 +6,7 @@ import type { Sheet } from "../sheet/parseSheet.ts"
 import { UnparsableDateError, type PlanError } from "./errors.ts"
 import { formatCells } from "./formatCells.ts"
 import { insertionAt } from "./insertionAt.ts"
-import {
-  reviewSection,
-  SectionTarget,
-  targetSection,
-  type SectionAction,
-} from "./targetSection.ts"
+import { reviewSection, SectionTarget, targetSection, type SectionAction } from "./targetSection.ts"
 
 export type PlannedRow = {
   readonly name: string

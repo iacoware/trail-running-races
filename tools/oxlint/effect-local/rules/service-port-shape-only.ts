@@ -27,14 +27,16 @@ export const servicePortShapeOnlyRule = defineRule({
   meta: {
     type: "problem",
     docs: {
-      description: "Keep a `Context.Service` port a pure contract, with implementations in separate Layers.",
+      description:
+        "Keep a `Context.Service` port a pure contract, with implementations in separate Layers.",
     },
     messages: {
       makeOption:
         "Declare the port as shape only: move the implementation into a Layer in its own adapter file.",
       staticImplementation:
         "Do not attach `static {{name}}` to the port: provide the implementation as a Layer in its own adapter file.",
-      legacyService: "Use `class X extends Context.Service<X, Shape>()(id) {}` instead of `{{name}}`.",
+      legacyService:
+        "Use `class X extends Context.Service<X, Shape>()(id) {}` instead of `{{name}}`.",
     },
   },
   createOnce(context) {
@@ -57,7 +59,11 @@ export const servicePortShapeOnlyRule = defineRule({
       MemberExpression(node) {
         for (const [object, property] of legacyServices) {
           if (memberOf(node, object) === property) {
-            context.report({ node, messageId: "legacyService", data: { name: `${object}.${property}` } })
+            context.report({
+              node,
+              messageId: "legacyService",
+              data: { name: `${object}.${property}` },
+            })
           }
         }
       },

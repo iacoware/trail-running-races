@@ -15,7 +15,9 @@ const found = {
 
 switch (process.argv[2]) {
   case "card":
-    console.log(`Ecco la scheda:\n\`\`\`json\n${JSON.stringify(found, null, 2)}\n\`\`\`\nSpero sia utile.`)
+    console.log(
+      `Ecco la scheda:\n\`\`\`json\n${JSON.stringify(found, null, 2)}\n\`\`\`\nSpero sia utile.`,
+    )
     break
   case "text":
     console.log("Non ho trovato nulla di rilevante.")

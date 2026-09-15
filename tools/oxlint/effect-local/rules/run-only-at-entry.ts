@@ -32,7 +32,8 @@ export const runOnlyAtEntryRule = defineRule({
     return {
       MemberExpression(node) {
         const name = runnerName(node)
-        if (name !== undefined) context.report({ node, messageId: "runOutsideEntry", data: { name } })
+        if (name !== undefined)
+          context.report({ node, messageId: "runOutsideEntry", data: { name } })
       },
     }
   },

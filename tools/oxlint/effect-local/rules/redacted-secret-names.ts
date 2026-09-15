@@ -39,7 +39,11 @@ export const redactedSecretNamesRule = defineRule({
             typeof argument.value === "string" &&
             secretName.test(argument.value)
           ) {
-            context.report({ node: argument, messageId: "notRedacted", data: { name: argument.value } })
+            context.report({
+              node: argument,
+              messageId: "notRedacted",
+              data: { name: argument.value },
+            })
           }
         }
       },

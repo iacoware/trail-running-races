@@ -35,7 +35,10 @@ export type SheetReadError =
   | SheetCsvError
 
 export type SheetWriteError =
-  SheetAuthError | SheetNotFoundError | SheetTabNotFoundError | SheetApiError
+  | SheetAuthError
+  | SheetNotFoundError
+  | SheetTabNotFoundError
+  | SheetApiError
 
 export class SheetColumnMissingError extends Schema.TaggedError<SheetColumnMissingError>()(
   "SheetColumnMissingError",

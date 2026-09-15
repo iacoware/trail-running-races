@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=24"
-  },
   "scripts": {
     "prepare": "effect-tsgo patch --oxlint",
     "start": "node --env-file-if-exists=.env src/main.ts",
@@ -15,6 +12,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run && pnpm test:lint-rules",
     "test:lint-rules": "node --test tools/oxlint/**/rules/*.test.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.0-rc.112",
+    "@googleapis/sheets": "^14.0.0",
+    "effect": "4.0.0-rc.112"
   },
   "devDependencies": {
     "@effect/tsgo": "0.45.0",
@@ -27,9 +29,7 @@
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
-  "dependencies": {
-    "@effect/platform-node": "4.0.0-rc.112",
-    "@googleapis/sheets": "^14.0.0",
-    "effect": "4.0.0-rc.112"
+  "engines": {
+    "node": ">=24"
   }
 }

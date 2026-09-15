@@ -1,6 +1,6 @@
 # Glossario
 
-**Elenco gare** — File di testo mantenuto a mano, un nome di gara per riga. È la sorgente di verità su *quali* gare interessano; non contiene altre informazioni.
+**Elenco gare** — File di testo mantenuto a mano, un nome di gara per riga. È la sorgente di verità su _quali_ gare interessano; non contiene altre informazioni.
 
 **Nome gara** — Stringa scritta nell'elenco. È la chiave di identità: il match con il foglio è esatto e case insensitive, e nel foglio viene scritta tale e quale.
 
@@ -22,9 +22,9 @@
 
 **Scheda gara** — JSON prodotto dall'agente per una gara: esito, url, data, luogo, regione, tempo da Firenze, tipo, distanze. Lo script la valida e la traduce in una riga gara.
 
-**Esito** — Risultato della ricerca dell'agente: *trovata*, *non trovata*, *ambigua*. Solo *trovata* produce una riga completa; gli altri producono una riga con messaggio in `Da verificare`.
+**Esito** — Risultato della ricerca dell'agente: _trovata_, _non trovata_, _ambigua_. Solo _trovata_ produce una riga completa; gli altri producono una riga con messaggio in `Da verificare`.
 
-**Risultato per gara** — Come si chiude il lavoro su una gara durante un run: *inserita* (nel dry run *pianificata*), *non trovata*, *ambigua* oppure *errore*. Non coincide con l'esito: comprende anche la pianificazione e la scrittura sul foglio, e *errore* raccoglie i fallimenti dell'agente, del piano o del foglio. Una gara in errore non ferma il run. I risultati per gara compongono il riepilogo del run. Nel codice: `RaceFillResult`, prodotto da `fillRace`.
+**Risultato per gara** — Come si chiude il lavoro su una gara durante un run: _inserita_ (nel dry run _pianificata_), _non trovata_, _ambigua_ oppure _errore_. Non coincide con l'esito: comprende anche la pianificazione e la scrittura sul foglio, e _errore_ raccoglie i fallimenti dell'agente, del piano o del foglio. Una gara in errore non ferma il run. I risultati per gara compongono il riepilogo del run. Nel codice: `RaceFillResult`, prodotto da `fillRace`.
 
 **Ambiguità** — Più eventi rispondono allo stesso nome e l'agente non sa scegliere, nemmeno usando la freschezza dei siti come criterio. I candidati vengono riportati nel riepilogo del run, non nel foglio.
 

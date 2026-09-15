@@ -43,7 +43,8 @@ export const preferEffectFnRule = defineRule({
   meta: {
     type: "suggestion",
     docs: {
-      description: "Write effectful functions with a named `Effect.fn` instead of returning `Effect.gen`.",
+      description:
+        "Write effectful functions with a named `Effect.fn` instead of returning `Effect.gen`.",
     },
     messages: {
       useEffectFn:

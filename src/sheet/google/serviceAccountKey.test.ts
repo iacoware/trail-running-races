@@ -34,7 +34,10 @@ it.effect("decodes the key from a file path", () =>
 it.effect("fails with ServiceAccountKeyError when the JSON lacks the private key", () =>
   Effect.gen(function* () {
     const error = yield* Effect.flip(
-      loadServiceAccountKey({ _tag: "InlineJson", json: Redacted.make('{"client_email":"bot@x"}') }),
+      loadServiceAccountKey({
+        _tag: "InlineJson",
+        json: Redacted.make('{"client_email":"bot@x"}'),
+      }),
     )
 
     expect(error._tag).toBe("ServiceAccountKeyError")

@@ -8,7 +8,8 @@ export const tryObjectFormRule = defineRule({
   meta: {
     type: "problem",
     docs: {
-      description: "Use the object form of `Effect.try` and `Effect.tryPromise`, mapping failures to tagged errors.",
+      description:
+        "Use the object form of `Effect.try` and `Effect.tryPromise`, mapping failures to tagged errors.",
     },
     messages: {
       objectForm:

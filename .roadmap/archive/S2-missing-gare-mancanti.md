@@ -46,7 +46,6 @@ Il match sul testo visibile della colonna Nome, letto con valori formattati, è 
 - Parsing delle date e ordine dentro le sezioni: `S4`.
 - Riparazione delle sezioni spezzate: licenza in `OUT-OF-SCOPE`.
 
-
 ## Open questions
 
 - —

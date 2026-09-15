@@ -133,22 +133,19 @@ test("creates a missing special section before the first later one in canonical 
   })
 })
 
-test(
-  "adds a trailing separator when the following special section is directly below the header",
-  () => {
-    const sheet = sheetOf(["Estero"])
+test("adds a trailing separator when the following special section is directly below the header", () => {
+  const sheet = sheetOf(["Estero"])
 
-    const planned = plan(sheet, "Gara Lombarda", race({ regione: "Lombardia" }))
+  const planned = plan(sheet, "Gara Lombarda", race({ regione: "Lombardia" }))
 
-    expect(planned.sectionAction).toEqual({
-      _tag: "CreateSection",
-      separatorRow: 2,
-      headerRow: 3,
-      trailingSeparator: true,
-    })
-    expect(planned.row).toBe(4)
-  },
-)
+  expect(planned.sectionAction).toEqual({
+    _tag: "CreateSection",
+    separatorRow: 2,
+    headerRow: 3,
+    trailingSeparator: true,
+  })
+  expect(planned.row).toBe(4)
+})
 
 test("creates Resto di Italia instead of a missing regional section", () => {
   const sheet = sheetOf(["Toscana"], ["Brunello Crossing", "20-21 febbraio"])

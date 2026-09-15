@@ -13,7 +13,11 @@ const isInsideRelease = (node: ESTree.Node) => {
   let child: ESTree.Node = node
   for (let current: ESTree.Node | null = node.parent; current; current = current.parent) {
     const slot = releaseSlots.get(calleeOf(current, "Effect") ?? "")
-    if (current.type === "CallExpression" && slot !== undefined && current.arguments[slot] === child) {
+    if (
+      current.type === "CallExpression" &&
+      slot !== undefined &&
+      current.arguments[slot] === child
+    ) {
       return true
     }
     child = current

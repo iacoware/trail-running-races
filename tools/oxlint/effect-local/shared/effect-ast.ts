@@ -57,7 +57,7 @@ export const isInsideEffectGeneratorBody = (node: ESTree.Node) => {
   return false
 }
 
-export const nearestFunction =(node: ESTree.Node): FunctionNode | undefined => {
+export const nearestFunction = (node: ESTree.Node): FunctionNode | undefined => {
   for (let current: ESTree.Node | null = node.parent; current; current = current.parent) {
     if (isFunctionNode(current)) return current
   }

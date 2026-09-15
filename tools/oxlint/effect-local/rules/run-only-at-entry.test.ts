@@ -3,10 +3,7 @@ import { RuleTester } from "oxlint/plugins-dev"
 import { runOnlyAtEntryRule } from "./run-only-at-entry.ts"
 
 new RuleTester().run("run-only-at-entry", runOnlyAtEntryRule, {
-  valid: [
-    "const program = Effect.provide(main, layer)",
-    "const launched = Layer.launch(layer)",
-  ],
+  valid: ["const program = Effect.provide(main, layer)", "const launched = Layer.launch(layer)"],
   invalid: [
     {
       code: "const done = Effect.runPromise(program)",

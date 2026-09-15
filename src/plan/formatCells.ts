@@ -35,7 +35,10 @@ const distances = (list: ReadonlyArray<Distance>) =>
 export const formatCells = (name: string, race: FoundRace): Cells => ({
   name,
   date: collapseSpaces(race.data),
-  place: race.luogo.map(collapseSpaces).filter((place) => place !== "").join(", "),
+  place: race.luogo
+    .map(collapseSpaces)
+    .filter((place) => place !== "")
+    .join(", "),
   fromFlorence: fromFlorence(race.minutiDaFirenze),
   type: race.tipo,
   distances: distances(race.distanze),

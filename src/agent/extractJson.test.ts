@@ -7,7 +7,8 @@ test("parses an output that is only a JSON object", () => {
 })
 
 test("finds the first JSON object surrounded by prose and fences", () => {
-  const output = 'Ecco la scheda:\n```json\n{"esito":"non_trovata"}\n```\nSpero sia utile {non json}'
+  const output =
+    'Ecco la scheda:\n```json\n{"esito":"non_trovata"}\n```\nSpero sia utile {non json}'
 
   expect(extractJson(output)).toEqual(Option.some({ esito: "non_trovata" }))
 })

@@ -25,35 +25,35 @@ Classi di enforcement:
 
 ## Riepilogo
 
-| ID | Pattern | Natura | Enforcement | v4 | Questo repo |
-|---|---|---|---|---|---|
-| P01 | Port come `Context.Service` solo shape | misto | lint-sintattico | `Context.Service`; `Context.Tag`/`Effect.Service` non esistono | conforme |
-| P02 | Adapter in Layer separati, port senza dettagli d'adapter | misto | solo-skill | invariato | conforme |
-| P03 | Capability via `yield*`, mai parametri o singleton | idioma | solo-skill | invariato | conforme |
-| P04 | Esecuzione solo all'entry point | idioma | lint-sintattico | `NodeRuntime.runMain`, `ManagedRuntime.make` | conforme |
-| P05 | Errori attesi tagged, mai `Error` nudo | idioma | lint-sintattico | invariato | conforme |
-| P06 | Entrambe ammesse: `Schema.TaggedError` se l'errore esce dal processo, altrimenti `Data.TaggedError` | locale | solo-skill | entrambi presenti | ammesso, non preferito |
-| P07 | Fallire con `return yield* new Err()` | idioma | lint-sintattico | invariato | conforme |
-| P08 | `tryPromise`/`try` in forma oggetto | idioma | lint-sintattico | la forma thunk dà `Cause.UnknownError` | conforme |
-| P09 | Catch mirati, niente catch-all che discrimina o ingoia | idioma | lint-sintattico | `catchAll` → `catch` | conforme |
-| P10 | Schema al confine, niente `as` né `JSON.parse` | idioma | lint-sintattico | `decodeUnknownEffect`/`Result`/`Option` | 1 deviazione |
-| P11 | Niente `decode*Sync` dentro codice Effect | idioma | lint-sintattico | invariato | conforme |
-| P12 | HttpClient configurato in Layer | idioma | solo-skill | `effect/unstable/http` | n/a |
-| P13 | Config via `Config`, segreti `Config.redacted` | idioma | lint-sintattico | invariato | devia |
-| P14 | Match esaustivo: `$match` di default, `Match` per le eccezioni | misto | lint-sintattico | `Match.valueTags`, `Match.tagsExhaustive` | devia |
-| P15 | Unioni come `Data.taggedEnum`, mai letterali `_tag` (preferito) | misto | lint-sintattico | `Data.taggedEnum` | conforme |
-| P16 | Option/Result/Exit via modulo, mai `_tag` | idioma | lint-sintattico | `Either` → `Result` | conforme |
-| P17 | `Effect.fn("nome")` per funzioni effettful | idioma | lint-sintattico | invariato | conforme |
-| P18 | Niente effetti flottanti né `yield` senza `*` | idioma | lint-tipi | invariato | conforme (verificato con `oxlint`) |
-| P19 | Risorse con `acquireRelease`, `Effect.scoped` solo se serve | idioma | lint-tipi | `Layer.scoped` rimosso | conforme |
-| P20 | Concorrenza esplicita | idioma | solo-skill | invariato | conforme |
-| P21 | Log e output via Effect, niente `console` dentro gli effetti | idioma | lint-sintattico | invariato | conforme (`Console`; una deroga motivata) |
-| P22 | Test con `@effect/vitest` e fake come Layer | idioma | lint-sintattico | `layer(...)`, `it.effect` | conforme |
-| P23 | Guard runtime con `Predicate` | idioma | lint-sintattico | invariato | conforme |
-| P24 | Uno stile solo per funzione: o Effect o async/await | locale | lint-sintattico | invariato | conforme |
-| P25 | Successo nel generatore, errori nel secondo argomento di `Effect.fn` | locale | lint-sintattico | invariato | devia |
-| P26 | Niente tipi di trasporto nel generatore | locale | lint-sintattico | invariato | n/a |
-| P27 | Entry point con canale errori chiuso a `never` | misto | lint-sintattico | invariato | devia |
+| ID  | Pattern                                                                                             | Natura | Enforcement     | v4                                                             | Questo repo                               |
+| --- | --------------------------------------------------------------------------------------------------- | ------ | --------------- | -------------------------------------------------------------- | ----------------------------------------- |
+| P01 | Port come `Context.Service` solo shape                                                              | misto  | lint-sintattico | `Context.Service`; `Context.Tag`/`Effect.Service` non esistono | conforme                                  |
+| P02 | Adapter in Layer separati, port senza dettagli d'adapter                                            | misto  | solo-skill      | invariato                                                      | conforme                                  |
+| P03 | Capability via `yield*`, mai parametri o singleton                                                  | idioma | solo-skill      | invariato                                                      | conforme                                  |
+| P04 | Esecuzione solo all'entry point                                                                     | idioma | lint-sintattico | `NodeRuntime.runMain`, `ManagedRuntime.make`                   | conforme                                  |
+| P05 | Errori attesi tagged, mai `Error` nudo                                                              | idioma | lint-sintattico | invariato                                                      | conforme                                  |
+| P06 | Entrambe ammesse: `Schema.TaggedError` se l'errore esce dal processo, altrimenti `Data.TaggedError` | locale | solo-skill      | entrambi presenti                                              | ammesso, non preferito                    |
+| P07 | Fallire con `return yield* new Err()`                                                               | idioma | lint-sintattico | invariato                                                      | conforme                                  |
+| P08 | `tryPromise`/`try` in forma oggetto                                                                 | idioma | lint-sintattico | la forma thunk dà `Cause.UnknownError`                         | conforme                                  |
+| P09 | Catch mirati, niente catch-all che discrimina o ingoia                                              | idioma | lint-sintattico | `catchAll` → `catch`                                           | conforme                                  |
+| P10 | Schema al confine, niente `as` né `JSON.parse`                                                      | idioma | lint-sintattico | `decodeUnknownEffect`/`Result`/`Option`                        | 1 deviazione                              |
+| P11 | Niente `decode*Sync` dentro codice Effect                                                           | idioma | lint-sintattico | invariato                                                      | conforme                                  |
+| P12 | HttpClient configurato in Layer                                                                     | idioma | solo-skill      | `effect/unstable/http`                                         | n/a                                       |
+| P13 | Config via `Config`, segreti `Config.redacted`                                                      | idioma | lint-sintattico | invariato                                                      | devia                                     |
+| P14 | Match esaustivo: `$match` di default, `Match` per le eccezioni                                      | misto  | lint-sintattico | `Match.valueTags`, `Match.tagsExhaustive`                      | devia                                     |
+| P15 | Unioni come `Data.taggedEnum`, mai letterali `_tag` (preferito)                                     | misto  | lint-sintattico | `Data.taggedEnum`                                              | conforme                                  |
+| P16 | Option/Result/Exit via modulo, mai `_tag`                                                           | idioma | lint-sintattico | `Either` → `Result`                                            | conforme                                  |
+| P17 | `Effect.fn("nome")` per funzioni effettful                                                          | idioma | lint-sintattico | invariato                                                      | conforme                                  |
+| P18 | Niente effetti flottanti né `yield` senza `*`                                                       | idioma | lint-tipi       | invariato                                                      | conforme (verificato con `oxlint`)        |
+| P19 | Risorse con `acquireRelease`, `Effect.scoped` solo se serve                                         | idioma | lint-tipi       | `Layer.scoped` rimosso                                         | conforme                                  |
+| P20 | Concorrenza esplicita                                                                               | idioma | solo-skill      | invariato                                                      | conforme                                  |
+| P21 | Log e output via Effect, niente `console` dentro gli effetti                                        | idioma | lint-sintattico | invariato                                                      | conforme (`Console`; una deroga motivata) |
+| P22 | Test con `@effect/vitest` e fake come Layer                                                         | idioma | lint-sintattico | `layer(...)`, `it.effect`                                      | conforme                                  |
+| P23 | Guard runtime con `Predicate`                                                                       | idioma | lint-sintattico | invariato                                                      | conforme                                  |
+| P24 | Uno stile solo per funzione: o Effect o async/await                                                 | locale | lint-sintattico | invariato                                                      | conforme                                  |
+| P25 | Successo nel generatore, errori nel secondo argomento di `Effect.fn`                                | locale | lint-sintattico | invariato                                                      | devia                                     |
+| P26 | Niente tipi di trasporto nel generatore                                                             | locale | lint-sintattico | invariato                                                      | n/a                                       |
+| P27 | Entry point con canale errori chiuso a `never`                                                      | misto  | lint-sintattico | invariato                                                      | devia                                     |
 
 Totale: 20 `lint-sintattico`, 2 `lint-tipi`, 5 `solo-skill`.
 
@@ -61,11 +61,11 @@ Totale: 20 `lint-sintattico`, 2 `lint-tipi`, 5 `solo-skill`.
 
 Questi tre non hanno più una sezione discorsiva: `pnpm lint` li segnala da sé, nel punto e nel momento giusto, e la prosa non aggiungeva nulla che il messaggio della regola non dica meglio. Resta qui solo ciò che il linter non può dire.
 
-| P | Regola | Regole `effecttsgo` | Cosa resta da sapere |
-|---|---|---|---|
-| P07 | Fallire con `return yield* new Err()`, non `yield* Effect.fail(new Err())` | `unnecessary-fail-yieldable-error` (error), `missing-return-yield-star` (error) | Il `return` serve a TypeScript per capire che il flusso si interrompe (`node_modules/effect/AGENTS.md`: "Always return when raising an error") |
-| P11 | Niente `decode*Sync` dentro codice Effect | `schema-sync`, `schema-sync-in-effect` (error) | Le varianti `*Sync` lanciano, quindi l'errore di decodifica diventa un difetto invece di arrivare nel canale errori. Fuori dagli effetti va `decodeUnknownResult` (`src/agent/parseAgentOutput.ts`) |
-| P18 | Niente effetti flottanti né `yield` senza `*` | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` (error) | Un Effect che nessuno esegue è un no-op silenzioso, tipicamente un log che non esce. Non verificabile senza type checker, quindi prima del passo 1 questa voce era l'unica del catalogo marcata "non verificato" |
+| P   | Regola                                                                     | Regole `effecttsgo`                                                                                                     | Cosa resta da sapere                                                                                                                                                                                             |
+| --- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P07 | Fallire con `return yield* new Err()`, non `yield* Effect.fail(new Err())` | `unnecessary-fail-yieldable-error` (error), `missing-return-yield-star` (error)                                         | Il `return` serve a TypeScript per capire che il flusso si interrompe (`node_modules/effect/AGENTS.md`: "Always return when raising an error")                                                                   |
+| P11 | Niente `decode*Sync` dentro codice Effect                                  | `schema-sync`, `schema-sync-in-effect` (error)                                                                          | Le varianti `*Sync` lanciano, quindi l'errore di decodifica diventa un difetto invece di arrivare nel canale errori. Fuori dagli effetti va `decodeUnknownResult` (`src/agent/parseAgentOutput.ts`)              |
+| P18 | Niente effetti flottanti né `yield` senza `*`                              | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` (error) | Un Effect che nessuno esegue è un no-op silenzioso, tipicamente un log che non esce. Non verificabile senza type checker, quindi prima del passo 1 questa voce era l'unica del catalogo marcata "non verificato" |
 
 Il criterio per stare qui è stretto: copertura verificata con una prova negativa, e nessuna decisione residua. P21 resta una sezione a sé pur essendo coperto, perché il messaggio della regola consiglia `Effect.log`, che per l'output di una CLI è sbagliato: quale sostituto usare è una decisione che il linter non prende.
 
@@ -121,10 +121,15 @@ export const layer = Layer.effect(Agent, Effect.gen(function* () {
 
 ```ts
 // no
-const loadConfig = () => Effect.gen(function* () { const http = httpClient() /* singleton */ })
+const loadConfig = () =>
+  Effect.gen(function* () {
+    const http = httpClient() /* singleton */
+  })
 
 // sì
-const insert = Effect.gen(function* () { const writer = yield* SheetWriter })
+const insert = Effect.gen(function* () {
+  const writer = yield* SheetWriter
+})
 ```
 
 - **archivio**: client da singleton `lazyCache` dentro l'effetto (`apps/caveau/src/features/config/api-config.ts:56`) e config letta da `process.env` via `appConfigServer()` (`:54`). Il client passato come parametro e rifornito con `provideService` (`packages/pimcore-data/src/infra/users/http-adapter.ts:22`) avviene invece alla costruzione dell'adapter: è accettabile.
@@ -159,7 +164,9 @@ NodeRuntime.runMain(run(process.argv.slice(2)).pipe(Effect.provide(NodeServices.
 
 ```ts
 // no
-class TabNotFound extends Error { readonly _tag = "TabNotFound" }
+class TabNotFound extends Error {
+  readonly _tag = "TabNotFound"
+}
 Effect.fail(new Error("tab non trovato"))
 
 // sì
@@ -219,7 +226,10 @@ Effect.tryPromise(() => api.spreadsheets.get({ spreadsheetId }))
 Effect.promise(() => client.connect())
 
 // sì
-Effect.tryPromise({ try: () => api.spreadsheets.get({ spreadsheetId }), catch: toSheetError(spreadsheetId) })
+Effect.tryPromise({
+  try: () => api.spreadsheets.get({ spreadsheetId }),
+  catch: toSheetError(spreadsheetId),
+})
 ```
 
 - **archivio**:
@@ -232,6 +242,7 @@ Effect.tryPromise({ try: () => api.spreadsheets.get({ spreadsheetId }), catch: t
 ### P09 · Catch mirati, niente catch-all che discrimina o ingoia
 
 **Regola**:
+
 - per il recupero o la traduzione di errori specifici si usano `catchTag`, `catchTag([...])`, `catchTags` o `mapError`;
 - `Effect.catch` (v3 `catchAll`) serve solo al bordo o per convertire tutto in un valore di output;
 - mai confronti su `_tag` dentro un catch-all;
@@ -284,6 +295,7 @@ const parseObject = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unkn
 ### P12 · HttpClient configurato in Layer
 
 **Regola**: si prende `HttpClient.HttpClient` dal contesto, dentro il Layer dell'adapter, e lo si configura una volta:
+
 - base URL con `HttpClient.mapRequest(HttpClientRequest.prependUrl(baseUrl))`;
 - `HttpClient.filterStatusOk` se tutti i non-2xx hanno lo stesso significato, altrimenti `HttpClientResponse.matchStatus`;
 - body decodificato con `HttpClientResponse.schemaBodyJson`.
@@ -443,9 +455,11 @@ const client = yield* Effect.acquireRelease(
 **Perché**: il parallelismo è una decisione, non un default; il limite protegge dai rate limit.
 
 ```ts
-const [stdout, stderr] = yield* Effect.all([collect(handle.stdout), collect(handle.stderr)], {
-  concurrency: "unbounded",
-})
+const [stdout, stderr] =
+  yield *
+  Effect.all([collect(handle.stdout), collect(handle.stderr)], {
+    concurrency: "unbounded",
+  })
 ```
 
 - **archivio**: `"unbounded"` per i caricamenti di pagina (`apps/caveau/src/features/detail/apis/api-detail-page.ts:48` e altri 9 punti). È ragionevole, ma nessun limite verso Pimcore.
@@ -460,10 +474,14 @@ const [stdout, stderr] = yield* Effect.all([collect(handle.stdout), collect(hand
 
 ```ts
 // no
-Effect.gen(function* () { for (const name of yield* missing) console.log(name) })
+Effect.gen(function* () {
+  for (const name of yield* missing) console.log(name)
+})
 
 // sì
-Effect.gen(function* () { yield* Effect.forEach(yield* missing, (name) => Console.log(name)) })
+Effect.gen(function* () {
+  yield* Effect.forEach(yield* missing, (name) => Console.log(name))
+})
 ```
 
 - **archivio**: conforme su `packages/shared/src/with-error-logging.ts:9,43` (`tapError` + `logError` + `annotateLogs`). Devia su `apps/caveau/src/app/public/health/route.ts:42` (`console.error` nella `catch` di `tryPromise`).
@@ -478,7 +496,9 @@ Effect.gen(function* () { yield* Effect.forEach(yield* missing, (name) => Consol
 
 ```ts
 // no
-test("…", async () => { await Effect.runPromise(authorize({ role: "Manager" })) })
+test("…", async () => {
+  await Effect.runPromise(authorize({ role: "Manager" }))
+})
 
 // sì
 const sheetWith = (...rows: ReadonlyArray<Row>) =>
@@ -523,14 +543,19 @@ export const POST = async (request: Request) => {
   const credential = await readSession()
   const submission = submittedEvent(await request.formData())
   if (submission._tag === "Left") return new Response(submission.left, { status: 400 })
-  const created = await Effect.runPromise(Effect.either(apiCreateEvent(credential, submission.right)))
+  const created = await Effect.runPromise(
+    Effect.either(apiCreateEvent(credential, submission.right)),
+  )
   // …
 }
 
 // sì (inloco, c3c5ab1)
 const createEvent = Effect.fn("events.create")(function* (request: Request) {
   const credential = yield* sessionCredential
-  const form = yield* Effect.tryPromise({ try: () => request.formData(), catch: () => new BadRequest({ message: "invalid form data" }) })
+  const form = yield* Effect.tryPromise({
+    try: () => request.formData(),
+    catch: () => new BadRequest({ message: "invalid form data" }),
+  })
   // …
 })
 ```
@@ -630,17 +655,18 @@ Le regole stanno nel plugin `anti-slop-effect`. Il pacchetto non è pubblicato s
 
 Compatibilità verificata: `@oxlint/plugins` `1.82.0` (allineato a `oxlint`, non il `1.78.0` dell'upstream); i cinque `RuleTester` upstream passano, eseguiti da `pnpm test:lint-rules` con `node --test`. Sono esclusi da Vitest in `vitest.config.ts`, che altrimenti li raccoglieva e falliva con "No test suite found".
 
-| Regola | Cosa rileva | v3 / v4 | Stato (2026-09-14) |
-|---|---|---|---|
-| `no-manual-effect-error-tag` | `_tag ==/===/!=/!==` letterale o `switch` su `_tag`, solo nella funzione passata direttamente a `Effect.catch`/`catchAll`/`catchIf`; su `x.reason._tag` suggerisce `catchReason` | entrambe; `catchAll` esiste solo in v3 e non disturba | **error** (P09); rumore zero, verificata con prova negativa |
-| `prefer-effect-match` | catena di almeno 2 ternari sulla stessa espressione (per testo) confrontata con letterali | agnostica | **error** (P14); rumore zero, verificata con prova negativa |
-| `no-manual-tag-comparison` | stessi confronti e `switch`, ovunque tranne nei catch-all | agnostica | **error** (P14, P16); i 10 punti iniziali sono stati migrati |
-| `no-manual-tagged-construction` | object literal con `_tag` letterale, esente solo come argomento diretto di `Match.when`/`Match.not` | agnostica | **error** (P15), spenta su `**/*.test.ts` e `src/testing/**` come previsto: i 18 punti in `src/` sono stati migrati |
-| `no-service-constructor-imports` | import nominati `/^make[A-Z]/` da percorsi relativi, test esclusi | agnostica, euristica di naming | vendorizzata ma **non attivata**: qui nessun `make*` e gli adapter si importano come namespace; P01 va scritta a parte |
+| Regola                           | Cosa rileva                                                                                                                                                                      | v3 / v4                                               | Stato (2026-09-14)                                                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `no-manual-effect-error-tag`     | `_tag ==/===/!=/!==` letterale o `switch` su `_tag`, solo nella funzione passata direttamente a `Effect.catch`/`catchAll`/`catchIf`; su `x.reason._tag` suggerisce `catchReason` | entrambe; `catchAll` esiste solo in v3 e non disturba | **error** (P09); rumore zero, verificata con prova negativa                                                            |
+| `prefer-effect-match`            | catena di almeno 2 ternari sulla stessa espressione (per testo) confrontata con letterali                                                                                        | agnostica                                             | **error** (P14); rumore zero, verificata con prova negativa                                                            |
+| `no-manual-tag-comparison`       | stessi confronti e `switch`, ovunque tranne nei catch-all                                                                                                                        | agnostica                                             | **error** (P14, P16); i 10 punti iniziali sono stati migrati                                                           |
+| `no-manual-tagged-construction`  | object literal con `_tag` letterale, esente solo come argomento diretto di `Match.when`/`Match.not`                                                                              | agnostica                                             | **error** (P15), spenta su `**/*.test.ts` e `src/testing/**` come previsto: i 18 punti in `src/` sono stati migrati    |
+| `no-service-constructor-imports` | import nominati `/^make[A-Z]/` da percorsi relativi, test esclusi                                                                                                                | agnostica, euristica di naming                        | vendorizzata ma **non attivata**: qui nessun `make*` e gli adapter si importano come namespace; P01 va scritta a parte |
 
 Tutte spente su `tools/**`, dove i casi di test delle regole contengono di proposito le forme vietate.
 
 Limiti noti, dalla lettura del codice:
+
 - non rilevano gli handler passati per nome, i confronti dentro funzioni annidate nell'handler o `?._tag`;
 - `no-manual-tag-comparison` segnala anche i `_tag` di librerie non Effect e i confronti dentro `catchTag`.
 
@@ -648,20 +674,20 @@ Limiti noti, dalla lettura del codice:
 
 `tools/oxlint/effect-local/`, caricato da `jsPlugins` come anti-slop, per i gap rimasti dopo preset e anti-slop. Regole sintattiche, senza alias d'import né opzioni; le allowlist per file stanno negli `overrides` di `.oxlintrc.json`. Test: `pnpm test:lint-rules`.
 
-| Regola | P | Cosa rileva | Stato (2026-09-14) |
-|---|---|---|---|
-| `prefer-effect-fn` | P17 | funzione dichiarata, variabile o membro d'oggetto che ritorna solo `Effect.gen(…)` (anche con `.pipe`); `Effect.fn(body)` senza nome; `.pipe` su `Effect.fn(…)(…)` | **warn**, rumore zero dal 2026-09-15 (i 7 punti, che `effect-fn-opportunity` non vedeva, sono convertiti) |
-| `error-handling-in-effect-fn-handler` | P25 | `Effect.catch*`, `either`, `result`, `exit`, `match*`, `sandbox` dentro un generatore di `Effect.gen`/`Effect.fn`, anche in callback annidate; esenti i pipeable di un `Effect.fn` annidato | **warn**, 2 punti |
-| `single-style-per-function` | P24 | `async`, `await`, `.then(` in una funzione che usa `Effect.*` (esclusi gli `Effect.run*`) | error, rumore zero |
-| `no-transport-types-in-generator` | P26 | `new T(…)`, `T.metodo(…)` o `T(…)` dentro un generatore Effect (callback annidate comprese, pipeable di `Effect.fn` esenti), con `T` nell'opzione `transportTypes` (default `Response`, `NextResponse`) | error, rumore zero (n/a in una CLI) |
-| `boundary-entrypoint-shape` | P27 | `Effect.runPromise`/`runSync`/`runFork`/`runCallback` e `runMain` il cui argomento non è `satisfies Effect.Effect<A, never>` né un parametro con quel tipo | **warn**, 1 punto (`src/main.ts:92`) |
-| `service-port-shape-only` | P01 | secondo argomento di `Context.Service<…>()(id, opts)`, `static layer`/`Default` sul port, `Effect.Service`/`Context.Tag`/`Context.GenericTag` | error, rumore zero |
-| `no-bare-error-in-effect` | P05 | `throw` direttamente nel generatore; `Effect.fail` con letterale o template | error, rumore zero |
-| `no-parameterless-catch-all` | P09 | `Effect.catch`/`catchAll`/`catchCause`/`catchEager` con handler senza parametri | error, rumore zero |
-| `try-object-form` | P08 | `Effect.try`/`tryPromise` il cui argomento non è un oggetto | error, rumore zero |
-| `no-effect-promise` | P08 | `Effect.promise` fuori dal rilascio di `acquireRelease`/`acquireUseRelease`/`addFinalizer` | warn, rumore zero |
-| `redacted-secret-names` | P13 | nome letterale in `Config.*` che finisce per `KEY`/`SECRET`/`TOKEN`/`PASSWORD`/`CREDENTIAL(S)`/`_JSON`, fuori da `Config.redacted` e `Schema.Redacted*` | **warn**, 1 punto (`src/config.ts:20`) |
-| `run-only-at-entry` | P04, P22 | riferimenti a `Effect.run*`, `NodeRuntime.runMain`, `ManagedRuntime.make` | error, spenta su `src/main.ts` |
+| Regola                                | P        | Cosa rileva                                                                                                                                                                                             | Stato (2026-09-14)                                                                                        |
+| ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `prefer-effect-fn`                    | P17      | funzione dichiarata, variabile o membro d'oggetto che ritorna solo `Effect.gen(…)` (anche con `.pipe`); `Effect.fn(body)` senza nome; `.pipe` su `Effect.fn(…)(…)`                                      | **warn**, rumore zero dal 2026-09-15 (i 7 punti, che `effect-fn-opportunity` non vedeva, sono convertiti) |
+| `error-handling-in-effect-fn-handler` | P25      | `Effect.catch*`, `either`, `result`, `exit`, `match*`, `sandbox` dentro un generatore di `Effect.gen`/`Effect.fn`, anche in callback annidate; esenti i pipeable di un `Effect.fn` annidato             | **warn**, 2 punti                                                                                         |
+| `single-style-per-function`           | P24      | `async`, `await`, `.then(` in una funzione che usa `Effect.*` (esclusi gli `Effect.run*`)                                                                                                               | error, rumore zero                                                                                        |
+| `no-transport-types-in-generator`     | P26      | `new T(…)`, `T.metodo(…)` o `T(…)` dentro un generatore Effect (callback annidate comprese, pipeable di `Effect.fn` esenti), con `T` nell'opzione `transportTypes` (default `Response`, `NextResponse`) | error, rumore zero (n/a in una CLI)                                                                       |
+| `boundary-entrypoint-shape`           | P27      | `Effect.runPromise`/`runSync`/`runFork`/`runCallback` e `runMain` il cui argomento non è `satisfies Effect.Effect<A, never>` né un parametro con quel tipo                                              | **warn**, 1 punto (`src/main.ts:92`)                                                                      |
+| `service-port-shape-only`             | P01      | secondo argomento di `Context.Service<…>()(id, opts)`, `static layer`/`Default` sul port, `Effect.Service`/`Context.Tag`/`Context.GenericTag`                                                           | error, rumore zero                                                                                        |
+| `no-bare-error-in-effect`             | P05      | `throw` direttamente nel generatore; `Effect.fail` con letterale o template                                                                                                                             | error, rumore zero                                                                                        |
+| `no-parameterless-catch-all`          | P09      | `Effect.catch`/`catchAll`/`catchCause`/`catchEager` con handler senza parametri                                                                                                                         | error, rumore zero                                                                                        |
+| `try-object-form`                     | P08      | `Effect.try`/`tryPromise` il cui argomento non è un oggetto                                                                                                                                             | error, rumore zero                                                                                        |
+| `no-effect-promise`                   | P08      | `Effect.promise` fuori dal rilascio di `acquireRelease`/`acquireUseRelease`/`addFinalizer`                                                                                                              | warn, rumore zero                                                                                         |
+| `redacted-secret-names`               | P13      | nome letterale in `Config.*` che finisce per `KEY`/`SECRET`/`TOKEN`/`PASSWORD`/`CREDENTIAL(S)`/`_JSON`, fuori da `Config.redacted` e `Schema.Redacted*`                                                 | **warn**, 1 punto (`src/config.ts:20`)                                                                    |
+| `run-only-at-entry`                   | P04, P22 | riferimenti a `Effect.run*`, `NodeRuntime.runMain`, `ManagedRuntime.make`                                                                                                                               | error, spenta su `src/main.ts`                                                                            |
 
 ## Language service
 
@@ -725,35 +751,35 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 
 `coperto` = una violazione del pattern produce una diagnostica; `parziale` = solo alcune forme; `no` = serve una regola custom (passo 2 o 3). Severità: quella effettiva dopo gli `overrides` di `.oxlintrc.json`.
 
-| P | Copertura | Regole `effecttsgo` | Severità |
-|---|---|---|---|
-| P01 | coperto | `non-object-effect-service-type`, `generic-effect-services`, `missing-effect-context`, `missing-layer-context`, `class-self-mismatch`; la forma del port da `effect-local/service-port-shape-only` | error / warn |
-| P02 | no | — | — |
-| P03 | no | — | — |
-| P04 | coperto | `run-effect-inside-effect`; fuori dall'entry point `effect-local/run-only-at-entry` | error |
-| P05 | coperto | `global-error-in-effect-failure`, `global-error-in-effect-catch`, `extends-native-error`, `unknown-in-effect-catch`; `throw` in generatore e `Effect.fail("stringa")` da `effect-local/no-bare-error-in-effect` | error / warn |
-| P06 | no | `redundant-schema-tag-identifier` (solo cosmetica) | warn |
-| P07 | coperto | `unnecessary-fail-yieldable-error`, `missing-return-yield-star` | error |
-| P08 | coperto | nessuna del preset; `effect-local/try-object-form`, `effect-local/no-effect-promise` | error / warn |
-| P09 | parziale | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die`; la discriminazione manuale su `_tag` dentro `Effect.catch` è ora coperta da `anti-slop-effect/no-manual-effect-error-tag`, il catch-all senza parametro da `effect-local/no-parameterless-catch-all` | error / warn |
-| P10 | parziale | `prefer-schema-over-json`, `prefer-typed-schema-decoder`, `instance-of-schema` (l'`as` non è coperto) | warn |
-| P11 | coperto | `schema-sync`, `schema-sync-in-effect` | error (alzate) |
-| P12 | no | — | — |
-| P13 | coperto | `process-env`, `process-env-in-effect`; i nomi dei segreti, euristicamente, da `effect-local/redacted-secret-names` | error / warn |
-| P14 | coperto | preset: `match-effect-to-match`, `option-match-to-from-option`; il `_tag ===`/`switch` generico da `anti-slop-effect/no-manual-tag-comparison`, le catene di ternari da `anti-slop-effect/prefer-effect-match` | warn / error (le due anti-slop) |
-| P15 | coperto | preset: `schema-struct-with-tag` (solo Schema); i letterali `_tag` da `anti-slop-effect/no-manual-tagged-construction`, spenta su test e fixture | warn / error (l'anti-slop) |
-| P16 | coperto | preset: `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none`; il `_tag` da `anti-slop-effect/no-manual-tag-comparison` | warn / error (l'anti-slop) |
-| P17 | coperto | `effect-fn-opportunity`, `effect-fn-implicit-any`, `effect-fn-iife`, `unnecessary-effect-gen`; `effect-local/prefer-effect-fn` per le funzioni che ritornano `Effect.gen`, il nome e il `.pipe` (verificato: `effect-fn-opportunity` non vede i 7 punti del repo) | error / warn |
-| P18 | coperto | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` | error |
-| P19 | parziale | `acquire-release-disposable`, `scope-in-layer-effect` | warn |
-| P20 | no | `all-of-map-to-for-each` | warn |
-| P21 | coperto | `global-console-in-effect`, `global-console` (più `global-date`, `global-random`, `global-fetch`, `global-timers`) | warn |
-| P22 | parziale | `floating-effect-in-vitest` | error |
-| P23 | no | — | — |
-| P24 | coperto | `async-function`; il mix nella stessa funzione da `effect-local/single-style-per-function` | warn / error |
-| P25 | coperto | nessuna del preset; `effect-local/error-handling-in-effect-fn-handler` | warn |
-| P26 | coperto | nessuna del preset; `effect-local/no-transport-types-in-generator` (il `return` anticipato di un valore di dominio che segnala un errore resta scoperto) | error |
-| P27 | coperto | `leaking-requirements`; la forma dell'entry point da `effect-local/boundary-entrypoint-shape` | error / warn |
+| P   | Copertura | Regole `effecttsgo`                                                                                                                                                                                                                                                                                                                                                                                                                   | Severità                        |
+| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| P01 | coperto   | `non-object-effect-service-type`, `generic-effect-services`, `missing-effect-context`, `missing-layer-context`, `class-self-mismatch`; la forma del port da `effect-local/service-port-shape-only`                                                                                                                                                                                                                                    | error / warn                    |
+| P02 | no        | —                                                                                                                                                                                                                                                                                                                                                                                                                                     | —                               |
+| P03 | no        | —                                                                                                                                                                                                                                                                                                                                                                                                                                     | —                               |
+| P04 | coperto   | `run-effect-inside-effect`; fuori dall'entry point `effect-local/run-only-at-entry`                                                                                                                                                                                                                                                                                                                                                   | error                           |
+| P05 | coperto   | `global-error-in-effect-failure`, `global-error-in-effect-catch`, `extends-native-error`, `unknown-in-effect-catch`; `throw` in generatore e `Effect.fail("stringa")` da `effect-local/no-bare-error-in-effect`                                                                                                                                                                                                                       | error / warn                    |
+| P06 | no        | `redundant-schema-tag-identifier` (solo cosmetica)                                                                                                                                                                                                                                                                                                                                                                                    | warn                            |
+| P07 | coperto   | `unnecessary-fail-yieldable-error`, `missing-return-yield-star`                                                                                                                                                                                                                                                                                                                                                                       | error                           |
+| P08 | coperto   | nessuna del preset; `effect-local/try-object-form`, `effect-local/no-effect-promise`                                                                                                                                                                                                                                                                                                                                                  | error / warn                    |
+| P09 | parziale  | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die`; la discriminazione manuale su `_tag` dentro `Effect.catch` è ora coperta da `anti-slop-effect/no-manual-effect-error-tag`, il catch-all senza parametro da `effect-local/no-parameterless-catch-all` | error / warn                    |
+| P10 | parziale  | `prefer-schema-over-json`, `prefer-typed-schema-decoder`, `instance-of-schema` (l'`as` non è coperto)                                                                                                                                                                                                                                                                                                                                 | warn                            |
+| P11 | coperto   | `schema-sync`, `schema-sync-in-effect`                                                                                                                                                                                                                                                                                                                                                                                                | error (alzate)                  |
+| P12 | no        | —                                                                                                                                                                                                                                                                                                                                                                                                                                     | —                               |
+| P13 | coperto   | `process-env`, `process-env-in-effect`; i nomi dei segreti, euristicamente, da `effect-local/redacted-secret-names`                                                                                                                                                                                                                                                                                                                   | error / warn                    |
+| P14 | coperto   | preset: `match-effect-to-match`, `option-match-to-from-option`; il `_tag ===`/`switch` generico da `anti-slop-effect/no-manual-tag-comparison`, le catene di ternari da `anti-slop-effect/prefer-effect-match`                                                                                                                                                                                                                        | warn / error (le due anti-slop) |
+| P15 | coperto   | preset: `schema-struct-with-tag` (solo Schema); i letterali `_tag` da `anti-slop-effect/no-manual-tagged-construction`, spenta su test e fixture                                                                                                                                                                                                                                                                                      | warn / error (l'anti-slop)      |
+| P16 | coperto   | preset: `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none`; il `_tag` da `anti-slop-effect/no-manual-tag-comparison`                                                                                                                                                                                                                                                                                                            | warn / error (l'anti-slop)      |
+| P17 | coperto   | `effect-fn-opportunity`, `effect-fn-implicit-any`, `effect-fn-iife`, `unnecessary-effect-gen`; `effect-local/prefer-effect-fn` per le funzioni che ritornano `Effect.gen`, il nome e il `.pipe` (verificato: `effect-fn-opportunity` non vede i 7 punti del repo)                                                                                                                                                                     | error / warn                    |
+| P18 | coperto   | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star`                                                                                                                                                                                                                                                                                                                       | error                           |
+| P19 | parziale  | `acquire-release-disposable`, `scope-in-layer-effect`                                                                                                                                                                                                                                                                                                                                                                                 | warn                            |
+| P20 | no        | `all-of-map-to-for-each`                                                                                                                                                                                                                                                                                                                                                                                                              | warn                            |
+| P21 | coperto   | `global-console-in-effect`, `global-console` (più `global-date`, `global-random`, `global-fetch`, `global-timers`)                                                                                                                                                                                                                                                                                                                    | warn                            |
+| P22 | parziale  | `floating-effect-in-vitest`                                                                                                                                                                                                                                                                                                                                                                                                           | error                           |
+| P23 | no        | —                                                                                                                                                                                                                                                                                                                                                                                                                                     | —                               |
+| P24 | coperto   | `async-function`; il mix nella stessa funzione da `effect-local/single-style-per-function`                                                                                                                                                                                                                                                                                                                                            | warn / error                    |
+| P25 | coperto   | nessuna del preset; `effect-local/error-handling-in-effect-fn-handler`                                                                                                                                                                                                                                                                                                                                                                | warn                            |
+| P26 | coperto   | nessuna del preset; `effect-local/no-transport-types-in-generator` (il `return` anticipato di un valore di dominio che segnala un errore resta scoperto)                                                                                                                                                                                                                                                                              | error                           |
+| P27 | coperto   | `leaking-requirements`; la forma dell'entry point da `effect-local/boundary-entrypoint-shape`                                                                                                                                                                                                                                                                                                                                         | error / warn                    |
 
 Fuori catalogo ma utile: `outdated-api` (warn) segnala le API v3 residue, e `duplicate-package` le installazioni doppie di `effect`.
 
@@ -784,20 +810,21 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
    - i pattern `solo-skill` (P02, P03, P06, P12, P19, P20);
    - la tabella v3 → v4:
 
-     | v3 | v4 |
-     |---|---|
-     | `Context.Tag` | `Context.Service` |
-     | `catchAll` | `catch` |
-     | `Either` / `Effect.either` | `Result` / `Effect.result` |
-     | `Option.fromNullable` | `Option.fromNullishOr` |
-     | `Layer.scoped` | `Layer.effect` |
-     | `Schema.decodeUnknown` | `Schema.decodeUnknownEffect` |
-     | `@effect/platform` | `effect/unstable/http` |
+     | v3                         | v4                           |
+     | -------------------------- | ---------------------------- |
+     | `Context.Tag`              | `Context.Service`            |
+     | `catchAll`                 | `catch`                      |
+     | `Either` / `Effect.either` | `Result` / `Effect.result`   |
+     | `Option.fromNullable`      | `Option.fromNullishOr`       |
+     | `Layer.scoped`             | `Layer.effect`               |
+     | `Schema.decodeUnknown`     | `Schema.decodeUnknownEffect` |
+     | `@effect/platform`         | `effect/unstable/http`       |
 
    - il rimando a `node_modules/effect/AGENTS.md` e `ai-docs/`;
    - l'istruzione di lanciare `pnpm lint` e `pnpm typecheck` prima di chiudere.
 
    Niente che il linter già applica.
+
 6. **Hook**: un `PostToolUse` su `Edit|Write` per `src/**/*.ts` che lancia `oxlint` sul file toccato, più `pnpm typecheck && pnpm lint` a fine turno. Non c'è CI (`docs/tech-choices.md`), quindi l'hook è l'unico punto di enforcement automatico.
 
 ## Migrazioni da fare

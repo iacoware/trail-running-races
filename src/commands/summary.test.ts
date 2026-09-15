@@ -21,12 +21,15 @@ const timedOut = (name: string): RaceFillResult => ({
 })
 
 test("counts every category and lists the races behind each one", () => {
-  const lines = summaryLines([
-    filled("Garfagnana Epic Trail"),
-    { _tag: "NotFound", name: "Gara inesistente di prova" },
-    { _tag: "Ambiguous", name: "Sky trail Covigliaio", candidates: ["2024", "2025"] },
-    timedOut("Ultra trail Mugello"),
-  ], "pianificate")
+  const lines = summaryLines(
+    [
+      filled("Garfagnana Epic Trail"),
+      { _tag: "NotFound", name: "Gara inesistente di prova" },
+      { _tag: "Ambiguous", name: "Sky trail Covigliaio", candidates: ["2024", "2025"] },
+      timedOut("Ultra trail Mugello"),
+    ],
+    "pianificate",
+  )
 
   expect(lines).toEqual([
     "== riepilogo",
