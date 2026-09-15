@@ -39,7 +39,19 @@
         "effecttsgo/effect-fn-opportunity": "error",
         "effecttsgo/leaking-requirements": "error",
         "effecttsgo/run-effect-inside-effect": "error",
-        "effecttsgo/strict-effect-provide": "error"
+        "effecttsgo/strict-effect-provide": "error",
+        "effecttsgo/any-unknown-in-error-context": "error",
+        "effecttsgo/unsafe-effect-type-assertion": "error",
+        "effecttsgo/nested-effect-gen-yield": "error",
+        "effecttsgo/effect-do-notation": "error",
+        "effecttsgo/service-not-as-class": "error",
+        "effecttsgo/missing-effect-service-dependency": "error",
+        "effecttsgo/prefer-schema-type-property": "error",
+        "effecttsgo/schema-union-of-literals": "error",
+        "effecttsgo/missed-pipeable-opportunity": "error",
+        "effecttsgo/unnecessary-arrow-block": "error",
+        "effecttsgo/deterministic-keys": "error",
+        "effecttsgo/strict-boolean-expressions": "error"
     },
     "overrides": [
         {
@@ -63,16 +75,16 @@
             "files": ["**/*.test.ts", "src/testing/**"],
             "rules": {
                 "anti-slop-effect/no-manual-tagged-construction": "off",
-                "effecttsgo/strict-effect-provide": "off",
-                "effect-local/provide-named-layer": "off",
-                "effect-local/no-provide-on-definition": "off"
+                "effecttsgo/strict-effect-provide": "off"
             }
         },
         {
             "files": ["tools/**"],
             "rules": {
                 "anti-slop-effect/no-manual-tag-comparison": "off",
-                "anti-slop-effect/no-manual-tagged-construction": "off"
+                "anti-slop-effect/no-manual-tagged-construction": "off",
+                "effecttsgo/strict-boolean-expressions": "off",
+                "effecttsgo/node-builtin-import": "off"
             }
         }
     ]

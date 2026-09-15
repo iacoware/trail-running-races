@@ -681,7 +681,7 @@ Missing: () => printMissing.pipe(Effect.provide(missingLayer)),
     - `effect-local/provide-named-layer` (error): l'argomento di `Effect.provide` è `Layer.*(…)`, un ternario, un `&&`/`||` o un `match`;
     - `effect-local/no-provide-on-definition` (error): `Effect.provide` applicato a `Effect.gen(…)` o a `Effect.fn(…)(…)`, con `.pipe`, come pipeable di `Effect.fn` o in forma data-first;
     - `effecttsgo/strict-effect-provide` (error, dal preset `antipattern`): `Effect.provide` con un Layer fuori dall'entry point. Usa i tipi, quindi distingue un Layer da un `Context`; l'entry point si dichiara spegnendola negli `overrides`. Sostituisce una regola `provide-only-at-entry` che era stata pianificata.
-    - Tutte e tre sono spente su `**/*.test.ts` e `src/testing/**`: nei test `it.effect(…, () => Effect.gen(…).pipe(Effect.provide(fakes)))` è la forma idiomatica (P22), e i fake sono factory diverse per ogni test.
+    - Nei test `it.effect(…, () => Effect.gen(…).pipe(Effect.provide(fakes)))` è la forma idiomatica (P22), e i fake sono factory diverse per ogni test. Le due regole locali saltano i test da sé (opzione `testFiles`, `src/testing/` escluso dai default); `strict-effect-provide` non si può modificare e resta spenta con un override su `**/*.test.ts` e `src/testing/**`.
 
 ### P29 · Input interpretato in un tagged enum prima del dispatch
 
@@ -763,7 +763,7 @@ Limiti noti, dalla lettura del codice:
 
 ## Plugin locale
 
-`tools/oxlint/effect-local/`, caricato da `jsPlugins` come anti-slop, per i gap rimasti dopo preset e anti-slop. Regole sintattiche, senza alias d'import né opzioni; le allowlist per file stanno negli `overrides` di `.oxlintrc.json`. Test: `pnpm test:lint-rules`.
+`tools/oxlint/effect-local/`, caricato da `jsPlugins` come anti-slop, per i gap rimasti dopo preset e anti-slop. Regole sintattiche, senza alias d'import. Le esclusioni che dipendono dal progetto (l'entry point) stanno negli `overrides` di `.oxlintrc.json`; quelle che fanno parte della regola (i test per le due regole di P28) stanno nella regola, con un'opzione per sostituire i default. Test: `pnpm test:lint-rules`.
 
 | Regola                                | P        | Cosa rileva                                                                                                                                                                                             | Stato (2026-09-14)                                                                                        |
 | ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -779,8 +779,8 @@ Limiti noti, dalla lettura del codice:
 | `no-effect-promise`                   | P08      | `Effect.promise` fuori dal rilascio di `acquireRelease`/`acquireUseRelease`/`addFinalizer`                                                                                                              | warn, rumore zero                                                                                         |
 | `redacted-secret-names`               | P13      | nome letterale in `Config.*` che finisce per `KEY`/`SECRET`/`TOKEN`/`PASSWORD`/`CREDENTIAL(S)`/`_JSON`, fuori da `Config.redacted` e `Schema.Redacted*`                                                 | **warn**, 1 punto (`src/config.ts:20`)                                                                    |
 | `run-only-at-entry`                   | P04, P22 | riferimenti a `Effect.run*`, `NodeRuntime.runMain`, `ManagedRuntime.make`                                                                                                                               | error, spenta su `src/main.ts`                                                                            |
-| `provide-named-layer`                 | P28      | argomento di `Effect.provide` composto inline: `Layer.*(…)`, ternario, `&&`/`                                                                                                                           |                                                                                                           | `, `match`/`$match` | error, rumore zero dopo il refactoring di `src/main.ts`; spenta nei test |
-| `no-provide-on-definition`            | P28      | `Effect.provide` su `Effect.gen(…)`/`Effect.fn(…)(…)`: con `.pipe`, come pipeable di `Effect.fn` o data-first                                                                                           | error, rumore zero in `src/`; spenta nei test (17 punti idiomatici di P22)                                |
+| `provide-named-layer`                 | P28      | argomento di `Effect.provide` composto inline: `Layer.*(…)`, ternario, `&&`/`\|\|`, `match`/`$match`; salta i test (opzione `testFiles`)                                                                | error, rumore zero dopo il refactoring di `src/main.ts`                                                   |
+| `no-provide-on-definition`            | P28      | `Effect.provide` su `Effect.gen(…)`/`Effect.fn(…)(…)`: con `.pipe`, come pipeable di `Effect.fn` o data-first; salta i test (opzione `testFiles`)                                                       | error, rumore zero; i 17 punti nei test sono esclusi dalla regola                                         |
 | `no-nested-match`                     | P30      | handler di `Option`/`Result`/`Exit`/`Either.match`, `$match` o `Match.valueTags` che è un match data-last o restituisce un match o un ternario                                                          | **warn**, rumore zero; prova negativa sul `src/main.ts` precedente                                        |
 
 ## Language service
@@ -882,6 +882,16 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 Fuori catalogo ma utile: `outdated-api` (warn) segnala le API v3 residue, e `duplicate-package` le installazioni doppie di `effect`.
 
 Alzate a `error` in `.oxlintrc.json` perché a rumore zero sul codice attuale e corrispondenti a pattern da imporre: `extends-native-error`, `global-error-in-effect-catch`, `global-error-in-effect-failure`, `unnecessary-fail-yieldable-error`, `catch-all-to-map-error`, `catch-unfailable-effect`, `schema-sync`, `schema-sync-in-effect`, `process-env`, `process-env-in-effect`, `effect-fn-opportunity`, `leaking-requirements`, `run-effect-inside-effect`. Aggiunta dal preset `antipattern`, dove è `warn`: `strict-effect-provide` (P28), spenta su `src/main.ts` e nei test.
+
+Attivate a `error` fuori da `recommended` il 2026-09-15, dopo averle provate tutte: delle 113 regole di `@effect/tsgo` 0.45.0, 15 non sono nel preset (14 in `style` e `correctness`, più `strict-effect-provide`).
+
+- a rumore zero, dai preset `correctness` e `style`: `any-unknown-in-error-context`, `unsafe-effect-type-assertion`, `nested-effect-gen-yield`, `effect-do-notation`, `service-not-as-class`, `missing-effect-service-dependency`, `prefer-schema-type-property`, `schema-union-of-literals`, `missed-pipeable-opportunity`, `unnecessary-arrow-block`, `deterministic-keys`. Per `deterministic-keys` non è verificato se servono opzioni perché scatti;
+- `strict-boolean-expressions`: zero punti in `src/` e `test/`, 133 in `tools/**`, dove l'AST di oxlint confonde la regola (per esempio "`YieldExpression` type in condition"). Spenta lì con un override, insieme a `node-builtin-import`: le regole oxlint sono codice sincrono fuori da Effect, e l'helper `shared/test-files.ts` usa `node:path`.
+
+Lasciate spente di proposito:
+
+- `missing-pipeable-signature` (13 punti): chiede un overload pipeable per ogni funzione esportata. Serve a una libreria con API duali, non al codice applicativo; da riconsiderare per la libreria che estrarrà queste regole;
+- `new-schema-class` (20 punti): chiede `Err.make(...)` invece di `new Err(...)`. Le due forme sono equivalenti e restano ammesse entrambe; P07 continua a mostrare `return yield* new Err()`.
 
 Cinque regole del preset non guardano il contesto Effect — scattano su qualunque `async function`, `new Promise`, import di builtin Node, `console` o `setTimeout`, anche dove Effect non è coinvolto (le varianti `-in-effect` invece sì). Producevano 21 warning su due file che non sono codice Effect: `test/dryRun.test.ts`, che lancia la CLI come processo figlio, e `src/testing/fakeAgent.ts`, script standalone usato come `AGENT_CMD` nei test. Spente lì con un `overrides` in `.oxlintrc.json`, invariate altrove: `async-function`, `new-promise`, `node-builtin-import`, `global-console`, `global-timers`.
 

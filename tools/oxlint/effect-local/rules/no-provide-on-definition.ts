@@ -1,6 +1,7 @@
 import { defineRule, type ESTree } from "@oxlint/plugins"
 
 import { calleeOf, isEffectFnApplication } from "../shared/effect-ast.ts"
+import { isTestFile, testFilesSchema } from "../shared/test-files.ts"
 
 const pipeReceiver = (call: ESTree.CallExpression) => {
     const { callee } = call
@@ -34,17 +35,31 @@ export const noProvideOnDefinitionRule = defineRule({
         type: "suggestion",
         docs: {
             description:
-                "Keep `Effect.provide` off `Effect.gen`/`Effect.fn` definitions; provide where the program is dispatched.",
+                "Keep `Effect.provide` off `Effect.gen`/`Effect.fn` definitions; provide where the program is dispatched. Test files are skipped.",
         },
         messages: {
             provideOnDefinition:
                 "Define the program without layers and apply `Effect.provide` where it is dispatched, to a named program.",
         },
+        schema: [
+            {
+                type: "object",
+                properties: { testFiles: testFilesSchema },
+                additionalProperties: false,
+            },
+        ],
     },
     createOnce(context) {
+        let inTestFile = false
+
         return {
+            // `it.effect(…, () => Effect.gen(…).pipe(Effect.provide(fakes)))` is the idiomatic test.
+            before() {
+                inTestFile = isTestFile(context)
+            },
             CallExpression(node) {
-                if (calleeOf(node, "Effect") === "provide" && providedDefinition(node)) {
+                if (inTestFile || calleeOf(node, "Effect") !== "provide") return
+                if (providedDefinition(node)) {
                     context.report({ node, messageId: "provideOnDefinition" })
                 }
             },

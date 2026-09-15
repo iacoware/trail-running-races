@@ -15,11 +15,11 @@ Regole oxlint locali per i pattern Effect che né il preset `effecttsgo` né `an
 | `try-object-form`, `no-effect-promise` | P08                           |
 | `redacted-secret-names`                | P13                           |
 | `run-only-at-entry`                    | P04, P22                      |
-| `provide-named-layer`                  | P28                           |
-| `no-provide-on-definition`             | P28                           |
+| `provide-named-layer`                  | P28, opzione `testFiles`      |
+| `no-provide-on-definition`             | P28, opzione `testFiles`      |
 | `no-nested-match`                      | P30                           |
 
-Tutte sintattiche: nessuna informazione di tipo, e come in anti-slop i nomi si confrontano alla lettera (`import { Effect as E }` sfugge). Le allowlist per file stanno negli `overrides` di `.oxlintrc.json`; l'unica opzione è `transportTypes` di `no-transport-types-in-generator`, perché i tipi di trasporto cambiano da progetto a progetto.
+Tutte sintattiche: nessuna informazione di tipo, e come in anti-slop i nomi si confrontano alla lettera (`import { Effect as E }` sfugge). Quando il motivo di un'esclusione fa parte della regola, è la regola a riconoscere i file: `provide-named-layer` e `no-provide-on-definition` saltano i test da sé (default `**/*.test.*`, `**/*.spec.*`, `**/__tests__/**`, `**/test/**`, `**/tests/**`, relativi alla working directory; `src/testing/` non conta come test), e l'opzione `testFiles` sostituisce i default. Le esclusioni che dipendono dal progetto, come l'entry point, restano negli `overrides` di `.oxlintrc.json`. `transportTypes` di `no-transport-types-in-generator` è un'opzione perché i tipi di trasporto cambiano da progetto a progetto.
 
 ## Test
 

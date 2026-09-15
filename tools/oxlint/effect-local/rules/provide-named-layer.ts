@@ -1,6 +1,7 @@
 import { defineRule, type ESTree } from "@oxlint/plugins"
 
 import { calleeOf } from "../shared/effect-ast.ts"
+import { isTestFile, testFilesSchema } from "../shared/test-files.ts"
 
 const matchers = new Set(["match", "$match"])
 
@@ -22,17 +23,31 @@ export const provideNamedLayerRule = defineRule({
     meta: {
         type: "suggestion",
         docs: {
-            description: "Provide named layers instead of composing them inside `Effect.provide`.",
+            description:
+                "Provide named layers instead of composing them inside `Effect.provide`. Test files are skipped.",
         },
         messages: {
             inlineLayer:
                 "Name the layer passed to `Effect.provide` (`const appLayer = Layer.mergeAll(...)`) instead of composing it inline.",
         },
+        schema: [
+            {
+                type: "object",
+                properties: { testFiles: testFilesSchema },
+                additionalProperties: false,
+            },
+        ],
     },
     createOnce(context) {
+        let inTestFile = false
+
         return {
+            // Tests build per-test fakes inline, which is the idiomatic form there.
+            before() {
+                inTestFile = isTestFile(context)
+            },
             CallExpression(node) {
-                if (calleeOf(node, "Effect") !== "provide") return
+                if (inTestFile || calleeOf(node, "Effect") !== "provide") return
                 // Data-first `Effect.provide(effect, layer)` and data-last `Effect.provide(layer)`.
                 const layer = node.arguments.at(-1)
                 if (isInlineComposition(layer)) {
