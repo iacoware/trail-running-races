@@ -34,7 +34,9 @@ const usageError = Effect.fn("usageError")(function* (message: string) {
 const printMissing = Effect.gen(function* () {
     const names = yield* missing
     for (const name of names) yield* Console.log(name)
-}).pipe(Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.readerLayer)))
+}).pipe(
+    Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.readerLayer)),
+)
 
 const printFillSummary = Effect.fn("printFillSummary")(function* (
     only: Option.Option<string>,
@@ -48,13 +50,20 @@ const printFillSummary = Effect.fn("printFillSummary")(function* (
 const fillSheet = (only: Option.Option<string>) =>
     printFillSummary(only, "inserite").pipe(
         Effect.provide(
-            Layer.mergeAll(FileRaceList.layer, GoogleSheet.layer, ProcessAgent.layer),
+            Layer.mergeAll(
+                FileRaceList.layer,
+                GoogleSheet.layer,
+                ProcessAgent.layer,
+            ),
         ),
     )
 
 // `--sheet-csv` reads a local export and needs no Google credentials; `--dry-run` alone
 // reads the real sheet.
-const planFill = (only: Option.Option<string>, sheetCsv: Option.Option<string>) =>
+const planFill = (
+    only: Option.Option<string>,
+    sheetCsv: Option.Option<string>,
+) =>
     printFillSummary(only, "pianificate").pipe(
         Effect.provide(
             Layer.mergeAll(
@@ -98,5 +107,5 @@ NodeRuntime.runMain(
                 process.exitCode = 1
             }),
         ),
-    ),
+    ) satisfies Effect.Effect<void, never>,
 )
