@@ -42,7 +42,7 @@ const findColumn = (header: Row, key: ColumnKey) => {
         : Result.succeed(index)
 }
 
-export const resolveColumns = (header: Row): Result.Result<Columns, SheetColumnMissingError> =>
+export const resolveColumns = (header: Row) =>
     Result.all({
         name: findColumn(header, "name"),
         date: findColumn(header, "date"),

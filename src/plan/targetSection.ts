@@ -41,7 +41,7 @@ const named = (sheet: Sheet, name: string) =>
 const specialIndex = (name: string) =>
     SPECIAL_SECTIONS.findIndex((section) => sectionKey(section) === sectionKey(name))
 
-const missingSpecial = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): SectionTarget => {
+const missingSpecial = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]) => {
     const following = sheet.sections.find(
         (section) => specialIndex(section.name) > specialIndex(name),
     )
@@ -66,7 +66,7 @@ const sectionTarget = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): S
         : SectionTarget.ExistingSection({ section, action: SectionAction.UseExistingSection() })
 }
 
-export const reviewSection = (sheet: Sheet): SectionTarget => sectionTarget(sheet, REVIEW_SECTION)
+export const reviewSection = (sheet: Sheet) => sectionTarget(sheet, REVIEW_SECTION)
 
 // Regional sections remain author-owned. An absent Italian region targets the script-owned
 // Resto di Italia section instead, creating only that special section when necessary.

@@ -8,10 +8,7 @@ export type Tab = {
 
 // Like the Sheets UI and a sheet-less A1 range, "first tab" means the first visible one; a
 // tab named explicitly is taken as it is, hidden or not.
-export const chooseTab = (
-    tabs: ReadonlyArray<Tab>,
-    wanted: Option.Option<string>,
-): Option.Option<Tab> =>
+export const chooseTab = (tabs: ReadonlyArray<Tab>, wanted: Option.Option<string>) =>
     Option.fromNullishOr(
         Option.match(wanted, {
             onNone: () => tabs.find((tab) => tab.hidden !== true),

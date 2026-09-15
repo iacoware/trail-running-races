@@ -89,11 +89,7 @@ export const planRow = (
     })
 }
 
-export const planReviewRow = (
-    sheet: Sheet,
-    name: string,
-    esito: ReviewEsito,
-): Result.Result<PlannedRow, never> =>
+export const planReviewRow = (sheet: Sheet, name: string, esito: ReviewEsito) =>
     Result.succeed({
         name,
         url: Option.none(),

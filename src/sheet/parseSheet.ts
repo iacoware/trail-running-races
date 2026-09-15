@@ -1,7 +1,6 @@
 import { Data, Result } from "effect"
 
 import { COLUMN_KEYS, cellsOf, resolveColumns, type Cells, type Columns } from "./columns.ts"
-import type { SheetColumnMissingError } from "./errors.ts"
 import type { Row } from "./SheetReader.ts"
 
 export type RaceRow = {
@@ -93,9 +92,7 @@ const readSections = (columns: Columns, rows: ReadonlyArray<Row>) => {
     return { sections, orphans, warnings }
 }
 
-export const parseSheet = (
-    rows: ReadonlyArray<Row>,
-): Result.Result<Sheet, SheetColumnMissingError> =>
+export const parseSheet = (rows: ReadonlyArray<Row>) =>
     Result.map(resolveColumns(rows[0] ?? []), (columns) => ({
         columns,
         ...readSections(columns, rows),
