@@ -7,4 +7,5 @@ node_modules/
 !/package.json
 !/tsconfig.json
 !/.oxlintrc.json
+!/.oxfmtrc.json
 .DS_Store
