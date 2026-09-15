@@ -646,6 +646,25 @@ Limiti noti, dalla lettura del codice:
 - non rilevano gli handler passati per nome, i confronti dentro funzioni annidate nell'handler o `?._tag`;
 - `no-manual-tag-comparison` segnala anche i `_tag` di librerie non Effect e i confronti dentro `catchTag`.
 
+## Plugin locale
+
+`tools/oxlint/effect-local/`, caricato da `jsPlugins` come anti-slop, per i gap rimasti dopo preset e anti-slop. Regole sintattiche, senza alias d'import né opzioni; le allowlist per file stanno negli `overrides` di `.oxlintrc.json`. Test: `pnpm test:lint-rules`.
+
+| Regola | P | Cosa rileva | Stato (2026-09-14) |
+|---|---|---|---|
+| `prefer-effect-fn` | P17 | funzione dichiarata, variabile o membro d'oggetto che ritorna solo `Effect.gen(…)` (anche con `.pipe`); `Effect.fn(body)` senza nome; `.pipe` su `Effect.fn(…)(…)` | **warn**, 7 punti (`effect-fn-opportunity` non ne vede nessuno) |
+| `error-handling-in-effect-fn-handler` | P25 | `Effect.catch*`, `either`, `result`, `exit`, `match*`, `sandbox` dentro un generatore di `Effect.gen`/`Effect.fn`, anche in callback annidate; esenti i pipeable di un `Effect.fn` annidato | **warn**, 2 punti |
+| `single-style-per-function` | P24 | `async`, `await`, `.then(` in una funzione che usa `Effect.*` (esclusi gli `Effect.run*`) | error, rumore zero |
+| `no-transport-types-in-generator` | P26 | `new T(…)`, `T.metodo(…)` o `T(…)` dentro un generatore Effect (callback annidate comprese, pipeable di `Effect.fn` esenti), con `T` nell'opzione `transportTypes` (default `Response`, `NextResponse`) | error, rumore zero (n/a in una CLI) |
+| `boundary-entrypoint-shape` | P27 | `Effect.runPromise`/`runSync`/`runFork`/`runCallback` e `runMain` il cui argomento non è `satisfies Effect.Effect<A, never>` né un parametro con quel tipo | **warn**, 1 punto (`src/main.ts:77`) |
+| `service-port-shape-only` | P01 | secondo argomento di `Context.Service<…>()(id, opts)`, `static layer`/`Default` sul port, `Effect.Service`/`Context.Tag`/`Context.GenericTag` | error, rumore zero |
+| `no-bare-error-in-effect` | P05 | `throw` direttamente nel generatore; `Effect.fail` con letterale o template | error, rumore zero |
+| `no-parameterless-catch-all` | P09 | `Effect.catch`/`catchAll`/`catchCause`/`catchEager` con handler senza parametri | error, rumore zero |
+| `try-object-form` | P08 | `Effect.try`/`tryPromise` il cui argomento non è un oggetto | error, rumore zero |
+| `no-effect-promise` | P08 | `Effect.promise` fuori dal rilascio di `acquireRelease`/`acquireUseRelease`/`addFinalizer` | warn, rumore zero |
+| `redacted-secret-names` | P13 | nome letterale in `Config.*` che finisce per `KEY`/`SECRET`/`TOKEN`/`PASSWORD`/`CREDENTIAL(S)`/`_JSON`, fuori da `Config.redacted` e `Schema.Redacted*` | **warn**, 1 punto (`src/config.ts:20`) |
+| `run-only-at-entry` | P04, P22 | riferimenti a `Effect.run*`, `NodeRuntime.runMain`, `ManagedRuntime.make` | error, spenta su `src/main.ts` |
+
 ## Language service
 
 Fatti verificati su repo, CHANGELOG e npm:
@@ -710,33 +729,33 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 
 | P | Copertura | Regole `effecttsgo` | Severità |
 |---|---|---|---|
-| P01 | parziale | `non-object-effect-service-type`, `generic-effect-services`, `missing-effect-context`, `missing-layer-context`, `class-self-mismatch` | error / warn |
+| P01 | coperto | `non-object-effect-service-type`, `generic-effect-services`, `missing-effect-context`, `missing-layer-context`, `class-self-mismatch`; la forma del port da `effect-local/service-port-shape-only` | error / warn |
 | P02 | no | — | — |
 | P03 | no | — | — |
-| P04 | parziale | `run-effect-inside-effect` | error (alzata) |
-| P05 | parziale | `global-error-in-effect-failure`, `global-error-in-effect-catch`, `extends-native-error`, `unknown-in-effect-catch`. Verificato scoperto: `throw` dentro un generatore e `Effect.fail("stringa")` (un `new TypeError` invece è segnalato) | error (alzate) / warn |
+| P04 | coperto | `run-effect-inside-effect`; fuori dall'entry point `effect-local/run-only-at-entry` | error |
+| P05 | coperto | `global-error-in-effect-failure`, `global-error-in-effect-catch`, `extends-native-error`, `unknown-in-effect-catch`; `throw` in generatore e `Effect.fail("stringa")` da `effect-local/no-bare-error-in-effect` | error / warn |
 | P06 | no | `redundant-schema-tag-identifier` (solo cosmetica) | warn |
 | P07 | coperto | `unnecessary-fail-yieldable-error`, `missing-return-yield-star` | error |
-| P08 | **no** | — (verificato: `Effect.tryPromise(() => …)` in forma thunk non è segnalato) | — |
-| P09 | parziale | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die`; la discriminazione manuale su `_tag` dentro `Effect.catch` è ora coperta da `anti-slop-effect/no-manual-effect-error-tag`. Resta scoperto il catch-all senza parametro che ingoia | error (alzate le prime due) / warn |
+| P08 | coperto | nessuna del preset; `effect-local/try-object-form`, `effect-local/no-effect-promise` | error / warn |
+| P09 | parziale | `catch-all-to-map-error`, `catch-unfailable-effect`, `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`, `catch-tag-to-catch-reason`, `catch-conditional-refail-to-catch-if`, `catch-die-to-or-die`; la discriminazione manuale su `_tag` dentro `Effect.catch` è ora coperta da `anti-slop-effect/no-manual-effect-error-tag`, il catch-all senza parametro da `effect-local/no-parameterless-catch-all` | error / warn |
 | P10 | parziale | `prefer-schema-over-json`, `prefer-typed-schema-decoder`, `instance-of-schema` (l'`as` non è coperto) | warn |
 | P11 | coperto | `schema-sync`, `schema-sync-in-effect` | error (alzate) |
 | P12 | no | — | — |
-| P13 | parziale | `process-env`, `process-env-in-effect` (i nomi dei segreti non sono coperti) | error (alzate) |
+| P13 | coperto | `process-env`, `process-env-in-effect`; i nomi dei segreti, euristicamente, da `effect-local/redacted-secret-names` | error / warn |
 | P14 | coperto | preset: `match-effect-to-match`, `option-match-to-from-option`; il `_tag ===`/`switch` generico da `anti-slop-effect/no-manual-tag-comparison`, le catene di ternari da `anti-slop-effect/prefer-effect-match` | warn / error (le due anti-slop) |
 | P15 | coperto | preset: `schema-struct-with-tag` (solo Schema); i letterali `_tag` da `anti-slop-effect/no-manual-tagged-construction`, spenta su test e fixture | warn / error (l'anti-slop) |
 | P16 | coperto | preset: `run-of-exit-to-run-exit`, `prefer-succeed-some-or-none`; il `_tag` da `anti-slop-effect/no-manual-tag-comparison` | warn / error (l'anti-slop) |
-| P17 | parziale | `effect-fn-opportunity`, `effect-fn-implicit-any`, `effect-fn-iife`, `unnecessary-effect-gen` (il nome in `Effect.fn("…")` non è imposto) | error (alzata la prima) / warn |
+| P17 | coperto | `effect-fn-opportunity`, `effect-fn-implicit-any`, `effect-fn-iife`, `unnecessary-effect-gen`; `effect-local/prefer-effect-fn` per le funzioni che ritornano `Effect.gen`, il nome e il `.pipe` (verificato: `effect-fn-opportunity` non vede i 7 punti del repo) | error / warn |
 | P18 | coperto | `floating-effect`, `floating-effect-in-vitest`, `missing-star-in-yield-effect-gen`, `missing-return-yield-star` | error |
 | P19 | parziale | `acquire-release-disposable`, `scope-in-layer-effect` | warn |
 | P20 | no | `all-of-map-to-for-each` | warn |
 | P21 | coperto | `global-console-in-effect`, `global-console` (più `global-date`, `global-random`, `global-fetch`, `global-timers`) | warn |
 | P22 | parziale | `floating-effect-in-vitest` | error |
 | P23 | no | — | — |
-| P24 | parziale | `async-function` | warn |
-| P25 | no | — | — |
-| P26 | no | — | — |
-| P27 | parziale | `leaking-requirements` (il canale errori chiuso a `never` non è coperto) | error (alzata) |
+| P24 | coperto | `async-function`; il mix nella stessa funzione da `effect-local/single-style-per-function` | warn / error |
+| P25 | coperto | nessuna del preset; `effect-local/error-handling-in-effect-fn-handler` | warn |
+| P26 | coperto | nessuna del preset; `effect-local/no-transport-types-in-generator` (il `return` anticipato di un valore di dominio che segnala un errore resta scoperto) | error |
+| P27 | coperto | `leaking-requirements`; la forma dell'entry point da `effect-local/boundary-entrypoint-shape` | error / warn |
 
 Fuori catalogo ma utile: `outdated-api` (warn) segnala le API v3 residue, e `duplicate-package` le installazioni doppie di `effect`.
 
@@ -761,21 +780,7 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 
 1. ~~**oxlint + tsgo**~~ **fatto**: vedi "Attivato in questo repo" sopra. `pnpm lint` è a 0 warning, 0 error. La patch è risultata obbligatoria, non opzionale.
 2. ~~**Vendoring anti-slop**~~ **fatto** (2026-09-14): `tools/oxlint/anti-slop-effect/`, quattro regole su cinque attive, **tutte a `error`**. Le 28 violazioni iniziali sono state chiuse migrando le sei unioni di P15 a `Data.taggedEnum`.
-3. **Plugin locale** `tools/oxlint/effect-local/`, solo per ciò che il preset non copre. Lista potata dopo il passo 1, in ordine di valore:
-   1. `error-handling-in-effect-fn-handler` (P25), insieme a `prefer-effect-fn` (P17), da cui dipende;
-   2. `single-style-per-function` (P24);
-   3. `no-transport-types-in-generator` (P26), con la lista dei tipi di trasporto come opzione;
-   4. `boundary-entrypoint-shape` (P27);
-   5. `service-port-shape-only` (P01);
-   6. `no-bare-error-in-effect` (P05), ridotta a `throw` in generatore e `Effect.fail("stringa")`;
-   7. `no-parameterless-catch-all` (P09), con allowlist per l'entry point;
-   8. `try-object-form`, con `Effect.promise` come warning (P08);
-   9. `redacted-secret-names` (P13);
-   10. `run-only-at-entry` (P04, P22), ridimensionata.
-
-   Cadute perché coperte dal preset: `no-sync-decode-in-effect` (P11), `no-process-env` (P13), `return-yield-error` (P07), `no-console-in-effect` (P21).
-
-   Ogni regola va scritta con il `RuleTester` di `oxlint/plugins-dev`, come in anti-slop.
+3. ~~**Plugin locale**~~ **fatto** (2026-09-14): `tools/oxlint/effect-local/`, 12 regole con `RuleTester`, vedi "Plugin locale" sopra. Cadute perché coperte dal preset: `no-sync-decode-in-effect` (P11), `no-process-env` (P13), `return-yield-error` (P07), `no-console-in-effect` (P21).
 4. **tsgo fuori da oxlint**: se l'integrazione del passo 1 non funziona su `rc.112`, il ripiego è `effect-tsgo diagnostics --project tsconfig.json` come script separato, senza patch, con `floatingEffect`, `missingStarInYieldEffectGen`, `globalErrorInEffectFailure`, `effectFnOpportunity` e `leakingRequirements` (P18, P19).
 5. **Skill**, sottile:
    - i pattern `solo-skill` (P02, P03, P06, P12, P19, P20);

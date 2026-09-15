@@ -56,18 +56,29 @@ Correzione del 2026-09-14, da prova negativa: **`no-bare-error-in-effect` (P05) 
 
 Checklist risultante, già potata di ciò che il preset copre:
 
-- [ ] `error-handling-in-effect-fn-handler` (P25) + `prefer-effect-fn` (P17), da cui dipende
-- [ ] `single-style-per-function` (P24)
-- [ ] `no-transport-types-in-generator` (P26), lista dei tipi come opzione
-- [ ] `boundary-entrypoint-shape` (P27)
-- [ ] `service-port-shape-only` (P01)
-- [ ] `no-bare-error-in-effect` (P05), ridotta a `throw` in generatore e `Effect.fail("stringa")`
-- [ ] `no-parameterless-catch-all` (P09), allowlist per l'entry point
-- [ ] `try-object-form`, con `Effect.promise` come warning (P08)
-- [ ] `redacted-secret-names` (P13)
-- [ ] `run-only-at-entry` (P04, P22), allowlist `src/main.ts` — ridimensionata: `run-effect-inside-effect` copre già il caso pericoloso
+- [x] `error-handling-in-effect-fn-handler` (P25) + `prefer-effect-fn` (P17), da cui dipende — **warn**: 2 + 7 violazioni
+- [x] `single-style-per-function` (P24) — error, rumore zero
+- [x] `no-transport-types-in-generator` (P26), lista dei tipi come opzione `transportTypes` (default `Response`, `NextResponse`) — error, rumore zero. Inizialmente saltata perché qui non ci sono tipi di trasporto; scritta perché l'obiettivo è un plugin portabile in altri progetti
+- [x] `boundary-entrypoint-shape` (P27) — **warn**: 1 violazione (`src/main.ts:77`)
+- [x] `service-port-shape-only` (P01) — error, rumore zero
+- [x] `no-bare-error-in-effect` (P05), ridotta a `throw` in generatore e `Effect.fail("stringa")` — error, rumore zero
+- [x] `no-parameterless-catch-all` (P09) — error, rumore zero; allowlist non servita (il catch di `main.ts` ha il parametro)
+- [x] `try-object-form` (error) + `no-effect-promise` (**warn**) (P08) — due regole, perché la severità è per regola; rumore zero
+- [x] `redacted-secret-names` (P13) — **warn**: 1 violazione (`src/config.ts:20`)
+- [x] `run-only-at-entry` (P04, P22) — error, spenta su `src/main.ts` con `overrides`
 
 Ogni regola va scritta con il `RuleTester` di `oxlint/plugins-dev`, con casi valid e invalid, come in anti-slop.
+
+Esito (2026-09-14): plugin `tools/oxlint/effect-local/` con 12 regole, caricato da `jsPlugins`. Criterio di severità del passo 1d: `error` a rumore zero, `warn` dove ci sono violazioni (da migrare, non corrette qui) o dove la regola è euristica. `pnpm lint`: **11 warning, 0 error**, tutte deviazioni già elencate nel catalogo.
+
+Violazioni riportate (migrazioni 4, 5 e 3 del catalogo):
+
+- `prefer-effect-fn`: `fill.ts:41,51,69`, `missing.ts:7`, `main.ts:27,46`, `ProcessAgent.ts:48`. `fill.ts:41` è la callback `onSome` di `Option.match`: la regola conta anche i membri di oggetto, perché lì stanno le implementazioni dei servizi (`X.of({ m: (…) => Effect.gen(…) })`);
+- `error-handling-in-effect-fn-handler`: `fill.ts:74` (`Effect.result`), `ProcessAgent.ts:70` (`catchTag` dentro il generatore del layer);
+- `boundary-entrypoint-shape`: `main.ts:77`;
+- `redacted-secret-names`: `config.ts:20`.
+
+`effecttsgo/effect-fn-opportunity`, pur a `error`, non segnala nessuno dei 7 punti di `prefer-effect-fn`: la copertura di P17 stimata dopo 1c era ottimistica.
 
 ## File toccati
 
@@ -116,4 +127,9 @@ Nessuna modifica a `src/` in questo piano.
 | 2026-09-14 | passo 2 | `pnpm typecheck` (con `tools/` incluso) e `pnpm test` | verdi: tsc 0 errori, 177 test Vitest + 5 RuleTester |
 | 2026-09-14 | fuori passo 2 | migrate le sei unioni di P15 a `Data.taggedEnum` | `ServiceAccountSource`, `Cursor`+`SheetWarning`, `SectionAction`+`SectionTarget`, `RaceOutcome`, una alla volta con typecheck e test a ogni passo. Ha chiuso anche tutti i punti di P14/P16: lo `switch` di `parseSheet` e i ternari di `planRow` diventano `$match`, i confronti di `summary`, `insertRowRequests`, `PrintSheetWriter` e `fill.test.ts` diventano `$is`. Da 28 warning a **0 warning, 0 error**; 177 test verdi |
 | 2026-09-14 | fuori passo 2 | `no-manual-tag-comparison` e `no-manual-tagged-construction` alzate a `error` | rumore ormai zero, stesso criterio del passo 1d |
+| 2026-09-14 | passo 3 | 11 regole in `tools/oxlint/effect-local/`, RuleTester con `node --test` | 16/16 verdi (5 anti-slop + 11 locali); verificato che un caso rotto ad arte fallisce con `AssertionError` |
+| 2026-09-14 | passo 3 | primo `pnpm lint` con tutte le regole locali a error | 12 diagnostiche: `prefer-effect-fn` 7, `error-handling-in-effect-fn-handler` 2, `boundary-entrypoint-shape` 1, `redacted-secret-names` 1, `run-only-at-entry` 1 (`main.ts`, allowlist); nessuna nei test né in `tools/`, quindi nessun `overrides` oltre a `main.ts` |
+| 2026-09-14 | passo 3 | prova negativa (file temporaneo in `src/`, poi rimosso) | scattano tutte le 7 regole a rumore zero sul codice attuale. Sovrapposizione: su `Effect.catch(() => Effect.void)` scatta anche `effecttsgo/catch-to-ignore` (warn), che però non vede `() => Effect.succeed(fallback)` |
+| 2026-09-14 | passo 3 | severità finali, `pnpm typecheck`, `pnpm test` | 11 warning, 0 error, exit 0; tsc 0 errori; 177 test Vitest + 16 RuleTester |
+| 2026-09-14 | passo 3 | `no-transport-types-in-generator` (P26) con opzione `transportTypes` | 17/17 RuleTester (anche i casi con opzione); prova negativa su `new Response` in un generatore: error; `pnpm lint` invariato a 11 warning, 0 error; tsc verde. L'opzione passata da `.oxlintrc.json` non è stata provata, solo via RuleTester |
 | 2026-09-14 | catalogo | potatura delle voci meccanizzate | collassate in tabella solo P07, P11, P18: copertura verificata e nessuna decisione residua. P21 tenuta come sezione pur essendo coperta, perché il messaggio della regola consiglia `Effect.log`, sbagliato per l'output di una CLI. **P05 e P09 corretti da `coperto` a `parziale`**: prova negativa mostra scoperti `throw` in generatore, `Effect.fail("stringa")`, il catch-all senza parametro e la discriminazione manuale su `_tag` |

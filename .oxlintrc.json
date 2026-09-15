@@ -2,8 +2,20 @@
   "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
   "extends": ["./node_modules/@effect/tsgo/oxlint-presets/recommended.json"],
   "ignorePatterns": ["node_modules", "fixtures"],
-  "jsPlugins": ["./tools/oxlint/anti-slop-effect/index.ts"],
+  "jsPlugins": ["./tools/oxlint/anti-slop-effect/index.ts", "./tools/oxlint/effect-local/index.ts"],
   "rules": {
+    "effect-local/boundary-entrypoint-shape": "warn",
+    "effect-local/error-handling-in-effect-fn-handler": "warn",
+    "effect-local/no-bare-error-in-effect": "error",
+    "effect-local/no-effect-promise": "warn",
+    "effect-local/no-parameterless-catch-all": "error",
+    "effect-local/no-transport-types-in-generator": "error",
+    "effect-local/prefer-effect-fn": "warn",
+    "effect-local/redacted-secret-names": "warn",
+    "effect-local/run-only-at-entry": "error",
+    "effect-local/service-port-shape-only": "error",
+    "effect-local/single-style-per-function": "error",
+    "effect-local/try-object-form": "error",
     "anti-slop-effect/no-manual-effect-error-tag": "error",
     "anti-slop-effect/prefer-effect-match": "error",
     "anti-slop-effect/no-manual-tag-comparison": "error",
@@ -23,6 +35,12 @@
     "effecttsgo/run-effect-inside-effect": "error"
   },
   "overrides": [
+    {
+      "files": ["src/main.ts"],
+      "rules": {
+        "effect-local/run-only-at-entry": "off"
+      }
+    },
     {
       "files": ["test/dryRun.test.ts", "src/testing/fakeAgent.ts"],
       "rules": {
