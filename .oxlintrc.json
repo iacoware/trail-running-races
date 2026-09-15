@@ -11,6 +11,7 @@
         "effect-local/error-handling-in-effect-fn-handler": "warn",
         "effect-local/no-bare-error-in-effect": "error",
         "effect-local/no-effect-promise": "warn",
+        "effect-local/no-inline-yield-star": "warn",
         "effect-local/no-nested-match": "warn",
         "effect-local/no-parameterless-catch-all": "error",
         "effect-local/no-provide-on-definition": "error",

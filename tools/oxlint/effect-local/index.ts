@@ -4,6 +4,7 @@ import { boundaryEntrypointShapeRule } from "./rules/boundary-entrypoint-shape.t
 import { errorHandlingInEffectFnHandlerRule } from "./rules/error-handling-in-effect-fn-handler.ts"
 import { noBareErrorInEffectRule } from "./rules/no-bare-error-in-effect.ts"
 import { noEffectPromiseRule } from "./rules/no-effect-promise.ts"
+import { noInlineYieldStarRule } from "./rules/no-inline-yield-star.ts"
 import { noNestedMatchRule } from "./rules/no-nested-match.ts"
 import { noParameterlessCatchAllRule } from "./rules/no-parameterless-catch-all.ts"
 import { noProvideOnDefinitionRule } from "./rules/no-provide-on-definition.ts"
@@ -24,6 +25,7 @@ const effectLocalPlugin = eslintCompatPlugin({
         "error-handling-in-effect-fn-handler": errorHandlingInEffectFnHandlerRule,
         "no-bare-error-in-effect": noBareErrorInEffectRule,
         "no-effect-promise": noEffectPromiseRule,
+        "no-inline-yield-star": noInlineYieldStarRule,
         "no-nested-match": noNestedMatchRule,
         "no-parameterless-catch-all": noParameterlessCatchAllRule,
         "no-provide-on-definition": noProvideOnDefinitionRule,

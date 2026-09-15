@@ -58,8 +58,9 @@ Classi di enforcement:
 | P29 | Input interpretato in un tagged enum prima del dispatch                                             | locale | solo-skill      | invariato                                                      | conforme                                  |
 | P30 | Guard clause invece di match annidati                                                               | locale | lint-sintattico | invariato                                                      | conforme                                  |
 | P31 | Nome a ciò che ha significato o si ripete, inline il resto                                          | locale | solo-skill      | invariato                                                      | conforme                                  |
+| P32 | Un `yield*` non sta dentro un'espressione più grande                                                | locale | lint-sintattico | invariato                                                      | conforme                                  |
 
-Totale: 22 `lint-sintattico`, 2 `lint-tipi`, 7 `solo-skill`.
+Totale: 23 `lint-sintattico`, 2 `lint-tipi`, 7 `solo-skill`.
 
 ## Pattern interamente meccanizzati
 
@@ -743,6 +744,24 @@ const run = (argv: ReadonlyArray<string>) => {
 - **Questo repo**: conforme dal 2026-09-15; eliminati `fillSheet`, `planFill` e `runFill`, aggiunti `missingLayer`, `fillLayer`, `planLayer` e `platformLayer`.
 - **Enforcement**: `solo-skill`. La parte meccanizzabile, i Layer composti inline, è coperta da `provide-named-layer` (P28).
 
+### P32 · Un `yield*` non sta dentro un'espressione più grande
+
+**Regola**: il risultato di un `yield*` si lega a una `const` prima di usarlo. Un `yield*` è ammesso solo come intero valore di uno statement (`yield* x`, `return yield* x`, `if (yield* x)`, `for (… of yield* x)`), di una dichiarazione (`const a = yield* x`) o di un'assegnazione (`a = yield* x`).
+
+**Perché**: un `yield*` annidato in un argomento, in un operando o in un template esegue un effetto a metà di un'espressione; con più `yield*` nella stessa espressione l'ordine degli effetti si ricava solo dalla precedenza. Una `const` per effetto rende l'ordine quello di lettura e dà un nome al valore intermedio.
+
+```ts
+// no
+return yield * missingIn(yield * readSheet())
+
+// sì
+const sheet = yield * readSheet()
+return yield * missingIn(sheet)
+```
+
+- **Questo repo**: conforme dal 2026-09-15; i 4 punti (`src/commands/missing.ts` ×2, `src/sheet/readSheet.ts`, `src/agent/process/ProcessAgent.ts`) corretti con l'autofix.
+- **Enforcement**: `lint-sintattico`, `effect-local/no-inline-yield-star` con autofix. Il fix estrae tutti i `yield*` annidati dello statement in `const` (dal più interno, da sinistra a destra) e ricava il nome dall'ultimo identificatore dell'argomento senza prefisso verbale (`readSheet()` → `sheet`, `reader.rows` → `rows`), con suffisso numerico se il nome è già in uso e `value` come ripiego. Nessun fix, solo il warning, quando spostare l'effetto prima dello statement cambierebbe quando o quante volte gira: rami di `&&`/`||`/`??`/ternario, optional chaining, condizioni di `while`/`for`, statement senza graffe, o un'altra chiamata valutata prima del `yield*`.
+
 ## Regole anti-slop
 
 Le regole stanno nel plugin `anti-slop-effect`. Il pacchetto non è pubblicato su npm: **vendorizzato il 2026-09-14** in `tools/oxlint/anti-slop-effect/` (commit `c44ef22`, MIT, file invariati; origine e istruzioni di aggiornamento nel suo `README.md`), caricato da `.oxlintrc.json` con `jsPlugins`. Nessuna regola usa informazioni di tipo o risolve gli alias d'import (`Effect as E` sfugge), e nessuna ha opzioni.
@@ -784,6 +803,7 @@ Limiti noti, dalla lettura del codice:
 | `run-only-at-entry`                   | P04, P22 | riferimenti a `Effect.run*`, `NodeRuntime.runMain`, `ManagedRuntime.make`                                                                                                                                                                           | error, spenta su `src/main.ts`                                                                            |
 | `provide-named-layer`                 | P28      | argomento di `Effect.provide` composto inline: `Layer.*(…)`, ternario, `&&`/`\|\|`, `match`/`$match`; salta i test (opzione `testFiles`)                                                                                                            | error, rumore zero dopo il refactoring di `src/main.ts`                                                   |
 | `no-provide-on-definition`            | P28      | `Effect.provide` su `Effect.gen(…)`/`Effect.fn(…)(…)`: con `.pipe`, come pipeable di `Effect.fn` o data-first; salta i test (opzione `testFiles`)                                                                                                   | error, rumore zero; i 17 punti nei test sono esclusi dalla regola                                         |
+| `no-inline-yield-star`                | P32      | `yield*` il cui risultato è usato dentro un'espressione più grande (argomento, operando, membro, proprietà, template); autofix con estrazione in `const` quando l'ordine degli effetti resta invariato                                              | **warn**, rumore zero dopo l'autofix dei 4 punti                                                          |
 | `no-nested-match`                     | P30      | handler di `Option`/`Result`/`Exit`/`Either.match`, `$match` o `Match.valueTags` che è un match data-last o restituisce un match o un ternario                                                                                                      | **warn**, rumore zero; prova negativa sul `src/main.ts` precedente                                        |
 
 ## Language service
@@ -881,6 +901,7 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 | P29 | no        | —                                                                                                                                                                                                                                                                                                                                                                                                                                     | —                               |
 | P30 | parziale  | nessuna del preset; `effect-local/no-nested-match`                                                                                                                                                                                                                                                                                                                                                                                    | warn                            |
 | P31 | parziale  | nessuna del preset; i Layer inline da `effect-local/provide-named-layer`                                                                                                                                                                                                                                                                                                                                                              | error                           |
+| P32 | coperto   | nessuna del preset; `effect-local/no-inline-yield-star`                                                                                                                                                                                                                                                                                                                                                                               | warn                            |
 
 Fuori catalogo ma utile: `outdated-api` (warn) segnala le API v3 residue, e `duplicate-package` le installazioni doppie di `effect`.
 
