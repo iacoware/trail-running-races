@@ -69,17 +69,16 @@ const park = (name: string, esito: "non_trovata" | "ambigua") =>
 const fillRace = Effect.fn("fillRace")(
   function* (name: string) {
     const agent = yield* Agent
-    const card = yield* Effect.result(agent.search(name))
-    if (Result.isFailure(card)) return RaceFillResult.Failed({ name, error: card.failure })
-    switch (card.success.esito) {
+    const card = yield* agent.search(name)
+    switch (card.esito) {
       case "non_trovata":
-        yield* park(name, card.success.esito)
+        yield* park(name, card.esito)
         return RaceFillResult.NotFound({ name })
       case "ambigua":
-        yield* park(name, card.success.esito)
-        return RaceFillResult.Ambiguous({ name, candidates: card.success.candidati })
+        yield* park(name, card.esito)
+        return RaceFillResult.Ambiguous({ name, candidates: card.candidati })
       case "trovata":
-        return yield* writeFound(name, card.success)
+        return yield* writeFound(name, card)
     }
   },
   // One race in error never stops the run: it is reported and the next race is searched.
