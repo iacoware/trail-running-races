@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Match, Schema } from "effect"
+import { Effect, FileSystem, Match, Redacted, Schema } from "effect"
 import type { ServiceAccountSource } from "../../config.ts"
 import { ServiceAccountKeyError } from "../errors.ts"
 
@@ -35,7 +35,7 @@ const describe = (source: ServiceAccountSource) =>
 export const loadServiceAccountKey = Effect.fn("loadServiceAccountKey")(
     function* (source: ServiceAccountSource) {
         const json = yield* Match.valueTags(source, {
-            InlineJson: ({ json }) => Effect.succeed(json),
+            InlineJson: ({ json }) => Effect.succeed(Redacted.value(json)),
             FilePath: ({ path }) => readKeyFile(path),
         })
 

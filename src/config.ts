@@ -1,7 +1,7 @@
-import { Config, Data, Schema } from "effect"
+import { Config, Data, Redacted, Schema } from "effect"
 
 export type ServiceAccountSource = Data.TaggedEnum<{
-  InlineJson: { readonly json: string }
+  InlineJson: { readonly json: Redacted.Redacted<string> }
   FilePath: { readonly path: string }
 }>
 
@@ -9,15 +9,15 @@ export const ServiceAccountSource = Data.taggedEnum<ServiceAccountSource>()
 
 const NonBlank = Schema.Trim.pipe(Schema.check(Schema.isNonEmpty()))
 
-const serviceAccountSourceFromEnv = (value: string): ServiceAccountSource =>
-  value.startsWith("{")
+const serviceAccountSourceFromEnv = (value: Redacted.Redacted<string>): ServiceAccountSource =>
+  Redacted.value(value).startsWith("{")
     ? ServiceAccountSource.InlineJson({ json: value })
-    : ServiceAccountSource.FilePath({ path: value })
+    : ServiceAccountSource.FilePath({ path: Redacted.value(value) })
 
 export const sheetConfig = Config.all({
   spreadsheetId: Config.schema(NonBlank, "SHEET_ID"),
   tab: Config.schema(NonBlank, "SHEET_TAB").pipe(Config.option),
-  serviceAccount: Config.schema(NonBlank, "GOOGLE_SERVICE_ACCOUNT_JSON").pipe(
+  serviceAccount: Config.schema(Schema.Redacted(NonBlank), "GOOGLE_SERVICE_ACCOUNT_JSON").pipe(
     Config.map(serviceAccountSourceFromEnv),
   ),
 })

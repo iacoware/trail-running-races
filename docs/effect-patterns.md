@@ -325,7 +325,7 @@ serviceAccount: Config.schema(Schema.Redacted(NonBlank), "GOOGLE_SERVICE_ACCOUNT
 ```
 
 - **archivio**: nessun uso del modulo `Config`. Helper su `process.env` con segreti in chiaro (`apps/caveau/src/features/config/app-config-server.ts:19,23`) e `process.env` letto dentro gli helper Effect (`packages/shared/src/with-span.ts:16`).
-- **Questo repo**: `Config` usato bene (`src/config.ts:12`). Però `GOOGLE_SERVICE_ACCOUNT_JSON`, che nella forma inline contiene `private_key`, non è redatto (`src/config.ts:15-17`).
+- **Questo repo**: conforme (2026-09-15). `GOOGLE_SERVICE_ACCOUNT_JSON` è letto con `Schema.Redacted(NonBlank)` (`src/config.ts:20`); `Redacted.value` si chiama solo per ricavare il percorso e in `src/sheet/google/serviceAccountKey.ts`, dove il JSON va al decoder.
 - **Enforcement**: `lint-sintattico`. Si segnala `process.env` fuori da `src/config.ts`. Con un warning euristico si segnalano `Config.string`/`Config.schema` il cui nome letterale matcha `/(KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|_JSON)$/` senza `Redacted`/`redacted`. In `lint-tipi`, la famiglia `processEnv*` è off di default.
 
 ## Matching e tipi dati

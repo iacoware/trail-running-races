@@ -1,6 +1,6 @@
 import { expect, it } from "@effect/vitest"
-import { ConfigProvider, Effect, Option } from "effect"
-import { agentConfig, raceListConfig, sheetConfig } from "./config.ts"
+import { ConfigProvider, Effect, Option, Redacted } from "effect"
+import { agentConfig, raceListConfig, ServiceAccountSource, sheetConfig } from "./config.ts"
 
 const parse = (env: Record<string, string>) => sheetConfig.parse(ConfigProvider.fromUnknown(env))
 
@@ -47,7 +47,11 @@ it.effect("reads GOOGLE_SERVICE_ACCOUNT_JSON as inline JSON when it starts with 
 
     const config = yield* parse({ ...validEnv, GOOGLE_SERVICE_ACCOUNT_JSON: inline })
 
-    expect(config.serviceAccount).toEqual({ _tag: "InlineJson", json: inline })
+    const json = ServiceAccountSource.$match(config.serviceAccount, {
+      InlineJson: ({ json }) => json,
+      FilePath: () => undefined,
+    })
+    expect(json && Redacted.value(json)).toBe(inline)
   }),
 )
 

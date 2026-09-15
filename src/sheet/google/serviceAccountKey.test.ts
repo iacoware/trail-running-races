@@ -1,5 +1,5 @@
 import { expect, it } from "@effect/vitest"
-import { Effect, FileSystem, PlatformError } from "effect"
+import { Effect, FileSystem, PlatformError, Redacted } from "effect"
 import { loadServiceAccountKey } from "./serviceAccountKey.ts"
 
 const keyJson = JSON.stringify({
@@ -16,7 +16,7 @@ const fileSystemWith = (files: Record<string, string>) =>
 
 it.effect("decodes the key from inline JSON", () =>
   Effect.gen(function* () {
-    const key = yield* loadServiceAccountKey({ _tag: "InlineJson", json: keyJson })
+    const key = yield* loadServiceAccountKey({ _tag: "InlineJson", json: Redacted.make(keyJson) })
 
     expect(key.client_email).toBe("bot@project.iam.gserviceaccount.com")
     expect(key.private_key).toContain("BEGIN PRIVATE KEY")
@@ -34,7 +34,7 @@ it.effect("decodes the key from a file path", () =>
 it.effect("fails with ServiceAccountKeyError when the JSON lacks the private key", () =>
   Effect.gen(function* () {
     const error = yield* Effect.flip(
-      loadServiceAccountKey({ _tag: "InlineJson", json: '{"client_email":"bot@x"}' }),
+      loadServiceAccountKey({ _tag: "InlineJson", json: Redacted.make('{"client_email":"bot@x"}') }),
     )
 
     expect(error._tag).toBe("ServiceAccountKeyError")
