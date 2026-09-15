@@ -7,37 +7,37 @@ import { SheetWriter } from "../SheetWriter.ts"
 
 // A multi-line cell keeps its lines, indented under the value so the cell reads as one block.
 const cellLines = (label: string, value: string) => {
-  const [first = "", ...rest] = value.split("\n")
-  const indent = " ".repeat(label.length + 2)
-  return [`${label}: ${first}`.trimEnd(), ...rest.map((line) => `${indent}${line}`)]
+    const [first = "", ...rest] = value.split("\n")
+    const indent = " ".repeat(label.length + 2)
+    return [`${label}: ${first}`.trimEnd(), ...rest.map((line) => `${indent}${line}`)]
 }
 
 const position = (planned: PlannedRow) =>
-  Option.match(planned.after, {
-    onNone: () => "in testa alla sezione",
-    onSome: (name) => `dopo ${name}`,
-  })
+    Option.match(planned.after, {
+        onNone: () => "in testa alla sezione",
+        onSome: (name) => `dopo ${name}`,
+    })
 
 const sectionCreation = (planned: PlannedRow) =>
-  SectionAction.$match(planned.sectionAction, {
-    UseExistingSection: () => [],
-    CreateSection: ({ separatorRow, headerRow }) => [
-      `crea ${planned.section}: riga vuota ${separatorRow}, ` +
-        `intestazione in grassetto ${headerRow}`,
-    ],
-  })
+    SectionAction.$match(planned.sectionAction, {
+        UseExistingSection: () => [],
+        CreateSection: ({ separatorRow, headerRow }) => [
+            `crea ${planned.section}: riga vuota ${separatorRow}, ` +
+                `intestazione in grassetto ${headerRow}`,
+        ],
+    })
 
 export const describePlan = (planned: PlannedRow): ReadonlyArray<string> => [
-  `== ${planned.name}`,
-  ...sectionCreation(planned),
-  `${planned.section}, riga ${planned.row}, ${position(planned)}`,
-  ...COLUMN_KEYS.flatMap((key) => cellLines(COLUMN_HEADERS[key], planned.cells[key])),
+    `== ${planned.name}`,
+    ...sectionCreation(planned),
+    `${planned.section}, riga ${planned.row}, ${position(planned)}`,
+    ...COLUMN_KEYS.flatMap((key) => cellLines(COLUMN_HEADERS[key], planned.cells[key])),
 ]
 
 export const layer = Layer.succeed(
-  SheetWriter,
-  SheetWriter.of({
-    // Console.log is variadic and Effect.forEach passes the index, so the lambda is required.
-    insert: (planned) => Effect.forEach(describePlan(planned), (line) => Console.log(line)),
-  }),
+    SheetWriter,
+    SheetWriter.of({
+        // Console.log is variadic and Effect.forEach passes the index, so the lambda is required.
+        insert: (planned) => Effect.forEach(describePlan(planned), (line) => Console.log(line)),
+    }),
 )

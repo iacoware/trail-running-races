@@ -18,99 +18,99 @@ const READ_WRITE_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 const Rows = Schema.Array(Schema.Array(Schema.String))
 
 const TabProperties = Schema.Struct({
-  sheetId: Schema.optional(Schema.Int),
-  title: Schema.String,
-  hidden: Schema.optional(Schema.Boolean),
+    sheetId: Schema.optional(Schema.Int),
+    title: Schema.String,
+    hidden: Schema.optional(Schema.Boolean),
 })
 
 const TabList = Schema.Struct({
-  sheets: Schema.optional(Schema.Array(Schema.Struct({ properties: TabProperties }))),
+    sheets: Schema.optional(Schema.Array(Schema.Struct({ properties: TabProperties }))),
 })
 
 const openTab = Effect.fn("openTab")(function* (scope: string) {
-  const { spreadsheetId, tab, serviceAccount } = yield* sheetConfig
-  const key = yield* loadServiceAccountKey(serviceAccount)
-  const api = sheets({
-    version: "v4",
-    auth: new auth.JWT({
-      email: key.client_email,
-      key: key.private_key,
-      scopes: [scope],
-    }),
-  })
-
-  const call = <A>(request: () => Promise<A>) =>
-    Effect.tryPromise({ try: request, catch: toSheetError(spreadsheetId) })
-
-  const decode = <S extends Schema.Top>(schema: S, value: unknown) =>
-    Schema.decodeUnknownEffect(schema)(value).pipe(
-      Effect.mapError(
-        (cause) =>
-          new SheetApiError({
-            spreadsheetId,
-            message: `risposta inattesa da Google Sheets: ${cause.message}`,
-            cause,
-          }),
-      ),
-    )
-
-  const listed = yield* call(() =>
-    api.spreadsheets.get({ spreadsheetId, fields: "sheets.properties(sheetId,title,hidden)" }),
-  )
-  const { sheets: list = [] } = yield* decode(TabList, listed.data)
-  // The JSON API leaves out zero-valued fields, so the very first tab of a spreadsheet
-  // comes back without the `sheetId` it does have, which is 0.
-  const available = list.map(({ properties }) => ({
-    ...properties,
-    sheetId: properties.sheetId ?? 0,
-  }))
-  const chosen = chooseTab(available, tab)
-  if (Option.isNone(chosen)) {
-    return yield* new SheetTabNotFoundError({
-      spreadsheetId,
-      message:
-        `tab ${Option.getOrElse(tab, () => "(nessuno)")} non trovato nel foglio ` +
-        `${spreadsheetId}; tab disponibili: ` +
-        available.map((properties) => properties.title).join(", "),
+    const { spreadsheetId, tab, serviceAccount } = yield* sheetConfig
+    const key = yield* loadServiceAccountKey(serviceAccount)
+    const api = sheets({
+        version: "v4",
+        auth: new auth.JWT({
+            email: key.client_email,
+            key: key.private_key,
+            scopes: [scope],
+        }),
     })
-  }
 
-  // Formatted values, so the match on the Nome column sees the same text a person sees.
-  const rows = Effect.gen(function* () {
-    const response = yield* call(() =>
-      api.spreadsheets.values.get({
-        spreadsheetId,
-        range: quoteSheetTitle(chosen.value.title),
-      }),
+    const call = <A>(request: () => Promise<A>) =>
+        Effect.tryPromise({ try: request, catch: toSheetError(spreadsheetId) })
+
+    const decode = <S extends Schema.Top>(schema: S, value: unknown) =>
+        Schema.decodeUnknownEffect(schema)(value).pipe(
+            Effect.mapError(
+                (cause) =>
+                    new SheetApiError({
+                        spreadsheetId,
+                        message: `risposta inattesa da Google Sheets: ${cause.message}`,
+                        cause,
+                    }),
+            ),
+        )
+
+    const listed = yield* call(() =>
+        api.spreadsheets.get({ spreadsheetId, fields: "sheets.properties(sheetId,title,hidden)" }),
     )
-    return yield* decode(Rows, response.data.values ?? [])
-  })
+    const { sheets: list = [] } = yield* decode(TabList, listed.data)
+    // The JSON API leaves out zero-valued fields, so the very first tab of a spreadsheet
+    // comes back without the `sheetId` it does have, which is 0.
+    const available = list.map(({ properties }) => ({
+        ...properties,
+        sheetId: properties.sheetId ?? 0,
+    }))
+    const chosen = chooseTab(available, tab)
+    if (Option.isNone(chosen)) {
+        return yield* new SheetTabNotFoundError({
+            spreadsheetId,
+            message:
+                `tab ${Option.getOrElse(tab, () => "(nessuno)")} non trovato nel foglio ` +
+                `${spreadsheetId}; tab disponibili: ` +
+                available.map((properties) => properties.title).join(", "),
+        })
+    }
 
-  const insert = (planned: PlannedRow) =>
-    call(() =>
-      api.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [...insertRowRequests(chosen.value.sheetId, planned)],
-        },
-      }),
-    ).pipe(Effect.asVoid)
+    // Formatted values, so the match on the Nome column sees the same text a person sees.
+    const rows = Effect.gen(function* () {
+        const response = yield* call(() =>
+            api.spreadsheets.values.get({
+                spreadsheetId,
+                range: quoteSheetTitle(chosen.value.title),
+            }),
+        )
+        return yield* decode(Rows, response.data.values ?? [])
+    })
 
-  return { rows, insert }
+    const insert = (planned: PlannedRow) =>
+        call(() =>
+            api.spreadsheets.batchUpdate({
+                spreadsheetId,
+                requestBody: {
+                    requests: [...insertRowRequests(chosen.value.sheetId, planned)],
+                },
+            }),
+        ).pipe(Effect.asVoid)
+
+    return { rows, insert }
 })
 
 // The credentials only allow reading: this layer cannot write to the sheet.
 export const readerLayer = Layer.effect(
-  SheetReader,
-  Effect.map(openTab(READ_ONLY_SCOPE), ({ rows }) => SheetReader.of({ rows })),
+    SheetReader,
+    Effect.map(openTab(READ_ONLY_SCOPE), ({ rows }) => SheetReader.of({ rows })),
 )
 
 // Reading and writing share one authenticated client and one tab lookup, so the row a plan
 // names and the row the batch update inserts are always in the same tab.
 export const layer = Layer.effectContext(
-  Effect.map(openTab(READ_WRITE_SCOPE), ({ rows, insert }) =>
-    Context.make(SheetReader, SheetReader.of({ rows })).pipe(
-      Context.add(SheetWriter, SheetWriter.of({ insert })),
+    Effect.map(openTab(READ_WRITE_SCOPE), ({ rows, insert }) =>
+        Context.make(SheetReader, SheetReader.of({ rows })).pipe(
+            Context.add(SheetWriter, SheetWriter.of({ insert })),
+        ),
     ),
-  ),
 )

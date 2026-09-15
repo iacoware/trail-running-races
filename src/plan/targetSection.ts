@@ -11,12 +11,12 @@ export const REVIEW_SECTION = "Da verificare"
 const SPECIAL_SECTIONS = [REST_OF_ITALY, ABROAD, REVIEW_SECTION] as const
 
 export type SectionAction = Data.TaggedEnum<{
-  UseExistingSection: object
-  CreateSection: {
-    readonly separatorRow: number
-    readonly headerRow: number
-    readonly trailingSeparator: boolean
-  }
+    UseExistingSection: object
+    CreateSection: {
+        readonly separatorRow: number
+        readonly headerRow: number
+        readonly trailingSeparator: boolean
+    }
 }>
 
 export const SectionAction = Data.taggedEnum<SectionAction>()
@@ -25,8 +25,8 @@ type UseExistingSection = Data.TaggedEnum.Value<SectionAction, "UseExistingSecti
 type CreateSection = Data.TaggedEnum.Value<SectionAction, "CreateSection">
 
 export type SectionTarget = Data.TaggedEnum<{
-  ExistingSection: { readonly section: Section; readonly action: UseExistingSection }
-  MissingSpecialSection: { readonly name: string; readonly action: CreateSection }
+    ExistingSection: { readonly section: Section; readonly action: UseExistingSection }
+    MissingSpecialSection: { readonly name: string; readonly action: CreateSection }
 }>
 
 export const SectionTarget = Data.taggedEnum<SectionTarget>()
@@ -36,34 +36,34 @@ export const SectionTarget = Data.taggedEnum<SectionTarget>()
 const sectionKey = (name: string) => raceKey(name).replaceAll("-", " ").replace(/\s+/g, " ")
 
 const named = (sheet: Sheet, name: string) =>
-  sheet.sections.find((section) => sectionKey(section.name) === sectionKey(name))
+    sheet.sections.find((section) => sectionKey(section.name) === sectionKey(name))
 
 const specialIndex = (name: string) =>
-  SPECIAL_SECTIONS.findIndex((section) => sectionKey(section) === sectionKey(name))
+    SPECIAL_SECTIONS.findIndex((section) => sectionKey(section) === sectionKey(name))
 
 const missingSpecial = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): SectionTarget => {
-  const following = sheet.sections.find(
-    (section) => specialIndex(section.name) > specialIndex(name),
-  )
-  const followsHeader = following?.headerRow === 2
-  const separatorRow =
-    following === undefined ? sheet.lastRow + 1 : Math.max(2, following.headerRow - 1)
+    const following = sheet.sections.find(
+        (section) => specialIndex(section.name) > specialIndex(name),
+    )
+    const followsHeader = following?.headerRow === 2
+    const separatorRow =
+        following === undefined ? sheet.lastRow + 1 : Math.max(2, following.headerRow - 1)
 
-  return SectionTarget.MissingSpecialSection({
-    name,
-    action: SectionAction.CreateSection({
-      separatorRow,
-      headerRow: separatorRow + 1,
-      trailingSeparator: followsHeader,
-    }),
-  })
+    return SectionTarget.MissingSpecialSection({
+        name,
+        action: SectionAction.CreateSection({
+            separatorRow,
+            headerRow: separatorRow + 1,
+            trailingSeparator: followsHeader,
+        }),
+    })
 }
 
 const sectionTarget = (sheet: Sheet, name: (typeof SPECIAL_SECTIONS)[number]): SectionTarget => {
-  const section = named(sheet, name)
-  return section === undefined
-    ? missingSpecial(sheet, name)
-    : SectionTarget.ExistingSection({ section, action: SectionAction.UseExistingSection() })
+    const section = named(sheet, name)
+    return section === undefined
+        ? missingSpecial(sheet, name)
+        : SectionTarget.ExistingSection({ section, action: SectionAction.UseExistingSection() })
 }
 
 export const reviewSection = (sheet: Sheet): SectionTarget => sectionTarget(sheet, REVIEW_SECTION)
@@ -71,12 +71,12 @@ export const reviewSection = (sheet: Sheet): SectionTarget => sectionTarget(shee
 // Regional sections remain author-owned. An absent Italian region targets the script-owned
 // Resto di Italia section instead, creating only that special section when necessary.
 export const targetSection = (sheet: Sheet, region: Region): SectionTarget => {
-  const own = named(sheet, region)
-  if (own !== undefined) {
-    return SectionTarget.ExistingSection({
-      section: own,
-      action: SectionAction.UseExistingSection(),
-    })
-  }
-  return sectionTarget(sheet, region === ABROAD ? ABROAD : REST_OF_ITALY)
+    const own = named(sheet, region)
+    if (own !== undefined) {
+        return SectionTarget.ExistingSection({
+            section: own,
+            action: SectionAction.UseExistingSection(),
+        })
+    }
+    return sectionTarget(sheet, region === ABROAD ? ABROAD : REST_OF_ITALY)
 }

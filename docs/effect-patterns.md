@@ -83,8 +83,8 @@ class Agent extends Context.Service<Agent, Shape>()("app/Agent", { make: makeAge
 
 // sì
 export class Agent extends Context.Service<
-  Agent,
-  { readonly search: (name: string) => Effect.Effect<RaceCard, AgentError> }
+    Agent,
+    { readonly search: (name: string) => Effect.Effect<RaceCard, AgentError> }
 >()("trail-running-races/agent/Agent") {}
 ```
 
@@ -122,13 +122,13 @@ export const layer = Layer.effect(Agent, Effect.gen(function* () {
 ```ts
 // no
 const loadConfig = () =>
-  Effect.gen(function* () {
-    const http = httpClient() /* singleton */
-  })
+    Effect.gen(function* () {
+        const http = httpClient() /* singleton */
+    })
 
 // sì
 const insert = Effect.gen(function* () {
-  const writer = yield* SheetWriter
+    const writer = yield* SheetWriter
 })
 ```
 
@@ -165,25 +165,25 @@ NodeRuntime.runMain(run(process.argv.slice(2)).pipe(Effect.provide(NodeServices.
 ```ts
 // no
 class TabNotFound extends Error {
-  readonly _tag = "TabNotFound"
+    readonly _tag = "TabNotFound"
 }
 Effect.fail(new Error("tab non trovato"))
 
 // sì
 export class SheetTabNotFoundError extends Schema.TaggedError<SheetTabNotFoundError>()(
-  "SheetTabNotFoundError",
-  { spreadsheetId: Schema.String, message: Schema.String },
+    "SheetTabNotFoundError",
+    { spreadsheetId: Schema.String, message: Schema.String },
 ) {}
 ```
 
 - **archivio**: `Schema.TaggedError` in 23 file (es. `packages/archivio-data/src/errors.ts:3`), nessun `extends Error` con `_tag`. Fa eccezione il `throw new Error("not_authenticated")` usato come controllo di flusso dentro `tryPromise` (`apps/caveau/src/features/auth/session.ts:38`).
 - **Questo repo**: conforme (`src/agent/errors.ts:3`, `src/sheet/errors.ts:3`).
 - **Enforcement**: `lint-sintattico`. Si segnalano:
-  - `Effect.fail(arg)` con `arg` uguale a `NewExpression` di `Error`/`TypeError`/`RangeError`, a un `Literal` o a un `TemplateLiteral`;
-  - una `ClassDeclaration` che estende `Error` con una `PropertyDefinition` `_tag`;
-  - un `ThrowStatement` dentro una funzione generatore passata a `Effect.gen`/`Effect.fn`.
+    - `Effect.fail(arg)` con `arg` uguale a `NewExpression` di `Error`/`TypeError`/`RangeError`, a un `Literal` o a un `TemplateLiteral`;
+    - una `ClassDeclaration` che estende `Error` con una `PropertyDefinition` `_tag`;
+    - un `ThrowStatement` dentro una funzione generatore passata a `Effect.gen`/`Effect.fn`.
 
-  Coperti dal preset: `global-error-in-effect-failure` e `global-error-in-effect-catch` (alzate a error), `extends-native-error`. **Verificato scoperto**: un `throw` dentro un generatore e `Effect.fail("stringa")` non danno alcuna diagnostica, mentre `Effect.fail(new TypeError(…))` sì. Sono i due casi che giustificano ancora una regola locale. La regola anti-slop `no-manual-tagged-construction` non vede i campi di classe.
+    Coperti dal preset: `global-error-in-effect-failure` e `global-error-in-effect-catch` (alzate a error), `extends-native-error`. **Verificato scoperto**: un `throw` dentro un generatore e `Effect.fail("stringa")` non danno alcuna diagnostica, mentre `Effect.fail(new TypeError(…))` sì. Sono i due casi che giustificano ancora una regola locale. La regola anti-slop `no-manual-tagged-construction` non vede i campi di classe.
 
 ### P06 · `Data.TaggedError` o `Schema.TaggedError` secondo il confine
 
@@ -199,14 +199,14 @@ La sintassi di dichiarazione resta diversa: `Data.TaggedError` prende i campi co
 ```ts
 // in-process
 export class UnparsableDateError extends Data.TaggedError("UnparsableDateError")<{
-  readonly race: string
-  readonly date: string
+    readonly race: string
+    readonly date: string
 }> {}
 
 // oltre il confine di processo
 export class UnparsableDateError extends Schema.TaggedError<UnparsableDateError>()(
-  "UnparsableDateError",
-  { race: Schema.String, date: Schema.String },
+    "UnparsableDateError",
+    { race: Schema.String, date: Schema.String },
 ) {}
 ```
 
@@ -227,15 +227,15 @@ Effect.promise(() => client.connect())
 
 // sì
 Effect.tryPromise({
-  try: () => api.spreadsheets.get({ spreadsheetId }),
-  catch: toSheetError(spreadsheetId),
+    try: () => api.spreadsheets.get({ spreadsheetId }),
+    catch: toSheetError(spreadsheetId),
 })
 ```
 
 - **archivio**:
-  - forma thunk seguita da `catchAll` (`packages/http/src/infra/fetch-http-client.ts:30`, `apps/caveau/src/features/auth/session.ts:32-39`, `apps/caveau/src/features/auth/action-login.ts:47`);
-  - `Effect.promise` sulla connessione Mongo (`packages/shared/src/mongodb.ts:17`);
-  - forma oggetto corretta in `packages/config-editor-data/src/infra/assets/assets.ts:37`.
+    - forma thunk seguita da `catchAll` (`packages/http/src/infra/fetch-http-client.ts:30`, `apps/caveau/src/features/auth/session.ts:32-39`, `apps/caveau/src/features/auth/action-login.ts:47`);
+    - `Effect.promise` sulla connessione Mongo (`packages/shared/src/mongodb.ts:17`);
+    - forma oggetto corretta in `packages/config-editor-data/src/infra/assets/assets.ts:37`.
 - **Questo repo**: conforme (`src/sheet/google/GoogleSheet.ts:42`).
 - **Enforcement**: `lint-sintattico`. Si segnala `Effect.tryPromise`/`Effect.try` il cui primo argomento non è un `ObjectExpression`. `Effect.promise` va segnalato con un warning, tranne quando è il secondo argomento di `acquireRelease`.
 
@@ -260,9 +260,9 @@ Effect.catchTag(["ParseError", "ReservedPortError"], () => Effect.succeed(3000))
 ```
 
 - **archivio**:
-  - catch-all che ingoia (`apps/caveau/src/features/config/api-config.ts:46`);
-  - `handleErrors`: un dispatcher per `_tag` fatto a mano sopra `catchAll`, con `e as never` (`packages/shared/src/effect.ts:29,37`). È esaustivo per tipo, ma reinventa `catchTags`;
-  - quattro `catchTag` che mappano sullo stesso errore, dove bastava un `mapError` (`packages/pimcore-data/src/infra/users/http-adapter.ts:23-34`).
+    - catch-all che ingoia (`apps/caveau/src/features/config/api-config.ts:46`);
+    - `handleErrors`: un dispatcher per `_tag` fatto a mano sopra `catchAll`, con `e as never` (`packages/shared/src/effect.ts:29,37`). È esaustivo per tipo, ma reinventa `catchTags`;
+    - quattro `catchTag` che mappano sullo stesso errore, dove bastava un `mapError` (`packages/pimcore-data/src/infra/users/http-adapter.ts:23-34`).
 - **Questo repo**: conforme. `Effect.catch` compare solo al bordo (`src/main.ts:95`) e per convertire in `RaceFillResult` (`src/commands/fill.ts:87`).
 - **Enforcement**: `lint-sintattico`. Il preset copre le trasformazioni (`catch-all-to-map-error` e `catch-unfailable-effect`, alzate a error, più `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`). **Verificato scoperto**: il catch-all senza parametro che ingoia, e la discriminazione manuale su `_tag` dentro `Effect.catch` — quest'ultima è il bersaglio di `no-manual-effect-error-tag` di anti-slop (passo 2), il primo richiede una regola locale con allowlist per l'entry point.
 
@@ -285,11 +285,11 @@ const parseObject = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unkn
 ```
 
 - **archivio**:
-  - positivo: schema del documento Mongo più `toCollection` (`packages/archivio-data/src/infra/collections/mongo-collections.ts:12-40`);
-  - asserzioni dopo la decodifica (`packages/http/src/infra/fetch-http-client.ts:56`) e sui form (`apps/caveau/src/features/search/action-saved-searches.ts:83`, `apps/caveau/src/features/users/api-user.ts:16`).
+    - positivo: schema del documento Mongo più `toCollection` (`packages/archivio-data/src/infra/collections/mongo-collections.ts:12-40`);
+    - asserzioni dopo la decodifica (`packages/http/src/infra/fetch-http-client.ts:56`) e sui form (`apps/caveau/src/features/search/action-saved-searches.ts:83`, `apps/caveau/src/features/users/api-user.ts:16`).
 - **Questo repo**:
-  - conforme su `src/agent/parseAgentOutput.ts:6`, `src/sheet/google/GoogleSheet.ts:45` e `src/sheet/google/serviceAccountKey.ts:12`; nessun `as` oltre `as const`;
-  - devia su `src/agent/extractJson.ts:5`, con `JSON.parse` in try/catch. Le API `Schema.decodeUnknownOption` e `Schema.fromJsonString` esistono in v4, ma la combinazione con `Schema.Unknown` non è stata eseguita.
+    - conforme su `src/agent/parseAgentOutput.ts:6`, `src/sheet/google/GoogleSheet.ts:45` e `src/sheet/google/serviceAccountKey.ts:12`; nessun `as` oltre `as const`;
+    - devia su `src/agent/extractJson.ts:5`, con `JSON.parse` in try/catch. Le API `Schema.decodeUnknownOption` e `Schema.fromJsonString` esistono in v4, ma la combinazione con `Schema.Unknown` non è stata eseguita.
 - **Enforcement**: `lint-sintattico`. Si segnala `JSON.parse`, e `TSAsExpression` diversa da `as const`; per le asserzioni anti-slop ha `require-safety-comment-for-type-assertion` e `no-chained-type-assertions`. In `lint-tipi`: `preferSchemaOverJson` e `unsafeEffectTypeAssertion` (entrambe off di default).
 
 ### P12 · HttpClient configurato in Layer
@@ -354,18 +354,18 @@ planned.sectionAction._tag === "UseExistingSection" ? [] : [describe(planned.sec
 
 // sì
 Match.valueTags(planned.sectionAction, {
-  UseExistingSection: () => [],
-  CreateSection: (action) => [describe(action)],
+    UseExistingSection: () => [],
+    CreateSection: (action) => [describe(action)],
 })
 outcomes.some(Predicate.isTagged("Failed"))
 ```
 
 - **archivio**:
-  - `Match.value` + `Match.when({ _tag })` + `Match.exhaustive` in 25 file (`apps/caveau/src/features/collections/use-collections.ts:67`); con `Match.tag` o `Match.valueTags` sarebbe più corto;
-  - `_tag ===` in OR (`apps/caveau/src/features/users/user-edit-form.tsx:71-72`).
+    - `Match.value` + `Match.when({ _tag })` + `Match.exhaustive` in 25 file (`apps/caveau/src/features/collections/use-collections.ts:67`); con `Match.tag` o `Match.valueTags` sarebbe più corto;
+    - `_tag ===` in OR (`apps/caveau/src/features/users/user-edit-form.tsx:71-72`).
 - **Questo repo**:
-  - conforme dal 2026-09-14, con la migrazione a `Data.taggedEnum` (P15): `Match.valueTags` in `src/sheet/google/serviceAccountKey.ts:30,37`; `$match` in `src/plan/planRow.ts:44,54`, `src/sheet/print/PrintSheetWriter.ts:21` e `src/sheet/parseSheet.ts:66`; `$is` in `src/sheet/google/insertRowRequests.ts:64,99` e `src/commands/summary.ts:4,44`;
-  - resta da coprire con `Match` la sola unione che non è `taggedEnum`, `src/agent/RaceCard.ts`, che viene da Schema (vedi "Migrazioni da fare", punto 2).
+    - conforme dal 2026-09-14, con la migrazione a `Data.taggedEnum` (P15): `Match.valueTags` in `src/sheet/google/serviceAccountKey.ts:30,37`; `$match` in `src/plan/planRow.ts:44,54`, `src/sheet/print/PrintSheetWriter.ts:21` e `src/sheet/parseSheet.ts:66`; `$is` in `src/sheet/google/insertRowRequests.ts:64,99` e `src/commands/summary.ts:4,44`;
+    - resta da coprire con `Match` la sola unione che non è `taggedEnum`, `src/agent/RaceCard.ts`, che viene da Schema (vedi "Migrazioni da fare", punto 2).
 - **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` di anti-slop è attiva (a `error`, rumore zero) senza modifiche: segnala anche gli `switch` completi su `_tag`, ed è voluto, perché la via preferita è `$match` o `Match`. `prefer-effect-match` copre le catene di ternari.
 
 ### P15 · Varianti costruite con costruttori, non letterali `_tag`
@@ -456,10 +456,10 @@ const client = yield* Effect.acquireRelease(
 
 ```ts
 const [stdout, stderr] =
-  yield *
-  Effect.all([collect(handle.stdout), collect(handle.stderr)], {
-    concurrency: "unbounded",
-  })
+    yield *
+    Effect.all([collect(handle.stdout), collect(handle.stderr)], {
+        concurrency: "unbounded",
+    })
 ```
 
 - **archivio**: `"unbounded"` per i caricamenti di pagina (`apps/caveau/src/features/detail/apis/api-detail-page.ts:48` e altri 9 punti). È ragionevole, ma nessun limite verso Pimcore.
@@ -475,12 +475,12 @@ const [stdout, stderr] =
 ```ts
 // no
 Effect.gen(function* () {
-  for (const name of yield* missing) console.log(name)
+    for (const name of yield* missing) console.log(name)
 })
 
 // sì
 Effect.gen(function* () {
-  yield* Effect.forEach(yield* missing, (name) => Console.log(name))
+    yield* Effect.forEach(yield* missing, (name) => Console.log(name))
 })
 ```
 
@@ -497,12 +497,12 @@ Effect.gen(function* () {
 ```ts
 // no
 test("…", async () => {
-  await Effect.runPromise(authorize({ role: "Manager" }))
+    await Effect.runPromise(authorize({ role: "Manager" }))
 })
 
 // sì
 const sheetWith = (...rows: ReadonlyArray<Row>) =>
-  Layer.succeed(SheetReader, SheetReader.of({ rows: Effect.succeed([header, ...rows]) }))
+    Layer.succeed(SheetReader, SheetReader.of({ rows: Effect.succeed([header, ...rows]) }))
 ```
 
 - **archivio**: niente `@effect/vitest`. `runPromise` nei test (`apps/config-editor/src/features/auth/session.test.ts:12`) e `ManagedRuntime` a livello di modulo mai rilasciato (`packages/http/src/infra/http-client.test.ts:13`).
@@ -540,23 +540,23 @@ I quattro pattern seguenti vengono da inloco e valgono insieme: descrivono la fo
 ```ts
 // no (inloco, 60e3f77)
 export const POST = async (request: Request) => {
-  const credential = await readSession()
-  const submission = submittedEvent(await request.formData())
-  if (submission._tag === "Left") return new Response(submission.left, { status: 400 })
-  const created = await Effect.runPromise(
-    Effect.either(apiCreateEvent(credential, submission.right)),
-  )
-  // …
+    const credential = await readSession()
+    const submission = submittedEvent(await request.formData())
+    if (submission._tag === "Left") return new Response(submission.left, { status: 400 })
+    const created = await Effect.runPromise(
+        Effect.either(apiCreateEvent(credential, submission.right)),
+    )
+    // …
 }
 
 // sì (inloco, c3c5ab1)
 const createEvent = Effect.fn("events.create")(function* (request: Request) {
-  const credential = yield* sessionCredential
-  const form = yield* Effect.tryPromise({
-    try: () => request.formData(),
-    catch: () => new BadRequest({ message: "invalid form data" }),
-  })
-  // …
+    const credential = yield* sessionCredential
+    const form = yield* Effect.tryPromise({
+        try: () => request.formData(),
+        catch: () => new BadRequest({ message: "invalid form data" }),
+    })
+    // …
 })
 ```
 
@@ -639,7 +639,7 @@ export const POST = (request: Request) => Effect.runPromise(createEvent(request)
 
 // sì (inloco, c3c5ab1)
 export const POST = (request: Request) =>
-  Effect.runPromise(createEvent(request) satisfies Effect.Effect<Response, never>)
+    Effect.runPromise(createEvent(request) satisfies Effect.Effect<Response, never>)
 
 // equivalente, più facile da controllare col lint
 const runBoundary = (effect: Effect.Effect<Response, never, never>) => Effect.runPromise(effect)
@@ -696,16 +696,16 @@ Fatti verificati su repo, CHANGELOG e npm:
 - **Supporto Effect 4**: `@effect/language-service` ha i completamenti dalla 0.73.0 e diagnostiche e refactor dalla 0.74.0 (febbraio 2026). Riconosce la versione installata e attiva le regole per v3 o v4. Entrambi i repo testano contro `effect` `4.0.0-beta.107`; la serie rc (qui rc.112) non è menzionata.
 - **TypeScript 7**: questo repo ha `typescript` `7.0.2`, il port nativo in Go, che non ha `lib/typescript.js`. Il plugin JS e il suo `patch` accettano solo TS 5 e 6: `patch` si ferma con "for 7 support look into @effect/tsgo". Il README dice di usare `@effect/tsgo` da TS 7.
 - **`@effect/tsgo` 0.45.0**:
-  - supporta TypeScript `7.0.2`, lo stesso gitHead installato qui;
-  - `effect-tsgo patch` sostituisce il binario `tsc` della piattaforma e conserva una copia `.original`;
-  - `effect-tsgo diagnostics --project tsconfig.json` funziona senza patch, con `--format`, `--strict` e `--severity`, ed esce con 1 sugli errori (o sui warning con `--strict`).
+    - supporta TypeScript `7.0.2`, lo stesso gitHead installato qui;
+    - `effect-tsgo patch` sostituisce il binario `tsc` della piattaforma e conserva una copia `.original`;
+    - `effect-tsgo diagnostics --project tsconfig.json` funziona senza patch, con `--format`, `--strict` e `--severity`, ed esce con 1 sugli errori (o sui warning con `--strict`).
 - **Il `patch` del plugin JS (solo TS 5/6)**: riscrive `typescript.js` e `_tsc.js`, e dopo il patch il `tsc` normale emette le diagnostiche e ne tiene conto nell'exit code. Il README consiglia `"prepare": "effect-language-service patch"`.
 - **Severità**: si configura con `diagnosticSeverity` nel plugin del `tsconfig`, oppure con commenti `// @effect-diagnostics effect/<regola>:off`. tsgo ha anche `overrides` per glob.
 - **Diagnostiche utili per questo catalogo**:
-  - errore: `floatingEffect`, `missingStarInYieldEffectGen`, `missingReturnYieldStar`, `missingEffectContext`;
-  - warning: `globalErrorInEffectFailure`, `outdatedApi` (solo v4), `duplicatePackage`;
-  - suggestion: `effectFnOpportunity`, `leakingRequirements`, `catchUnfailableEffect`, `catchAllToMapError`, `unnecessaryFailYieldableError`, `schemaSyncInEffect` (tsgo: v3 e v4);
-  - off di default: `strictEffectProvide`.
+    - errore: `floatingEffect`, `missingStarInYieldEffectGen`, `missingReturnYieldStar`, `missingEffectContext`;
+    - warning: `globalErrorInEffectFailure`, `outdatedApi` (solo v4), `duplicatePackage`;
+    - suggestion: `effectFnOpportunity`, `leakingRequirements`, `catchUnfailableEffect`, `catchAllToMapError`, `unnecessaryFailYieldableError`, `schemaSyncInEffect` (tsgo: v3 e v4);
+    - off di default: `strictEffectProvide`.
 - **Verificato in locale (2026-09-14)**: le diagnostiche funzionano con `effect@4.0.0-rc.112`; `effect-tsgo patch --oxlint` riesce sul layout pnpm di questo repo; il preset `recommended` attiva 98 regole (85 `warn`, 13 `error`) con `options.typeAware: true`, tutte con severità già impostata (nessuna resta spenta in attesa di configurazione).
 
 ### Integrazione ufficiale con oxlint
@@ -726,8 +726,8 @@ pnpm add -D @effect/tsgo oxlint oxlint-tsgolint
 
 ```json
 {
-  "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
-  "extends": ["./node_modules/@effect/tsgo/oxlint-presets/recommended.json"]
+    "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
+    "extends": ["./node_modules/@effect/tsgo/oxlint-presets/recommended.json"]
 }
 ```
 
@@ -807,23 +807,23 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 3. ~~**Plugin locale**~~ **fatto** (2026-09-14): `tools/oxlint/effect-local/`, 12 regole con `RuleTester`, vedi "Plugin locale" sopra. Cadute perché coperte dal preset: `no-sync-decode-in-effect` (P11), `no-process-env` (P13), `return-yield-error` (P07), `no-console-in-effect` (P21).
 4. **tsgo fuori da oxlint**: se l'integrazione del passo 1 non funziona su `rc.112`, il ripiego è `effect-tsgo diagnostics --project tsconfig.json` come script separato, senza patch, con `floatingEffect`, `missingStarInYieldEffectGen`, `globalErrorInEffectFailure`, `effectFnOpportunity` e `leakingRequirements` (P18, P19).
 5. **Skill**, sottile:
-   - i pattern `solo-skill` (P02, P03, P06, P12, P19, P20);
-   - la tabella v3 → v4:
+    - i pattern `solo-skill` (P02, P03, P06, P12, P19, P20);
+    - la tabella v3 → v4:
 
-     | v3                         | v4                           |
-     | -------------------------- | ---------------------------- |
-     | `Context.Tag`              | `Context.Service`            |
-     | `catchAll`                 | `catch`                      |
-     | `Either` / `Effect.either` | `Result` / `Effect.result`   |
-     | `Option.fromNullable`      | `Option.fromNullishOr`       |
-     | `Layer.scoped`             | `Layer.effect`               |
-     | `Schema.decodeUnknown`     | `Schema.decodeUnknownEffect` |
-     | `@effect/platform`         | `effect/unstable/http`       |
+        | v3                         | v4                           |
+        | -------------------------- | ---------------------------- |
+        | `Context.Tag`              | `Context.Service`            |
+        | `catchAll`                 | `catch`                      |
+        | `Either` / `Effect.either` | `Result` / `Effect.result`   |
+        | `Option.fromNullable`      | `Option.fromNullishOr`       |
+        | `Layer.scoped`             | `Layer.effect`               |
+        | `Schema.decodeUnknown`     | `Schema.decodeUnknownEffect` |
+        | `@effect/platform`         | `effect/unstable/http`       |
 
-   - il rimando a `node_modules/effect/AGENTS.md` e `ai-docs/`;
-   - l'istruzione di lanciare `pnpm lint` e `pnpm typecheck` prima di chiudere.
+    - il rimando a `node_modules/effect/AGENTS.md` e `ai-docs/`;
+    - l'istruzione di lanciare `pnpm lint` e `pnpm typecheck` prima di chiudere.
 
-   Niente che il linter già applica.
+    Niente che il linter già applica.
 
 6. **Hook**: un `PostToolUse` su `Edit|Write` per `src/**/*.ts` che lancia `oxlint` sul file toccato, più `pnpm typecheck && pnpm lint` a fine turno. Non c'è CI (`docs/tech-choices.md`), quindi l'hook è l'unico punto di enforcement automatico.
 

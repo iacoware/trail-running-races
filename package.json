@@ -1,35 +1,35 @@
 {
-  "name": "trail-running-races",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "prepare": "effect-tsgo patch --oxlint",
-    "start": "node --env-file-if-exists=.env src/main.ts",
-    "lint": "oxlint",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run && pnpm test:lint-rules",
-    "test:lint-rules": "node --test tools/oxlint/**/rules/*.test.ts"
-  },
-  "dependencies": {
-    "@effect/platform-node": "4.0.0-rc.112",
-    "@googleapis/sheets": "^14.0.0",
-    "effect": "4.0.0-rc.112"
-  },
-  "devDependencies": {
-    "@effect/tsgo": "0.45.0",
-    "@effect/vitest": "4.0.0-rc.112",
-    "@oxlint/plugins": "1.82.0",
-    "@types/node": "^24.13.3",
-    "oxfmt": "0.67.0",
-    "oxlint": "1.82.0",
-    "oxlint-tsgolint": "7.0.2001",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
-  },
-  "engines": {
-    "node": ">=24"
-  }
+    "name": "trail-running-races",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "prepare": "effect-tsgo patch --oxlint",
+        "start": "node --env-file-if-exists=.env src/main.ts",
+        "lint": "oxlint",
+        "format": "oxfmt",
+        "format:check": "oxfmt --check",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run && pnpm test:lint-rules",
+        "test:lint-rules": "node --test tools/oxlint/**/rules/*.test.ts"
+    },
+    "dependencies": {
+        "@effect/platform-node": "4.0.0-rc.112",
+        "@googleapis/sheets": "^14.0.0",
+        "effect": "4.0.0-rc.112"
+    },
+    "devDependencies": {
+        "@effect/tsgo": "0.45.0",
+        "@effect/vitest": "4.0.0-rc.112",
+        "@oxlint/plugins": "1.82.0",
+        "@types/node": "^24.13.3",
+        "oxfmt": "0.67.0",
+        "oxlint": "1.82.0",
+        "oxlint-tsgolint": "7.0.2001",
+        "typescript": "^7.0.2",
+        "vitest": "^4.1.11"
+    },
+    "engines": {
+        "node": ">=24"
+    }
 }

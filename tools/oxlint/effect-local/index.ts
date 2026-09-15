@@ -14,21 +14,21 @@ import { singleStylePerFunctionRule } from "./rules/single-style-per-function.ts
 import { tryObjectFormRule } from "./rules/try-object-form.ts"
 
 const effectLocalPlugin = eslintCompatPlugin({
-  meta: { name: "effect-local" },
-  rules: {
-    "boundary-entrypoint-shape": boundaryEntrypointShapeRule,
-    "error-handling-in-effect-fn-handler": errorHandlingInEffectFnHandlerRule,
-    "no-bare-error-in-effect": noBareErrorInEffectRule,
-    "no-effect-promise": noEffectPromiseRule,
-    "no-parameterless-catch-all": noParameterlessCatchAllRule,
-    "no-transport-types-in-generator": noTransportTypesInGeneratorRule,
-    "prefer-effect-fn": preferEffectFnRule,
-    "redacted-secret-names": redactedSecretNamesRule,
-    "run-only-at-entry": runOnlyAtEntryRule,
-    "service-port-shape-only": servicePortShapeOnlyRule,
-    "single-style-per-function": singleStylePerFunctionRule,
-    "try-object-form": tryObjectFormRule,
-  },
+    meta: { name: "effect-local" },
+    rules: {
+        "boundary-entrypoint-shape": boundaryEntrypointShapeRule,
+        "error-handling-in-effect-fn-handler": errorHandlingInEffectFnHandlerRule,
+        "no-bare-error-in-effect": noBareErrorInEffectRule,
+        "no-effect-promise": noEffectPromiseRule,
+        "no-parameterless-catch-all": noParameterlessCatchAllRule,
+        "no-transport-types-in-generator": noTransportTypesInGeneratorRule,
+        "prefer-effect-fn": preferEffectFnRule,
+        "redacted-secret-names": redactedSecretNamesRule,
+        "run-only-at-entry": runOnlyAtEntryRule,
+        "service-port-shape-only": servicePortShapeOnlyRule,
+        "single-style-per-function": singleStylePerFunctionRule,
+        "try-object-form": tryObjectFormRule,
+    },
 })
 
 export default effectLocalPlugin

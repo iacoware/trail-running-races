@@ -1,20 +1,20 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "lib": ["esnext"],
-    "types": ["node"],
-    "strict": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "skipLibCheck": true,
-    "plugins": [{ "name": "@effect/language-service", "diagnostics": false }]
-  },
-  "include": ["src/**/*.ts", "test/**/*.ts", "tools/**/*.ts"]
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "lib": ["esnext"],
+        "types": ["node"],
+        "strict": true,
+        "exactOptionalPropertyTypes": true,
+        "noUncheckedIndexedAccess": true,
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "erasableSyntaxOnly": true,
+        "verbatimModuleSyntax": true,
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        "plugins": [{ "name": "@effect/language-service", "diagnostics": false }]
+    },
+    "include": ["src/**/*.ts", "test/**/*.ts", "tools/**/*.ts"]
 }

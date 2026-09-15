@@ -7,36 +7,36 @@ import { missingRaces } from "./missingRaces.ts"
 const header = ["Nome", "Data (+ o -)", "Luogo", "Da FI", "Tipo", "Distanze"]
 
 const sheetWith = (...rows: ReadonlyArray<ReadonlyArray<string>>) =>
-  Result.getOrThrow(parseSheet([header, ...rows]))
+    Result.getOrThrow(parseSheet([header, ...rows]))
 
 test("returns the names without a race row, in list order", () => {
-  const sheet = sheetWith(["Toscana"], ["Chianti UTMB", "18-21 marzo"])
+    const sheet = sheetWith(["Toscana"], ["Chianti UTMB", "18-21 marzo"])
 
-  const missing = missingRaces(["Nuova Gara", "Chianti UTMB", "Altra Gara"], sheet)
+    const missing = missingRaces(["Nuova Gara", "Chianti UTMB", "Altra Gara"], sheet)
 
-  expect(missing).toEqual(["Nuova Gara", "Altra Gara"])
+    expect(missing).toEqual(["Nuova Gara", "Altra Gara"])
 })
 
 test("matches a name written with different case and spacing than the sheet", () => {
-  const sheet = sheetWith(["Toscana"], ["Chianti  UTMB", "18-21 marzo"])
+    const sheet = sheetWith(["Toscana"], ["Chianti  UTMB", "18-21 marzo"])
 
-  const missing = missingRaces(["chianti utmb"], sheet)
+    const missing = missingRaces(["chianti utmb"], sheet)
 
-  expect(missing).toEqual([])
+    expect(missing).toEqual([])
 })
 
 test("counts a race outside every section as present", () => {
-  const sheet = sheetWith(["Toscana"], [], ["Orfana", "2 maggio"])
+    const sheet = sheetWith(["Toscana"], [], ["Orfana", "2 maggio"])
 
-  const missing = missingRaces(["Orfana"], sheet)
+    const missing = missingRaces(["Orfana"], sheet)
 
-  expect(missing).toEqual([])
+    expect(missing).toEqual([])
 })
 
 test("does not count a section header as a race", () => {
-  const sheet = sheetWith(["Toscana"])
+    const sheet = sheetWith(["Toscana"])
 
-  const missing = missingRaces(["Toscana"], sheet)
+    const missing = missingRaces(["Toscana"], sheet)
 
-  expect(missing).toEqual(["Toscana"])
+    expect(missing).toEqual(["Toscana"])
 })

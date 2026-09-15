@@ -15,87 +15,87 @@ const REGIONS_PLACEHOLDER = "{{regioni}}"
 const REGIONS_TEXT = REGIONS.map((region) => `\`${region}\``).join(", ")
 
 const readPromptTemplate = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem
-  return yield* fs.readFileString(PROMPT_PATH).pipe(
-    Effect.mapError(
-      (cause) =>
-        new PromptFileError({
-          path: PROMPT_PATH,
-          message: `prompt non leggibile da ${PROMPT_PATH}: ${cause.message}`,
-          cause,
-        }),
-    ),
-  )
+    const fs = yield* FileSystem.FileSystem
+    return yield* fs.readFileString(PROMPT_PATH).pipe(
+        Effect.mapError(
+            (cause) =>
+                new PromptFileError({
+                    path: PROMPT_PATH,
+                    message: `prompt non leggibile da ${PROMPT_PATH}: ${cause.message}`,
+                    cause,
+                }),
+        ),
+    )
 })
 
 // AGENT_CMD is split on whitespace only: no quoting, as tech-choices § Effect 4 asks for
 // the array form rather than a shell.
 const splitCommand = (command: string) => {
-  const [executable = "", ...args] = command.split(/\s+/)
-  return { executable, args }
+    const [executable = "", ...args] = command.split(/\s+/)
+    return { executable, args }
 }
 
 const collectText = (stream: Stream.Stream<Uint8Array, PlatformError.PlatformError>) =>
-  Stream.mkString(Stream.decodeText(stream))
+    Stream.mkString(Stream.decodeText(stream))
 
 export const layer = Layer.effect(
-  Agent,
-  Effect.gen(function* () {
-    const { command, timeoutSeconds } = yield* agentConfig
-    const { executable, args } = splitCommand(command)
-    const spawner = yield* ChildProcessSpawner.ChildProcessSpawner
-    // The closed region list lives in the Schema; the prompt receives it so the two never drift.
-    const template = (yield* readPromptTemplate).replaceAll(REGIONS_PLACEHOLDER, REGIONS_TEXT)
+    Agent,
+    Effect.gen(function* () {
+        const { command, timeoutSeconds } = yield* agentConfig
+        const { executable, args } = splitCommand(command)
+        const spawner = yield* ChildProcessSpawner.ChildProcessSpawner
+        // The closed region list lives in the Schema; the prompt receives it so the two never drift.
+        const template = (yield* readPromptTemplate).replaceAll(REGIONS_PLACEHOLDER, REGIONS_TEXT)
 
-    const run = Effect.fn("run")(
-      function* (name: string) {
-        const prompt = template.replaceAll(NAME_PLACEHOLDER, name)
-        const handle = yield* spawner.spawn(
-          ChildProcess.make(executable, args, {
-            stdin: Stream.make(prompt).pipe(Stream.encodeText),
-          }),
+        const run = Effect.fn("run")(
+            function* (name: string) {
+                const prompt = template.replaceAll(NAME_PLACEHOLDER, name)
+                const handle = yield* spawner.spawn(
+                    ChildProcess.make(executable, args, {
+                        stdin: Stream.make(prompt).pipe(Stream.encodeText),
+                    }),
+                )
+                const [stdout, stderr] = yield* Effect.all(
+                    [collectText(handle.stdout), collectText(handle.stderr)],
+                    { concurrency: "unbounded" },
+                )
+                const exitCode = yield* handle.exitCode
+                if (exitCode !== 0) {
+                    return yield* new AgentProcessError({
+                        race: name,
+                        message: `agente terminato con exit code ${exitCode}: ${stderr.trim()}`,
+                    })
+                }
+                return yield* Effect.fromResult(parseAgentOutput(name, stdout))
+            },
+            Effect.scoped,
+            (effect, name) =>
+                effect.pipe(
+                    Effect.catchTag(
+                        "PlatformError",
+                        (cause) =>
+                            new AgentProcessError({
+                                race: name,
+                                message: `agente non eseguibile (${command}): ${cause.message}`,
+                                cause,
+                            }),
+                    ),
+                ),
         )
-        const [stdout, stderr] = yield* Effect.all(
-          [collectText(handle.stdout), collectText(handle.stderr)],
-          { concurrency: "unbounded" },
-        )
-        const exitCode = yield* handle.exitCode
-        if (exitCode !== 0) {
-          return yield* new AgentProcessError({
-            race: name,
-            message: `agente terminato con exit code ${exitCode}: ${stderr.trim()}`,
-          })
-        }
-        return yield* Effect.fromResult(parseAgentOutput(name, stdout))
-      },
-      Effect.scoped,
-      (effect, name) =>
-        effect.pipe(
-          Effect.catchTag(
-            "PlatformError",
-            (cause) =>
-              new AgentProcessError({
-                race: name,
-                message: `agente non eseguibile (${command}): ${cause.message}`,
-                cause,
-              }),
-          ),
-        ),
-    )
 
-    const search = (name: string) =>
-      run(name).pipe(
-        Effect.timeoutOrElse({
-          duration: Duration.seconds(timeoutSeconds),
-          orElse: () =>
-            new AgentTimeout({
-              race: name,
-              seconds: timeoutSeconds,
-              message: `agente senza risposta entro ${timeoutSeconds}s`,
-            }),
-        }),
-      )
+        const search = (name: string) =>
+            run(name).pipe(
+                Effect.timeoutOrElse({
+                    duration: Duration.seconds(timeoutSeconds),
+                    orElse: () =>
+                        new AgentTimeout({
+                            race: name,
+                            seconds: timeoutSeconds,
+                            message: `agente senza risposta entro ${timeoutSeconds}s`,
+                        }),
+                }),
+            )
 
-    return Agent.of({ search })
-  }),
+        return Agent.of({ search })
+    }),
 )
