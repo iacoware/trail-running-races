@@ -15,6 +15,7 @@ import { runOnlyAtEntryRule } from "./rules/run-only-at-entry.ts"
 import { servicePortShapeOnlyRule } from "./rules/service-port-shape-only.ts"
 import { singleStylePerFunctionRule } from "./rules/single-style-per-function.ts"
 import { tryObjectFormRule } from "./rules/try-object-form.ts"
+import { untracedRecursionRule } from "./rules/untraced-recursion.ts"
 
 const effectLocalPlugin = eslintCompatPlugin({
     meta: { name: "effect-local" },
@@ -34,6 +35,7 @@ const effectLocalPlugin = eslintCompatPlugin({
         "service-port-shape-only": servicePortShapeOnlyRule,
         "single-style-per-function": singleStylePerFunctionRule,
         "try-object-form": tryObjectFormRule,
+        "untraced-recursion": untracedRecursionRule,
     },
 })
 

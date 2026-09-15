@@ -49,7 +49,7 @@ const insert = Effect.fn("insert")(function* (
 ) {
     const writer = yield* SheetWriter
     // The sheet is read again here: a race inserted earlier in this run moved the rows below it.
-    const sheet = yield* readSheetQuietly
+    const sheet = yield* readSheetQuietly()
     const planned = yield* Effect.fromResult(plannedFor(sheet))
     yield* writer.insert(planned)
     return planned
@@ -88,7 +88,7 @@ const fillRace = Effect.fn("fillRace")(
 export const fill = (options: { readonly only: Option.Option<string> }) =>
     Stream.unwrap(
         Effect.gen(function* () {
-            const sheet = yield* readSheet
+            const sheet = yield* readSheet()
             const names = yield* candidates(sheet, options.only)
             return Stream.fromIterable(names).pipe(Stream.mapEffect(fillRace))
         }),

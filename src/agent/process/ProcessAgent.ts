@@ -14,7 +14,7 @@ const NAME_PLACEHOLDER = "{{nome}}"
 const REGIONS_PLACEHOLDER = "{{regioni}}"
 const REGIONS_TEXT = REGIONS.map((region) => `\`${region}\``).join(", ")
 
-const readPromptTemplate = Effect.gen(function* () {
+const readPromptTemplate = Effect.fn("readPromptTemplate")(function* () {
     const fs = yield* FileSystem.FileSystem
     return yield* fs.readFileString(PROMPT_PATH).pipe(
         Effect.mapError(
@@ -45,7 +45,7 @@ export const layer = Layer.effect(
         const { executable, args } = splitCommand(command)
         const spawner = yield* ChildProcessSpawner.ChildProcessSpawner
         // The closed region list lives in the Schema; the prompt receives it so the two never drift.
-        const template = (yield* readPromptTemplate).replaceAll(REGIONS_PLACEHOLDER, REGIONS_TEXT)
+        const template = (yield* readPromptTemplate()).replaceAll(REGIONS_PLACEHOLDER, REGIONS_TEXT)
 
         const run = Effect.fn("run")(
             function* (name: string) {

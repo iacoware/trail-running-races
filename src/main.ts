@@ -47,8 +47,8 @@ const planLayer = (sheetCsv: Option.Option<string>) =>
         ProcessAgent.layer,
     )
 
-const printMissing = Effect.gen(function* () {
-    const names = yield* missing
+const printMissing = Effect.fn("printMissing")(function* () {
+    const names = yield* missing()
     for (const name of names) yield* Console.log(name)
 })
 
@@ -66,7 +66,7 @@ const run = (argv: ReadonlyArray<string>) => {
     if (Result.isFailure(parsed)) return usageError(parsed.failure)
 
     return CliCommand.$match(parsed.success, {
-        Missing: () => printMissing.pipe(Effect.provide(missingLayer)),
+        Missing: () => printMissing().pipe(Effect.provide(missingLayer)),
         Fill: ({ only }) => printFillSummary(only, "inserite").pipe(Effect.provide(fillLayer)),
         Plan: ({ only, sheetCsv }) =>
             printFillSummary(only, "pianificate").pipe(Effect.provide(planLayer(sheetCsv))),

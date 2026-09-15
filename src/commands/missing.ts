@@ -10,6 +10,6 @@ export const missingIn = Effect.fn("missingIn")(function* (sheet: Sheet) {
     return missingRaces(yield* list.names, sheet)
 })
 
-export const missing = Effect.gen(function* () {
-    return yield* missingIn(yield* readSheet)
+export const missing = Effect.fn("missing")(function* () {
+    return yield* missingIn(yield* readSheet())
 })

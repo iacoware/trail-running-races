@@ -22,6 +22,7 @@
         "effect-local/service-port-shape-only": "error",
         "effect-local/single-style-per-function": "error",
         "effect-local/try-object-form": "error",
+        "effect-local/untraced-recursion": "warn",
         "anti-slop-effect/no-manual-effect-error-tag": "error",
         "anti-slop-effect/prefer-effect-match": "error",
         "anti-slop-effect/no-manual-tag-comparison": "error",

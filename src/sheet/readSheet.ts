@@ -8,13 +8,13 @@ const describe = (warning: SheetWarning) =>
 
 // Every insertion shifts the rows below it, so a position is only valid against the sheet as
 // it is now; the warnings belong to the first read and would only repeat noise on a reread.
-export const readSheetQuietly = Effect.gen(function* () {
+export const readSheetQuietly = Effect.fn("readSheetQuietly")(function* () {
     const reader = yield* SheetReader
     return yield* Effect.fromResult(parseSheet(yield* reader.rows))
 })
 
-export const readSheet = Effect.gen(function* () {
-    const sheet = yield* readSheetQuietly
+export const readSheet = Effect.fn("readSheet")(function* () {
+    const sheet = yield* readSheetQuietly()
     yield* Effect.forEach(sheet.warnings, (warning) => Effect.logWarning(describe(warning)))
     return sheet
 })

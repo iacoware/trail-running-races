@@ -5,6 +5,7 @@ Regole oxlint locali per i pattern Effect che né il preset `effecttsgo` né `an
 | Regola                                 | Pattern                       |
 | -------------------------------------- | ----------------------------- |
 | `prefer-effect-fn`                     | P17                           |
+| `untraced-recursion`                   | P17                           |
 | `error-handling-in-effect-fn-handler`  | P25                           |
 | `single-style-per-function`            | P24                           |
 | `no-transport-types-in-generator`      | P26, opzione `transportTypes` |
