@@ -14,7 +14,7 @@ const order = ({ month, day }: DayOfYear) => month * 100 + day
 // Rows in a section are assumed sorted by date: the new row goes after the last row with a
 // parsable date less than or equal to its own, and in any case before the first unparsable
 // one, which closes the sorted part of the section.
-export const insertionAt = (section: Section, start: DayOfYear) => {
+export const insertionAt = (section: Section, start: DayOfYear): Insertion => {
     let insertion: Insertion = { row: section.headerRow + 1, after: Option.none() }
     for (const race of section.races) {
         const existing = parseDate(race.cells.date)

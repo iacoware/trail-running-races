@@ -9,6 +9,7 @@ import { missingRaces } from "../races/missingRaces.ts"
 import type { SheetColumnMissingError, SheetReadError, SheetWriteError } from "../sheet/errors.ts"
 import type { Sheet } from "../sheet/parseSheet.ts"
 import { readSheet, readSheetQuietly } from "../sheet/readSheet.ts"
+import { SheetReader } from "../sheet/SheetReader.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
 import { missingIn } from "./missing.ts"
 
@@ -78,7 +79,7 @@ const fillRace = Effect.fn("fillRace")(
         }
     },
     // One race in error never stops the run: it is reported and the next race is searched.
-    (effect, name) =>
+    (effect, name): Effect.Effect<RaceFillResult, never, Agent | SheetReader | SheetWriter> =>
         effect.pipe(
             Effect.catch((error) => Effect.succeed(RaceFillResult.Failed({ name, error }))),
         ),

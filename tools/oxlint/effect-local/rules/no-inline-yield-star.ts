@@ -135,7 +135,7 @@ const namesInUse = (scope: Scope) => {
 }
 
 // The parentheses of a call with a single argument belong to the call, not to the `yield*`.
-const replacedRange = (node: Yield, sourceCode: SourceCode) => {
+const replacedRange = (node: Yield, sourceCode: SourceCode): Range => {
     const { parent } = node
     const callParens =
         (parent.type === "CallExpression" || parent.type === "NewExpression") &&

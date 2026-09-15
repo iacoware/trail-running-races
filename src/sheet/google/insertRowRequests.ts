@@ -22,7 +22,8 @@ const linkedCell = (value: string, uri: string): sheets_v4.Schema$CellData =>
         ? {}
         : { ...cell(value), textFormatRuns: [{ startIndex: 0, format: { link: { uri } } }] }
 
-const blankRowValues = (columns: Columns) => Array.from({ length: width(columns) }, () => ({}))
+const blankRowValues = (columns: Columns): Array<sheets_v4.Schema$CellData> =>
+    Array.from({ length: width(columns) }, () => ({}))
 
 const rowValues = (planned: PlannedRow) => {
     const values = blankRowValues(planned.columns)

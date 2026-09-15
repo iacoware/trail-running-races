@@ -2,7 +2,7 @@ import type { Row } from "../SheetReader.ts"
 
 // RFC 4180 as Google Sheets exports it: quoted fields carry commas and newlines, and a
 // doubled quote inside them is a literal one.
-export const parseCsv = (text: string) => {
+export const parseCsv = (text: string): ReadonlyArray<Row> => {
     const rows: Array<Row> = []
     let cells: Array<string> = []
     let cell = ""

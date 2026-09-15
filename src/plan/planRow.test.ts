@@ -7,7 +7,7 @@ import { planReviewRow, planRow } from "./planRow.ts"
 
 const header = ["Nome", "Data (+ o -)", "Luogo", "Da FI", "Tipo", "Distanze"]
 
-const sheetOf = (...rows: ReadonlyArray<ReadonlyArray<string>>) =>
+const sheetOf = (...rows: ReadonlyArray<ReadonlyArray<string>>): Sheet =>
     Result.getOrThrow(parseSheet([header, ...rows]))
 
 const race = (over: Partial<FoundRace> = {}): FoundRace => ({
