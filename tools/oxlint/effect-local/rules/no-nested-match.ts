@@ -1,21 +1,7 @@
 import { defineRule, type ESTree } from "@oxlint/plugins"
 
-import { isFunctionNode, memberOf, type FunctionNode } from "../shared/effect-ast.ts"
-
-const modulesWithMatch = ["Option", "Result", "Exit", "Either"]
-
-const isMatchCall = (node: ESTree.Node | null | undefined): node is ESTree.CallExpression => {
-    if (node?.type !== "CallExpression") return false
-    const { callee } = node
-    if (modulesWithMatch.some((module) => memberOf(callee, module) === "match")) return true
-    if (memberOf(callee, "Match") === "valueTags") return true
-    return (
-        callee.type === "MemberExpression" &&
-        !callee.computed &&
-        callee.property.type === "Identifier" &&
-        callee.property.name === "$match"
-    )
-}
+import { isFunctionNode, type FunctionNode } from "../shared/effect-ast.ts"
+import { handlersOf, isMatchCall } from "../shared/match-ast.ts"
 
 const returnedExpressions = (fn: FunctionNode): ReadonlyArray<ESTree.Node> => {
     if (fn.body?.type !== "BlockStatement") return fn.body ? [fn.body] : []
@@ -32,15 +18,6 @@ const nestedBranches = (handler: ESTree.Node): ReadonlyArray<ESTree.Node> => {
         (expression) => isMatchCall(expression) || expression.type === "ConditionalExpression",
     )
 }
-
-const handlersOf = (match: ESTree.CallExpression) =>
-    match.arguments.flatMap((argument) =>
-        argument.type === "ObjectExpression"
-            ? argument.properties.flatMap((property) =>
-                  property.type === "Property" ? [property.value] : [],
-              )
-            : [],
-    )
 
 export const noNestedMatchRule = defineRule({
     meta: {
