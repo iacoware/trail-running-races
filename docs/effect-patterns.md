@@ -60,8 +60,9 @@ Classi di enforcement:
 | P31 | Nome a ciò che ha significato o si ripete, inline il resto                                          | locale | solo-skill      | invariato                                                      | conforme                                  |
 | P32 | Un `yield*` non sta dentro un'espressione più grande                                                | locale | lint-sintattico | invariato                                                      | conforme                                  |
 | P33 | Niente `Effect`, `Stream` e `Layer` nel tipo di ritorno annotato                                    | locale | lint-sintattico | invariato                                                      | conforme                                  |
+| P34 | Handler di un match allo stesso livello di astrazione                                               | locale | lint-sintattico | invariato                                                      | conforme                                  |
 
-Totale: 24 `lint-sintattico`, 2 `lint-tipi`, 7 `solo-skill`.
+Totale: 25 `lint-sintattico`, 2 `lint-tipi`, 7 `solo-skill`.
 
 ## Pattern interamente meccanizzati
 
@@ -783,6 +784,29 @@ export const insertionAt = (section: Section, start: DayOfYear): Insertion => {
 - **Questo repo**: conforme dal 2026-09-15; rimossa l'unica annotazione con canali (pipeable di `Effect.fn` in `src/commands/fill.ts`) e l'import rimasto orfano. Una prima versione toglieva ogni annotazione che ripeteva l'inferenza (14 punti, `981a4dc`), annullata in `c47abdc`.
 - **Enforcement**: `lint-sintattico`, `effect-local/no-effect-return-type` con suggestion, non autofix. Nomi confrontati alla lettera: `Effect.Effect` sì, un `import type { Effect }` usato come `Effect<…>` sfugge. Senza informazioni di tipo (i plugin JS di oxlint non ne hanno) i rami da unificare si riconoscono dalla forma dei ritorni: callee o classe diversa, nodi di tipo diverso. Spenta su `tools/oxlint/anti-slop-effect/**`, vendorizzato a file invariati.
 
+### P34 · Handler di un match allo stesso livello di astrazione
+
+**Regola**: se un handler di un match delega a una funzione con nome, anche gli altri lo fanno. Un handler con un corpo proprio (più statement, un generatore, `Effect.fn(…)(function* …)` o `Effect.gen`) accanto a uno che chiama una funzione si estrae in una funzione con nome.
+
+**Perché**: un ramo che dice _cosa_ accanto a uno che mostra _come_ obbliga chi legge a cambiare livello a metà della scelta, e nasconde che i rami sono alternative equivalenti.
+
+```ts
+// no
+Option.match(only, {
+    onNone: () => missingIn(sheet),
+    onSome: Effect.fn("onlyCandidate")(function* (name: string) { ... }),
+})
+
+// sì
+Option.match(only, {
+    onNone: () => missingIn(sheet),
+    onSome: (name) => onlyCandidate(sheet, name),
+})
+```
+
+- **Questo repo**: conforme dal 2026-09-15; estratti `onlyCandidate` da `candidates` (`src/commands/fill.ts`) e `endOfExistingSection` da `reviewPositionIn` (`src/plan/planRow.ts`).
+- **Enforcement**: `lint-sintattico`, `effect-local/no-asymmetric-match-handlers` (warn), sugli stessi match di P30. Un handler delega se è un riferimento, una chiamata o una funzione che restituisce solo una chiamata; è inline se ha più statement, è un generatore o costruisce un `Effect.fn`/`Effect.gen`. Letterali, template, array e oggetti restituiti sono valori e non contano da nessuna parte. Solo messaggio, niente fix: l'estrazione deve scegliere nome e parametri catturati (`sheet`); se l'handler è un `Effect.fn("nome")` il messaggio propone quel nome.
+
 ## Regole anti-slop
 
 Le regole stanno nel plugin `anti-slop-effect`. Il pacchetto non è pubblicato su npm: **vendorizzato il 2026-09-14** in `tools/oxlint/anti-slop-effect/` (commit `c44ef22`, MIT, file invariati; origine e istruzioni di aggiornamento nel suo `README.md`), caricato da `.oxlintrc.json` con `jsPlugins`. Nessuna regola usa informazioni di tipo o risolve gli alias d'import (`Effect as E` sfugge), e nessuna ha opzioni.
@@ -827,6 +851,7 @@ Limiti noti, dalla lettura del codice:
 | `no-inline-yield-star`                | P32      | `yield*` il cui risultato è usato dentro un'espressione più grande (argomento, operando, membro, proprietà, template); autofix con estrazione in `const` quando l'ordine degli effetti resta invariato                                              | **warn**, rumore zero dopo l'autofix dei 4 punti                                                                |
 | `no-effect-return-type`               | P33      | `Effect.Effect`, `Stream.Stream` o `Layer.Layer` in un tipo di ritorno annotato, anche annidati; esenti ritorni di forma diversa e ricorsione; suggestion che rimuove l'annotazione                                                                 | **warn**, rumore zero dopo la rimozione in `src/commands/fill.ts`; spenta su `tools/oxlint/anti-slop-effect/**` |
 | `no-nested-match`                     | P30      | handler di `Option`/`Result`/`Exit`/`Either.match`, `$match` o `Match.valueTags` che è un match data-last o restituisce un match o un ternario                                                                                                      | **warn**, rumore zero; prova negativa sul `src/main.ts` precedente                                              |
+| `no-asymmetric-match-handlers`        | P34      | handler di un match (stessi match di `no-nested-match`) con corpo inline (più statement, generatore, `Effect.fn`/`Effect.gen`) accanto a uno che delega a una funzione                                                                              | **warn**, rumore zero dopo l'estrazione dei 2 punti                                                             |
 
 ## Language service
 

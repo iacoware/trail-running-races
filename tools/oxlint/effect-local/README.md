@@ -19,6 +19,7 @@ Regole oxlint locali per i pattern Effect che né il preset `effecttsgo` né `an
 | `provide-named-layer`                  | P28, opzione `testFiles`      |
 | `no-provide-on-definition`             | P28, opzione `testFiles`      |
 | `no-nested-match`                      | P30                           |
+| `no-asymmetric-match-handlers`         | P34                           |
 | `no-inline-yield-star`                 | P32, con autofix              |
 | `no-effect-return-type`                | P33, con suggestion           |
 

@@ -2,6 +2,7 @@ import { eslintCompatPlugin } from "@oxlint/plugins"
 
 import { boundaryEntrypointShapeRule } from "./rules/boundary-entrypoint-shape.ts"
 import { errorHandlingInEffectFnHandlerRule } from "./rules/error-handling-in-effect-fn-handler.ts"
+import { noAsymmetricMatchHandlersRule } from "./rules/no-asymmetric-match-handlers.ts"
 import { noBareErrorInEffectRule } from "./rules/no-bare-error-in-effect.ts"
 import { noEffectPromiseRule } from "./rules/no-effect-promise.ts"
 import { noEffectReturnTypeRule } from "./rules/no-effect-return-type.ts"
@@ -24,6 +25,7 @@ const effectLocalPlugin = eslintCompatPlugin({
     rules: {
         "boundary-entrypoint-shape": boundaryEntrypointShapeRule,
         "error-handling-in-effect-fn-handler": errorHandlingInEffectFnHandlerRule,
+        "no-asymmetric-match-handlers": noAsymmetricMatchHandlersRule,
         "no-bare-error-in-effect": noBareErrorInEffectRule,
         "no-effect-promise": noEffectPromiseRule,
         "no-effect-return-type": noEffectReturnTypeRule,

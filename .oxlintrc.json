@@ -9,6 +9,7 @@
     "rules": {
         "effect-local/boundary-entrypoint-shape": "warn",
         "effect-local/error-handling-in-effect-fn-handler": "warn",
+        "effect-local/no-asymmetric-match-handlers": "warn",
         "effect-local/no-bare-error-in-effect": "error",
         "effect-local/no-effect-promise": "warn",
         "effect-local/no-effect-return-type": "warn",
