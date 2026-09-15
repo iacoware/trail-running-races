@@ -1,5 +1,6 @@
-import { expect, test } from "vitest"
 import { Result } from "effect"
+import { expect, test } from "vitest"
+
 import { parseAgentOutput } from "./parseAgentOutput.ts"
 
 const found = {

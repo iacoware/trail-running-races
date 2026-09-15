@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url"
+
 import { Duration, Effect, FileSystem, Layer, type PlatformError, Stream } from "effect"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
+
 import { agentConfig } from "../../config.ts"
 import { Agent } from "../Agent.ts"
 import { AgentProcessError, AgentTimeout, PromptFileError } from "../errors.ts"

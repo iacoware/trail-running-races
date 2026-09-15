@@ -1,7 +1,9 @@
 import { fileURLToPath } from "node:url"
-import { expect, it } from "@effect/vitest"
+
 import { NodeServices } from "@effect/platform-node"
+import { expect, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer } from "effect"
+
 import { Agent } from "../Agent.ts"
 import * as ProcessAgent from "./ProcessAgent.ts"
 

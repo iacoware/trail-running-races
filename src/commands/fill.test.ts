@@ -1,5 +1,6 @@
 import { effect as test, expect } from "@effect/vitest"
 import { Effect, Layer, Option, Stream } from "effect"
+
 import { Agent } from "../agent/Agent.ts"
 import { AgentTimeout } from "../agent/errors.ts"
 import type { FoundRace, RaceCard } from "../agent/RaceCard.ts"

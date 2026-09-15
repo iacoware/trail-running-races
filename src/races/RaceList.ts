@@ -1,4 +1,5 @@
 import { Context, type Effect } from "effect"
+
 import type { RaceListError } from "./errors.ts"
 
 export class RaceList extends Context.Service<

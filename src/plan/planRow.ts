@@ -1,4 +1,5 @@
 import { Data, Option, Result } from "effect"
+
 import type { FoundRace } from "../agent/RaceCard.ts"
 import { parseDate, type DayOfYear } from "../dates/parseDate.ts"
 import type { Cells, Columns } from "../sheet/columns.ts"

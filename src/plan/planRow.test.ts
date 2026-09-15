@@ -1,5 +1,6 @@
 import { Option, Result } from "effect"
 import { expect, test } from "vitest"
+
 import type { FoundRace } from "../agent/RaceCard.ts"
 import { parseSheet, type Sheet } from "../sheet/parseSheet.ts"
 import { planReviewRow, planRow } from "./planRow.ts"

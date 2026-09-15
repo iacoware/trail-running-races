@@ -1,4 +1,5 @@
 import { Predicate } from "effect"
+
 import { SheetApiError, SheetAuthError, SheetNotFoundError } from "../errors.ts"
 
 const statusOf = (cause: unknown) =>

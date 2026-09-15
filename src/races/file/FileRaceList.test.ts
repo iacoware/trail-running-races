@@ -1,5 +1,6 @@
 import { expect, it } from "@effect/vitest"
 import { ConfigProvider, Effect, FileSystem, Layer, PlatformError } from "effect"
+
 import { captureLogs } from "../../testing/captureLogs.ts"
 import { RaceList } from "../RaceList.ts"
 import * as FileRaceList from "./FileRaceList.ts"

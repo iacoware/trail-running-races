@@ -1,5 +1,6 @@
 import type { sheets_v4 } from "@googleapis/sheets"
 import { Option } from "effect"
+
 import type { PlannedRow } from "../../plan/planRow.ts"
 import { SectionAction } from "../../plan/targetSection.ts"
 import { COLUMN_KEYS, type Columns } from "../columns.ts"

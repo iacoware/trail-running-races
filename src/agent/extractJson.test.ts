@@ -1,5 +1,6 @@
-import { expect, test } from "vitest"
 import { Option } from "effect"
+import { expect, test } from "vitest"
+
 import { extractJson } from "./extractJson.ts"
 
 test("parses an output that is only a JSON object", () => {

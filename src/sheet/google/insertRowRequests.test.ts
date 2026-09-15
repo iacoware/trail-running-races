@@ -1,5 +1,6 @@
 import { Option } from "effect"
 import { expect, test } from "vitest"
+
 import type { PlannedRow } from "../../plan/planRow.ts"
 import { plannedRow } from "../../testing/plannedRow.ts"
 import { insertRowRequests } from "./insertRowRequests.ts"

@@ -1,4 +1,5 @@
 import { Console, Effect, Layer, Option } from "effect"
+
 import type { PlannedRow } from "../../plan/planRow.ts"
 import { SectionAction } from "../../plan/targetSection.ts"
 import { COLUMN_HEADERS, COLUMN_KEYS } from "../columns.ts"

@@ -1,5 +1,6 @@
 import { expect, it } from "@effect/vitest"
 import { Effect, FileSystem, PlatformError, Redacted } from "effect"
+
 import { loadServiceAccountKey } from "./serviceAccountKey.ts"
 
 const keyJson = JSON.stringify({

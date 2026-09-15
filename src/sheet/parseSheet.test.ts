@@ -1,5 +1,6 @@
 import { Result } from "effect"
 import { expect, test } from "vitest"
+
 import { parseSheet } from "./parseSheet.ts"
 
 const header = ["Nome", "Data (+ o -)", "Luogo", "Da FI", "Tipo", "Distanze"]

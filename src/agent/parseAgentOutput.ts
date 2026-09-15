@@ -1,4 +1,5 @@
 import { Option, Result, Schema } from "effect"
+
 import { AgentInvalidOutput } from "./errors.ts"
 import { extractJson } from "./extractJson.ts"
 import { RaceCard } from "./RaceCard.ts"

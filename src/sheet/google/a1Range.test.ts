@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+
 import { quoteSheetTitle } from "./a1Range.ts"
 
 test("wraps the tab title in single quotes", () => {

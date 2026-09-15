@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+
 import { parseCsv } from "./parseCsv.ts"
 
 test("reads no rows from empty text", () => {

@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+
 import { toSheetError } from "./googleError.ts"
 
 const gaxiosError = (status: number, message: string) =>

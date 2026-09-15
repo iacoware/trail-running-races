@@ -1,5 +1,6 @@
-import { expect, test } from "vitest"
 import { Option } from "effect"
+import { expect, test } from "vitest"
+
 import { parseDate } from "./parseDate.ts"
 
 test.each([

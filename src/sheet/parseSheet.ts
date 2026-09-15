@@ -1,4 +1,5 @@
 import { Data, Result } from "effect"
+
 import { COLUMN_KEYS, cellsOf, resolveColumns, type Cells, type Columns } from "./columns.ts"
 import type { SheetColumnMissingError } from "./errors.ts"
 import type { Row } from "./SheetReader.ts"

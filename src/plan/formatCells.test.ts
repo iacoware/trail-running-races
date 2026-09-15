@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+
 import type { Distance, FoundRace } from "../agent/RaceCard.ts"
 import { formatCells } from "./formatCells.ts"
 

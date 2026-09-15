@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+
 import { raceKey } from "./raceKey.ts"
 
 test("matches names that differ only by case and surrounding spaces", () => {

@@ -1,10 +1,11 @@
 import { Data, Effect, Option, Result, Stream } from "effect"
+
 import { Agent } from "../agent/Agent.ts"
 import type { AgentError } from "../agent/errors.ts"
 import type { FoundRace } from "../agent/RaceCard.ts"
 import type { PlanError } from "../plan/errors.ts"
-import { missingRaces } from "../races/missingRaces.ts"
 import { planReviewRow, planRow, type PlannedRow } from "../plan/planRow.ts"
+import { missingRaces } from "../races/missingRaces.ts"
 import type { SheetColumnMissingError, SheetReadError, SheetWriteError } from "../sheet/errors.ts"
 import type { Sheet } from "../sheet/parseSheet.ts"
 import { readSheet, readSheetQuietly } from "../sheet/readSheet.ts"

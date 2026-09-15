@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+
 import { parseRaceList } from "./parseRaceList.ts"
 
 test("keeps one name per line in file order", () => {
