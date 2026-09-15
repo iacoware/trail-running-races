@@ -45,8 +45,8 @@ export const layer = Layer.effect(
     // The closed region list lives in the Schema; the prompt receives it so the two never drift.
     const template = (yield* readPromptTemplate).replaceAll(REGIONS_PLACEHOLDER, REGIONS_TEXT)
 
-    const run = (name: string) =>
-      Effect.gen(function* () {
+    const run = Effect.fn("run")(
+      function* (name: string) {
         const prompt = template.replaceAll(NAME_PLACEHOLDER, name)
         const handle = yield* spawner.spawn(
           ChildProcess.make(executable, args, {
@@ -65,18 +65,21 @@ export const layer = Layer.effect(
           })
         }
         return yield* Effect.fromResult(parseAgentOutput(name, stdout))
-      }).pipe(
-        Effect.scoped,
-        Effect.catchTag(
-          "PlatformError",
-          (cause) =>
-            new AgentProcessError({
-              race: name,
-              message: `agente non eseguibile (${command}): ${cause.message}`,
-              cause,
-            }),
+      },
+      Effect.scoped,
+      (effect, name) =>
+        effect.pipe(
+          Effect.catchTag(
+            "PlatformError",
+            (cause) =>
+              new AgentProcessError({
+                race: name,
+                message: `agente non eseguibile (${command}): ${cause.message}`,
+                cause,
+              }),
+          ),
         ),
-      )
+    )
 
     const search = (name: string) =>
       run(name).pipe(

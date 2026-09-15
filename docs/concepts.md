@@ -24,6 +24,8 @@
 
 **Esito** — Risultato della ricerca dell'agente: *trovata*, *non trovata*, *ambigua*. Solo *trovata* produce una riga completa; gli altri producono una riga con messaggio in `Da verificare`.
 
+**Risultato per gara** — Come si chiude il lavoro su una gara durante un run: *inserita* (nel dry run *pianificata*), *non trovata*, *ambigua* oppure *errore*. Non coincide con l'esito: comprende anche la pianificazione e la scrittura sul foglio, e *errore* raccoglie i fallimenti dell'agente, del piano o del foglio. Una gara in errore non ferma il run. I risultati per gara compongono il riepilogo del run. Nel codice: `RaceFillResult`, prodotto da `fillRace`.
+
 **Ambiguità** — Più eventi rispondono allo stesso nome e l'agente non sa scegliere, nemmeno usando la freschezza dei siti come criterio. I candidati vengono riportati nel riepilogo del run, non nel foglio.
 
 **Agente** — Comando headless (Claude Code, Codex) che cerca sul web e risponde con una scheda gara. È l'unica componente non deterministica ed è intercambiabile.

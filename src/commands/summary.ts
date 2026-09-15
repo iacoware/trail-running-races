@@ -1,7 +1,7 @@
-import { RaceOutcome } from "./fill.ts"
+import { RaceFillResult } from "./fill.ts"
 
-const withTag = <T extends RaceOutcome["_tag"]>(outcomes: ReadonlyArray<RaceOutcome>, tag: T) =>
-  outcomes.filter(RaceOutcome.$is(tag))
+const withTag = <T extends RaceFillResult["_tag"]>(results: ReadonlyArray<RaceFillResult>, tag: T) =>
+  results.filter(RaceFillResult.$is(tag))
 
 const count = (label: string, lines: ReadonlyArray<string>) => [
   `${label}: ${lines.length}`,
@@ -13,32 +13,32 @@ const count = (label: string, lines: ReadonlyArray<string>) => [
 export type FilledLabel = "pianificate" | "inserite"
 
 export const summaryLines = (
-  outcomes: ReadonlyArray<RaceOutcome>,
+  results: ReadonlyArray<RaceFillResult>,
   filled: FilledLabel,
 ): ReadonlyArray<string> => [
   "== riepilogo",
   ...count(
     filled,
-    withTag(outcomes, "Filled").map((outcome) => outcome.name),
+    withTag(results, "Filled").map((result) => result.name),
   ),
   ...count(
     "non trovate",
-    withTag(outcomes, "NotFound").map((outcome) => outcome.name),
+    withTag(results, "NotFound").map((result) => result.name),
   ),
   ...count(
     "ambigue",
-    withTag(outcomes, "Ambiguous").map(
-      (outcome) => `${outcome.name}: candidati ${outcome.candidates.join(", ")}`,
+    withTag(results, "Ambiguous").map(
+      (result) => `${result.name}: candidati ${result.candidates.join(", ")}`,
     ),
   ),
   ...count(
     "errori",
-    withTag(outcomes, "Failed").map(
-      (outcome) => `${outcome.name}: ${outcome.error._tag}: ${outcome.error.message}`,
+    withTag(results, "Failed").map(
+      (result) => `${result.name}: ${result.error._tag}: ${result.error.message}`,
     ),
   ),
 ]
 
 // Only an error is worth a failing exit code: a race not found or ambiguous is a result.
-export const hasErrors = (outcomes: ReadonlyArray<RaceOutcome>) =>
-  outcomes.some(RaceOutcome.$is("Failed"))
+export const hasErrors = (results: ReadonlyArray<RaceFillResult>) =>
+  results.some(RaceFillResult.$is("Failed"))

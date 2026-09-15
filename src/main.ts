@@ -13,8 +13,6 @@ import * as FileRaceList from "./races/file/FileRaceList.ts"
 import * as CsvSheetReader from "./sheet/csv/CsvSheetReader.ts"
 import * as GoogleSheet from "./sheet/google/GoogleSheet.ts"
 import * as PrintSheetWriter from "./sheet/print/PrintSheetWriter.ts"
-import type { SheetReader } from "./sheet/SheetReader.ts"
-import type { SheetWriter } from "./sheet/SheetWriter.ts"
 
 const USAGE =
     "uso: pnpm start missing | pnpm start fill [--dry-run] [--only <nome>] [--sheet-csv <path>]"
@@ -28,41 +26,46 @@ const stderrLogger = Logger.layer([
     }),
 ])
 
-const usageError = (message: string) =>
-    Effect.gen(function* () {
-        yield* Console.error(`${message}\n${USAGE}`)
-        process.exitCode = 1
-    })
+const usageError = Effect.fn("usageError")(function* (message: string) {
+    yield* Console.error(`${message}\n${USAGE}`)
+    process.exitCode = 1
+})
 
 const printMissing = Effect.gen(function* () {
     const names = yield* missing
     for (const name of names) yield* Console.log(name)
-}).pipe(Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.layer)))
+}).pipe(Effect.provide(Layer.mergeAll(FileRaceList.layer, GoogleSheet.readerLayer)))
+
+const printFillSummary = Effect.fn("printFillSummary")(function* (
+    only: Option.Option<string>,
+    filled: FilledLabel,
+) {
+    const results = yield* Stream.runCollect(fill({ only }))
+    for (const line of summaryLines(results, filled)) yield* Console.log(line)
+    if (hasErrors(results)) process.exitCode = 1
+})
+
+const fillSheet = (only: Option.Option<string>) =>
+    printFillSummary(only, "inserite").pipe(
+        Effect.provide(
+            Layer.mergeAll(FileRaceList.layer, GoogleSheet.layer, ProcessAgent.layer),
+        ),
+    )
 
 // `--sheet-csv` reads a local export and needs no Google credentials; `--dry-run` alone
 // reads the real sheet.
-const dryRunSheet = (sheetCsv: Option.Option<string>) =>
-    Layer.merge(
-        Option.match(sheetCsv, {
-            onNone: () => GoogleSheet.layer,
-            onSome: CsvSheetReader.layer,
-        }),
-        PrintSheetWriter.layer,
-    )
-
-const fillWith = <E, R>(
-    only: Option.Option<string>,
-    filled: FilledLabel,
-    sheet: Layer.Layer<SheetReader | SheetWriter, E, R>,
-) =>
-    Effect.gen(function* () {
-        const outcomes = yield* Stream.runCollect(fill({ only }))
-        for (const line of summaryLines(outcomes, filled))
-            yield* Console.log(line)
-        if (hasErrors(outcomes)) process.exitCode = 1
-    }).pipe(
+const planFill = (only: Option.Option<string>, sheetCsv: Option.Option<string>) =>
+    printFillSummary(only, "pianificate").pipe(
         Effect.provide(
-            Layer.mergeAll(FileRaceList.layer, sheet, ProcessAgent.layer),
+            Layer.mergeAll(
+                FileRaceList.layer,
+                Option.match(sheetCsv, {
+                    onNone: () => GoogleSheet.readerLayer,
+                    onSome: CsvSheetReader.layer,
+                }),
+                PrintSheetWriter.layer,
+                ProcessAgent.layer,
+            ),
         ),
     )
 
@@ -70,9 +73,7 @@ const runFill = (args: ReadonlyArray<string>) =>
     Result.match(parseFillArgs(args), {
         onFailure: usageError,
         onSuccess: ({ dryRun, only, sheetCsv }) =>
-            dryRun
-                ? fillWith(only, "pianificate", dryRunSheet(sheetCsv))
-                : fillWith(only, "inserite", GoogleSheet.layer),
+            dryRun ? planFill(only, sheetCsv) : fillSheet(only),
     })
 
 const run = ([subcommand, ...args]: ReadonlyArray<string>) => {
@@ -91,7 +92,6 @@ const run = ([subcommand, ...args]: ReadonlyArray<string>) => {
 NodeRuntime.runMain(
     run(process.argv.slice(2)).pipe(
         Effect.provide(Layer.mergeAll(NodeServices.layer, stderrLogger)),
-        // Expected failures are reported as one tagged line; only defects reach runMain's reporter.
         Effect.catch((error) =>
             Effect.gen(function* () {
                 yield* Console.error(`${error._tag}: ${error.message}`)

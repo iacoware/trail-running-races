@@ -41,9 +41,9 @@ Classi di enforcement:
 | P12 | HttpClient configurato in Layer | idioma | solo-skill | `effect/unstable/http` | n/a |
 | P13 | Config via `Config`, segreti `Config.redacted` | idioma | lint-sintattico | invariato | devia |
 | P14 | Match esaustivo: `$match` di default, `Match` per le eccezioni | misto | lint-sintattico | `Match.valueTags`, `Match.tagsExhaustive` | devia |
-| P15 | Unioni come `Data.taggedEnum`, mai letterali `_tag` (preferito) | misto | lint-sintattico | `Data.taggedEnum` | devia |
+| P15 | Unioni come `Data.taggedEnum`, mai letterali `_tag` (preferito) | misto | lint-sintattico | `Data.taggedEnum` | conforme |
 | P16 | Option/Result/Exit via modulo, mai `_tag` | idioma | lint-sintattico | `Either` → `Result` | conforme |
-| P17 | `Effect.fn("nome")` per funzioni effettful | idioma | lint-sintattico | invariato | devia |
+| P17 | `Effect.fn("nome")` per funzioni effettful | idioma | lint-sintattico | invariato | conforme |
 | P18 | Niente effetti flottanti né `yield` senza `*` | idioma | lint-tipi | invariato | conforme (verificato con `oxlint`) |
 | P19 | Risorse con `acquireRelease`, `Effect.scoped` solo se serve | idioma | lint-tipi | `Layer.scoped` rimosso | conforme |
 | P20 | Concorrenza esplicita | idioma | solo-skill | invariato | conforme |
@@ -110,7 +110,7 @@ export const layer = Layer.effect(Agent, Effect.gen(function* () {
 ```
 
 - **archivio**: il port HTTP espone `EffectHttpClient` in `R` (`packages/http/src/domain/http-client.ts:59`). Il file del port repository contiene helper di presentazione (i18n, `console.error`) (`packages/archivio-data/src/domain/collections/archivio-collections-repository.ts:10-31`). Gli adapter in-memory come Layer sono invece un buon esempio (`packages/archivio-data/src/infra/runtime-deps.ts:27`).
-- **Questo repo**: conforme. I port importano solo tipi; gli adapter sono in `src/agent/process/ProcessAgent.ts:39`, `src/sheet/google/GoogleSheet.ts:29` (`Layer.effectContext` per due servizi), `src/sheet/csv/CsvSheetReader.ts:7` e `src/sheet/print/PrintSheetWriter.ts:34`.
+- **Questo repo**: conforme. I port importano solo tipi; gli adapter sono in `src/agent/process/ProcessAgent.ts:39`, `src/sheet/google/GoogleSheet.ts:102,109` (`Layer.effect` per il solo `SheetReader` con scope in sola lettura, `Layer.effectContext` per lettura e scrittura su client e tab condivisi), `src/sheet/csv/CsvSheetReader.ts:6` e `src/sheet/print/PrintSheetWriter.ts:36`.
 - **Enforcement**: `solo-skill`. C'è un aiuto parziale da `lint-tipi` (`leakingRequirements`, severità suggestion) e da `no-restricted-imports` sui file port (vietare `@googleapis/*` e `effect/unstable/*`).
 
 ### P03 · Capability via `yield*`, mai parametri o singleton
@@ -128,7 +128,7 @@ const insert = Effect.gen(function* () { const writer = yield* SheetWriter })
 ```
 
 - **archivio**: client da singleton `lazyCache` dentro l'effetto (`apps/caveau/src/features/config/api-config.ts:56`) e config letta da `process.env` via `appConfigServer()` (`:54`). Il client passato come parametro e rifornito con `provideService` (`packages/pimcore-data/src/infra/users/http-adapter.ts:22`) avviene invece alla costruzione dell'adapter: è accettabile.
-- **Questo repo**: conforme (`src/commands/fill.ts:55,75`, `src/agent/process/ProcessAgent.ts:44`).
+- **Questo repo**: conforme (`src/commands/fill.ts:53,71`, `src/agent/process/ProcessAgent.ts:44`).
 - **Enforcement**: `solo-skill`. Riconoscere un "parametro di tipo servizio" richiede i tipi e resta comunque euristico.
 
 ### P04 · Esecuzione solo all'entry point
@@ -146,7 +146,7 @@ NodeRuntime.runMain(run(process.argv.slice(2)).pipe(Effect.provide(NodeServices.
 ```
 
 - **archivio**: `ManagedRuntime` + `runEffect` al bordo Next.js (`apps/caveau/src/common/runtime-server.ts:99,130`). Fanno eccezione `Effect.runPromise` ad hoc che salta runtime e `Logger.json` (`apps/caveau/src/app/public/health/route.ts:12`) e `runPromise` nei test (`apps/config-editor/src/features/auth/session.test.ts:12`).
-- **Questo repo**: conforme (`src/main.ts:76`).
+- **Questo repo**: conforme (`src/main.ts:92`).
 - **Enforcement**: `lint-sintattico`. Si segnala una `CallExpression` `Effect.run*`, `NodeRuntime.runMain` o `ManagedRuntime.make` fuori da una allowlist di file (`src/main.ts`).
 
 ## Errori
@@ -252,7 +252,7 @@ Effect.catchTag(["ParseError", "ReservedPortError"], () => Effect.succeed(3000))
   - catch-all che ingoia (`apps/caveau/src/features/config/api-config.ts:46`);
   - `handleErrors`: un dispatcher per `_tag` fatto a mano sopra `catchAll`, con `e as never` (`packages/shared/src/effect.ts:29,37`). È esaustivo per tipo, ma reinventa `catchTags`;
   - quattro `catchTag` che mappano sullo stesso errore, dove bastava un `mapError` (`packages/pimcore-data/src/infra/users/http-adapter.ts:23-34`).
-- **Questo repo**: conforme. `Effect.catch` compare solo al bordo (`src/main.ts:81`) e per convertire in `RaceOutcome` (`src/commands/fill.ts:90`).
+- **Questo repo**: conforme. `Effect.catch` compare solo al bordo (`src/main.ts:95`) e per convertire in `RaceFillResult` (`src/commands/fill.ts:87`).
 - **Enforcement**: `lint-sintattico`. Il preset copre le trasformazioni (`catch-all-to-map-error` e `catch-unfailable-effect`, alzate a error, più `catch-all-tag-dispatch-to-catch-tag`, `catch-to-ignore`, `multiple-catch-tag`). **Verificato scoperto**: il catch-all senza parametro che ingoia, e la discriminazione manuale su `_tag` dentro `Effect.catch` — quest'ultima è il bersaglio di `no-manual-effect-error-tag` di anti-slop (passo 2), il primo richiede una regola locale con allowlist per l'entry point.
 
 ## Confini e Schema
@@ -352,10 +352,8 @@ outcomes.some(Predicate.isTagged("Failed"))
   - `Match.value` + `Match.when({ _tag })` + `Match.exhaustive` in 25 file (`apps/caveau/src/features/collections/use-collections.ts:67`); con `Match.tag` o `Match.valueTags` sarebbe più corto;
   - `_tag ===` in OR (`apps/caveau/src/features/users/user-edit-form.tsx:71-72`).
 - **Questo repo**:
-  - conforme su `src/sheet/google/serviceAccountKey.ts:30,37`;
-  - devia su `src/plan/planRow.ts:44,53`, `src/sheet/print/PrintSheetWriter.ts:20` e `src/sheet/google/insertRowRequests.ts:62,97`;
-  - filtri per `_tag` in `src/commands/summary.ts:7,47`;
-  - `switch` senza guardia di esaustività in `src/sheet/parseSheet.ts:59` (se resta `switch`: `default: return absurd(cursor)`, con `absurd` da `effect/Function`).
+  - conforme dal 2026-09-14, con la migrazione a `Data.taggedEnum` (P15): `Match.valueTags` in `src/sheet/google/serviceAccountKey.ts:30,37`; `$match` in `src/plan/planRow.ts:44,54`, `src/sheet/print/PrintSheetWriter.ts:21` e `src/sheet/parseSheet.ts:66`; `$is` in `src/sheet/google/insertRowRequests.ts:64,99` e `src/commands/summary.ts:4,44`;
+  - resta da coprire con `Match` la sola unione che non è `taggedEnum`, `src/agent/RaceCard.ts`, che viene da Schema (vedi "Migrazioni da fare", punto 2).
 - **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` di anti-slop è attiva (a `error`, rumore zero) senza modifiche: segnala anche gli `switch` completi su `_tag`, ed è voluto, perché la via preferita è `$match` o `Match`. `prefer-effect-match` copre le catene di ternari.
 
 ### P15 · Varianti costruite con costruttori, non letterali `_tag`
@@ -374,8 +372,8 @@ return SectionTarget.MissingSpecialSection({ name, action })
 ```
 
 - **archivio**: letterali `_tag` solo come pattern di `Match.when`, che la regola anti-slop esenta.
-- **Questo repo**: letterali in `src/config.ts:10`, `src/commands/fill.ts:65,77,81,84,90`, `src/plan/targetSection.ts:51-79`, `src/sheet/parseSheet.ts:49-68`, e nelle fixture di test (`src/plan/planRow.test.ts:108`, `src/config.test.ts:50`).
-- **Enforcement**: `lint-sintattico`. `no-manual-tagged-construction` di anti-slop è attiva a `error`, senza modifiche, spenta su `**/*.test.ts` e `src/testing/**`, dove il letterale resta comodo e innocuo. Le sei unioni sono migrate: `src/` è a zero violazioni. Da fare: portare a `Data.taggedEnum` le sei unioni `ServiceAccountSource`, `RaceOutcome`, `SectionTarget`, `SectionAction`, `Cursor` e `SheetWarning`.
+- **Questo repo**: conforme dal 2026-09-14, con la migrazione a `Data.taggedEnum` delle sei unioni (`src/config.ts:8`, `src/commands/fill.ts:34`, …). I letterali `_tag` restano solo nei test, come valori attesi (`src/plan/planRow.test.ts:108`, `src/config.test.ts:50`).
+- **Enforcement**: `lint-sintattico`. `no-manual-tagged-construction` di anti-slop è attiva a `error`, senza modifiche, spenta su `**/*.test.ts` e `src/testing/**`, dove il letterale resta comodo e innocuo. Le sei unioni (`ServiceAccountSource`, `RaceFillResult`, `SectionTarget`, `SectionAction`, `Cursor`, `SheetWarning`) sono migrate: `src/` è a zero violazioni.
 
 ### P16 · Option/Result/Exit via modulo, mai `_tag`
 
@@ -389,11 +387,11 @@ if (card._tag === "Failure") return failed(card.failure)
 
 // sì
 if (Result.isFailure(card)) return failed(card.failure)
-Option.match(sheetCsv, { onNone: () => GoogleSheet.layer, onSome: CsvSheetReader.layer })
+Option.match(sheetCsv, { onNone: () => GoogleSheet.readerLayer, onSome: CsvSheetReader.layer })
 ```
 
 - **archivio**: conforme (`packages/archivio-data/src/infra/collections/mongo-collections.ts:55` con `O.isNone`, `packages/shared/src/action-result.ts:24` con `Either.match`).
-- **Questo repo**: conforme (`src/main.ts:41`, `src/commands/fill.ts:77`, `src/sheet/google/GoogleSheet.ts:67`).
+- **Questo repo**: conforme (`src/main.ts:62`, `src/commands/fill.ts:39,73`, `src/sheet/google/GoogleSheet.ts:67`).
 - **v4**: `Either` non esiste più. Le corrispondenze sono `Effect.either` → `Effect.result`, `Either.match` → `Result.match` (`onFailure`/`onSuccess`), `Schema.decodeUnknownEither` → `decodeUnknownResult`.
 - **Enforcement**: `lint-sintattico`. `no-manual-tag-comparison` copre già i letterali `Some`/`None`/`Success`/`Failure`/`Left`/`Right`; l'accesso a `.value` senza narrowing lo blocca già tsc.
 
@@ -414,7 +412,7 @@ const outcomeFor = Effect.fn("outcomeFor")(function* (name: string) { … }, Eff
 ```
 
 - **archivio**: zero `Effect.fn`. Le funzioni sono arrow con `Effect.gen` più un wrapper di span fatto in casa (`packages/archivio-data/src/infra/collections/mongo-collections.ts:44-70`, `packages/shared/src/with-span.ts:25`).
-- **Questo repo**: conforme su `src/sheet/google/serviceAccountKey.ts:16,35`. Devia su `src/commands/fill.ts:53,71`, `src/agent/process/ProcessAgent.ts:48,81` e `src/commands/missing.ts:7`.
+- **Questo repo**: conforme (2026-09-15). `Effect.fn` in `src/sheet/google/serviceAccountKey.ts:16,35`, `src/commands/fill.ts:41,50,69`, `src/commands/missing.ts:7`, `src/agent/process/ProcessAgent.ts:48` e `src/main.ts:29,39`. I combinatori prima appesi con `.pipe` sono pipeable di `Effect.fn` e ricevono gli argomenti della funzione: `(effect, name) => effect.pipe(Effect.catch…)`. Dove il combinatore è l'unica cosa che distingue due funzioni, come i Layer di `fillSheet` e `planFill` in `src/main.ts`, restano arrow che applicano `.pipe` a un `Effect.fn` condiviso (`printFillSummary`), non a un `Effect.gen`.
 - **Enforcement**: `lint-sintattico`. Si segnala un `VariableDeclarator` o una `Property` con valore `ArrowFunctionExpression` o `FunctionExpression` il cui corpo è (o ritorna soltanto) `Effect.gen(…)`. Si segnala anche `Effect.fn(…)(…).pipe(`. In `lint-tipi`: `effectFnOpportunity` (suggestion).
 
 ### P19 · Risorse con `acquireRelease`, `Effect.scoped` solo se serve
@@ -506,7 +504,7 @@ if (Predicate.hasProperty(cause, "status") && Predicate.isNumber(cause.status)) 
 ```
 
 - **archivio**: guard a mano (`packages/shared/src/with-error-logging.ts:18`).
-- **Questo repo**: conforme (`src/sheet/google/googleError.ts:3-7`).
+- **Questo repo**: conforme (`src/sheet/google/googleError.ts:5,10`).
 - **Enforcement**: `lint-sintattico`. `no-runtime-typeof` di anti-slop, nel plugin generico e non in quello Effect, con l'opzione `allowInTypeGuards`.
 
 ## Stile delle funzioni effettful e dei boundary
@@ -567,7 +565,7 @@ const createEvent = Effect.fn("events.create")(
 ```
 
 - **inloco**: `apps/web/src/app/events/create/route.ts` dopo `c3c5ab1`; `submittedEvent` usa `mapError` dentro il flusso (`apps/web/src/features/events/submission.ts`).
-- **Questo repo**: devia dove il catch è appeso con `.pipe` a un `Effect.gen` invece che passato come argomento di `Effect.fn` (`src/commands/fill.ts:88-90`, `src/agent/process/ProcessAgent.ts:68-93`). È lo stesso punto di P17.
+- **Questo repo**: devia in un punto. `src/commands/fill.ts:72` usa `Effect.result` dentro il generatore di `fillRace`. Il catch finale di `fillRace` (`src/commands/fill.ts:87`) e il `catchTag` di `src/agent/process/ProcessAgent.ts:72` sono già pipeable di `Effect.fn` (2026-09-15, con P17).
 - **Enforcement**: `lint-sintattico`. Dentro un generatore passato a `Effect.gen`/`Effect.fn` si segnalano `Effect.catchTag`, `catchTags`, `catch`, `catchAll`, `catchIf`, `either`, `result` ed `exit`, ovunque compaiano, anche dentro un `.pipe` su una singola espressione. Va in coppia con `prefer-effect-fn` (P17), altrimenti resta il modo di aggirarla appendendo `.pipe` all'`Effect.gen`.
 
 ### P26 · Niente tipi di trasporto nel generatore
@@ -623,7 +621,7 @@ const runBoundary = (effect: Effect.Effect<Response, never, never>) => Effect.ru
 ```
 
 - **inloco**: `fe5bcf9` lasciava `UnknownException`, `HttpApiDecodeError` e `ConfigError` fuori dal `catchTags`, e quei fallimenti uscivano come 500 di Next. `c3c5ab1` chiude il canale e lo dichiara.
-- **Questo repo**: devia in modo lieve. `src/main.ts:76` esegue `NodeRuntime.runMain` su un effetto già ripulito da `Effect.catch`, ma il tipo non è dichiarato: aggiungere `satisfies Effect.Effect<void, never>` renderebbe l'invariante verificata da `tsc`.
+- **Questo repo**: devia in modo lieve. `src/main.ts:92` esegue `NodeRuntime.runMain` su un effetto già ripulito da `Effect.catch`, ma il tipo non è dichiarato: aggiungere `satisfies Effect.Effect<void, never>` renderebbe l'invariante verificata da `tsc`.
 - **Enforcement**: `lint-sintattico` per la forma (l'entry point è solo `run*` con `satisfies` o l'helper); la garanzia vera la dà `tsc`.
 
 ## Regole anti-slop
@@ -652,11 +650,11 @@ Limiti noti, dalla lettura del codice:
 
 | Regola | P | Cosa rileva | Stato (2026-09-14) |
 |---|---|---|---|
-| `prefer-effect-fn` | P17 | funzione dichiarata, variabile o membro d'oggetto che ritorna solo `Effect.gen(…)` (anche con `.pipe`); `Effect.fn(body)` senza nome; `.pipe` su `Effect.fn(…)(…)` | **warn**, 7 punti (`effect-fn-opportunity` non ne vede nessuno) |
+| `prefer-effect-fn` | P17 | funzione dichiarata, variabile o membro d'oggetto che ritorna solo `Effect.gen(…)` (anche con `.pipe`); `Effect.fn(body)` senza nome; `.pipe` su `Effect.fn(…)(…)` | **warn**, rumore zero dal 2026-09-15 (i 7 punti, che `effect-fn-opportunity` non vedeva, sono convertiti) |
 | `error-handling-in-effect-fn-handler` | P25 | `Effect.catch*`, `either`, `result`, `exit`, `match*`, `sandbox` dentro un generatore di `Effect.gen`/`Effect.fn`, anche in callback annidate; esenti i pipeable di un `Effect.fn` annidato | **warn**, 2 punti |
 | `single-style-per-function` | P24 | `async`, `await`, `.then(` in una funzione che usa `Effect.*` (esclusi gli `Effect.run*`) | error, rumore zero |
 | `no-transport-types-in-generator` | P26 | `new T(…)`, `T.metodo(…)` o `T(…)` dentro un generatore Effect (callback annidate comprese, pipeable di `Effect.fn` esenti), con `T` nell'opzione `transportTypes` (default `Response`, `NextResponse`) | error, rumore zero (n/a in una CLI) |
-| `boundary-entrypoint-shape` | P27 | `Effect.runPromise`/`runSync`/`runFork`/`runCallback` e `runMain` il cui argomento non è `satisfies Effect.Effect<A, never>` né un parametro con quel tipo | **warn**, 1 punto (`src/main.ts:77`) |
+| `boundary-entrypoint-shape` | P27 | `Effect.runPromise`/`runSync`/`runFork`/`runCallback` e `runMain` il cui argomento non è `satisfies Effect.Effect<A, never>` né un parametro con quel tipo | **warn**, 1 punto (`src/main.ts:92`) |
 | `service-port-shape-only` | P01 | secondo argomento di `Context.Service<…>()(id, opts)`, `static layer`/`Default` sul port, `Effect.Service`/`Context.Tag`/`Context.GenericTag` | error, rumore zero |
 | `no-bare-error-in-effect` | P05 | `throw` direttamente nel generatore; `Effect.fail` con letterale o template | error, rumore zero |
 | `no-parameterless-catch-all` | P09 | `Effect.catch`/`catchAll`/`catchCause`/`catchEager` con handler senza parametri | error, rumore zero |
@@ -806,8 +804,8 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 
 Ordine consigliato, una volta attivo il lint:
 
-1. ~~Portare a `Data.taggedEnum` le sei unioni di P15~~ **fatto** (2026-09-14): `ServiceAccountSource`, `Cursor`, `SheetWarning`, `SectionAction`, `SectionTarget`, `RaceOutcome`. Come previsto ha chiuso anche tutti i punti di P14/P16: `$match` ha sostituito lo `switch` di `parseSheet` e i ternari di `planRow`, `$is` i confronti di `summary`, `insertRowRequests`, `PrintSheetWriter` e `fill.test.ts`.
+1. ~~Portare a `Data.taggedEnum` le sei unioni di P15~~ **fatto** (2026-09-14): `ServiceAccountSource`, `Cursor`, `SheetWarning`, `SectionAction`, `SectionTarget`, `RaceFillResult`. Come previsto ha chiuso anche tutti i punti di P14/P16: `$match` ha sostituito lo `switch` di `parseSheet` e i ternari di `planRow`, `$is` i confronti di `summary`, `insertRowRequests`, `PrintSheetWriter` e `fill.test.ts`.
 2. Coprire con `Match` i punti rimasti, cioè quelli su unioni che non sono `taggedEnum` (`src/agent/RaceCard.ts`, che viene da Schema).
 3. `Config.redacted` per il service account (P13).
-4. `Effect.fn` sulle funzioni effettful con nome (P17), spostando nel secondo argomento i catch oggi appesi con `.pipe` (P25): `src/commands/fill.ts:88-90` e `src/agent/process/ProcessAgent.ts:68-93`.
-5. `satisfies Effect.Effect<void, never>` sull'effetto passato a `runMain` in `src/main.ts:76` (P27).
+4. ~~`Effect.fn` sulle funzioni effettful con nome (P17), spostando nel secondo argomento i catch oggi appesi con `.pipe` (P25)~~ **fatto** (2026-09-15) per P17 e per il `catchTag` di `ProcessAgent`. Resta P25 su `src/commands/fill.ts:72`: `Effect.result` dentro il generatore di `fillRace`.
+5. `satisfies Effect.Effect<void, never>` sull'effetto passato a `runMain` in `src/main.ts:92` (P27).

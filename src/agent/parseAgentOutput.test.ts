@@ -26,7 +26,7 @@ test("decodes a found card surrounded by prose, trimming the date", () => {
   expect(parseAgentOutput("Gara", output)).toEqual(Result.succeed(found))
 })
 
-test("decodes a not-found card with only the outcome", () => {
+test("decodes a not-found card with only the esito", () => {
   expect(parseAgentOutput("Gara", '{"esito":"non_trovata"}')).toEqual(
     Result.succeed({ esito: "non_trovata" }),
   )
@@ -67,6 +67,6 @@ test("fails when the type is not Trail or Sky", () => {
   expect(failureMessage(JSON.stringify({ ...found, tipo: "Road" }))).toContain("tipo")
 })
 
-test("fails when the outcome is unknown", () => {
+test("fails when the esito is unknown", () => {
   expect(failureMessage('{"esito":"forse"}')).toContain("esito")
 })

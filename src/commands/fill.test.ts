@@ -10,7 +10,7 @@ import { SheetApiError } from "../sheet/errors.ts"
 import { SheetReader } from "../sheet/SheetReader.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
 import { captureLogs } from "../testing/captureLogs.ts"
-import { fill, RaceOutcome } from "./fill.ts"
+import { fill, RaceFillResult } from "./fill.ts"
 
 const header = ["Nome", "Data (+ o -)", "Luogo", "Da FI", "Tipo", "Distanze"]
 
@@ -82,7 +82,7 @@ const insertingSheet = (...rows: Array<Array<string>>) => {
   )
 }
 
-const outcomes = (only: Option.Option<string>) => Stream.runCollect(fill({ only }))
+const fillResults = (only: Option.Option<string>) => Stream.runCollect(fill({ only }))
 
 const tuscany = sheetWith(
   ["Toscana"],
@@ -106,7 +106,7 @@ test("plans a row for every found race and hands it to the writer", () =>
     const searched: Array<string> = []
     const written: Array<PlannedRow> = []
 
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       watching(searched, { "Garfagnana Epic Trail": found() }, written),
     )
 
@@ -122,7 +122,7 @@ test("parks not found and ambiguous races at the end of Da verificare", () =>
   Effect.gen(function* () {
     const written: Array<PlannedRow> = []
 
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       watching(
         [],
         {
@@ -205,7 +205,7 @@ test("appends an unresolved race after the last row in Da verificare", () =>
   Effect.gen(function* () {
     const written: Array<PlannedRow> = []
 
-    yield* outcomes(Option.none()).pipe(
+    yield* fillResults(Option.none()).pipe(
       watching([], { "Gara Assente": notFound }, written),
     )
 
@@ -230,11 +230,11 @@ test("creates Da verificare when parking the first unresolved race", () =>
   Effect.gen(function* () {
     const written: Array<PlannedRow> = []
 
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       watching([], { "Gara Assente": notFound }, written),
     )
 
-    expect(results.map((outcome) => outcome._tag)).toEqual(["NotFound"])
+    expect(results.map((result) => result._tag)).toEqual(["NotFound"])
     expect(written[0]?.section).toBe("Da verificare")
     expect(written[0]?.sectionAction._tag).toBe("CreateSection")
   }).pipe(
@@ -246,10 +246,10 @@ test("skips a parked race on the next run until its row is removed", () => {
   const searched: Array<string> = []
 
   return Effect.gen(function* () {
-    const first = yield* outcomes(Option.none())
-    const second = yield* outcomes(Option.none())
+    const first = yield* fillResults(Option.none())
+    const second = yield* fillResults(Option.none())
 
-    expect(first.map((outcome) => outcome._tag)).toEqual(["NotFound"])
+    expect(first.map((result) => result._tag)).toEqual(["NotFound"])
     expect(second).toEqual([])
     expect(searched).toEqual(["Gara Assente"])
   }).pipe(
@@ -273,12 +273,12 @@ test("keeps searching the next race after one fails, reporting the tagged error"
     const searched: Array<string> = []
     const written: Array<PlannedRow> = []
 
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       watching(searched, { "Gara Buona": found() }, written),
     )
 
     expect(searched).toEqual(["Gara Rotta", "Gara Buona"])
-    expect(results.map((outcome) => outcome._tag)).toEqual(["Failed", "Filled"])
+    expect(results.map((result) => result._tag)).toEqual(["Failed", "Filled"])
     expect(written).toHaveLength(1)
   }).pipe(startingFrom(["Gara Rotta", "Gara Buona"], tuscany)),
 )
@@ -287,11 +287,11 @@ test("creates Estero when a foreign race first needs it", () =>
   Effect.gen(function* () {
     const written: Array<PlannedRow> = []
 
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       watching([], { "Gara Francese": found({ regione: "Estero" }) }, written),
     )
 
-    expect(results.map((outcome) => outcome._tag)).toEqual(["Filled"])
+    expect(results.map((result) => result._tag)).toEqual(["Filled"])
     expect(written[0]?.section).toBe("Estero")
     expect(written[0]?.sectionAction._tag).toBe("CreateSection")
   }).pipe(startingFrom(["Gara Francese"], tuscany)),
@@ -299,7 +299,7 @@ test("creates Estero when a foreign race first needs it", () =>
 
 test("plans a second race against the special section created by the first", () =>
   Effect.gen(function* () {
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       Effect.provide(
         agentAnswering([], {
           "Prima Francese": found({ regione: "Estero", data: "5 marzo" }),
@@ -308,8 +308,8 @@ test("plans a second race against the special section created by the first", () 
       ),
     )
 
-    const filled = results.filter(RaceOutcome.$is("Filled"))
-    expect(filled.map((outcome) => [outcome.row.row, outcome.row.sectionAction._tag])).toEqual([
+    const filled = results.filter(RaceFillResult.$is("Filled"))
+    expect(filled.map((result) => [result.row.row, result.row.sectionAction._tag])).toEqual([
       [6, "CreateSection"],
       [7, "UseExistingSection"],
     ])
@@ -325,7 +325,7 @@ test("with --only searches that name even when it is absent from the list", () =
   Effect.gen(function* () {
     const searched: Array<string> = []
 
-    const results = yield* outcomes(Option.some("Fuori Elenco")).pipe(
+    const results = yield* fillResults(Option.some("Fuori Elenco")).pipe(
       watching(searched, { "Fuori Elenco": notFound }, []),
     )
 
@@ -350,7 +350,7 @@ test("with --only does not invoke the agent for a race already in the sheet and 
     const searched: Array<string> = []
     const logs: Array<string> = []
 
-    const results = yield* outcomes(Option.some("chianti utmb")).pipe(
+    const results = yield* fillResults(Option.some("chianti utmb")).pipe(
       Effect.provide(Layer.mergeAll(agentAnswering(searched), writerInto([]), captureLogs(logs))),
     )
 
@@ -362,7 +362,7 @@ test("with --only does not invoke the agent for a race already in the sheet and 
 
 test("plans the second race of a section against the row the first one just took", () =>
   Effect.gen(function* () {
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       Effect.provide(
         agentAnswering([], {
           "Prima Nuova": found({ data: "5 marzo" }),
@@ -371,7 +371,7 @@ test("plans the second race of a section against the row the first one just took
       ),
     )
 
-    const rows = results.map((outcome) => (RaceOutcome.$is("Filled")(outcome) ? outcome.row.row : 0))
+    const rows = results.map((result) => (RaceFillResult.$is("Filled")(result) ? result.row.row : 0))
     expect(rows).toEqual([4, 5])
   }).pipe(
     startingFrom(
@@ -404,7 +404,7 @@ test("reports the write error of one race and keeps inserting the next one", () 
       }),
     )
 
-    const results = yield* outcomes(Option.none()).pipe(
+    const results = yield* fillResults(Option.none()).pipe(
       Effect.provide(
         Layer.mergeAll(
           agentAnswering([], { "Gara Rifiutata": found(), "Gara Buona": found() }),
@@ -413,7 +413,7 @@ test("reports the write error of one race and keeps inserting the next one", () 
       ),
     )
 
-    expect(results.map((outcome) => outcome._tag)).toEqual(["Failed", "Filled"])
+    expect(results.map((result) => result._tag)).toEqual(["Failed", "Filled"])
     expect(written.map((row) => row.name)).toEqual(["Gara Buona"])
   }).pipe(startingFrom(["Gara Rifiutata", "Gara Buona"], tuscany)),
 )

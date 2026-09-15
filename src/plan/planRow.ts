@@ -24,9 +24,9 @@ export type PlannedRow = {
   readonly cells: Cells
 }
 
-type ReviewOutcome = "non_trovata" | "ambigua"
+type ReviewEsito = "non_trovata" | "ambigua"
 
-const reviewMessage: Readonly<Record<ReviewOutcome, string>> = {
+const reviewMessage: Readonly<Record<ReviewEsito, string>> = {
   non_trovata: "non ho trovato niente",
   ambigua: "più di un evento con questo nome",
 }
@@ -94,7 +94,7 @@ export const planRow = (
 export const planReviewRow = (
   sheet: Sheet,
   name: string,
-  outcome: ReviewOutcome,
+  esito: ReviewEsito,
 ): Result.Result<PlannedRow, never> =>
   Result.succeed({
     name,
@@ -103,7 +103,7 @@ export const planReviewRow = (
     columns: sheet.columns,
     cells: {
       name,
-      date: reviewMessage[outcome],
+      date: reviewMessage[esito],
       place: "",
       fromFlorence: "",
       type: "",

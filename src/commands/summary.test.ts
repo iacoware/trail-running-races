@@ -1,16 +1,16 @@
 import { expect, test } from "vitest"
 import { AgentTimeout } from "../agent/errors.ts"
 import { plannedRow } from "../testing/plannedRow.ts"
-import type { RaceOutcome } from "./fill.ts"
+import type { RaceFillResult } from "./fill.ts"
 import { hasErrors, summaryLines } from "./summary.ts"
 
-const filled = (name: string): RaceOutcome => ({
+const filled = (name: string): RaceFillResult => ({
   _tag: "Filled",
   name,
   row: plannedRow({ name }),
 })
 
-const timedOut = (name: string): RaceOutcome => ({
+const timedOut = (name: string): RaceFillResult => ({
   _tag: "Failed",
   name,
   error: new AgentTimeout({
