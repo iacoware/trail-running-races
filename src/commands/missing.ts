@@ -7,9 +7,11 @@ import { readSheet } from "../sheet/readSheet.ts"
 
 export const missingIn = Effect.fn("missingIn")(function* (sheet: Sheet) {
     const list = yield* RaceList
-    return missingRaces(yield* list.names, sheet)
+    const names = yield* list.names
+    return missingRaces(names, sheet)
 })
 
 export const missing = Effect.fn("missing")(function* () {
-    return yield* missingIn(yield* readSheet())
+    const sheet = yield* readSheet()
+    return yield* missingIn(sheet)
 })

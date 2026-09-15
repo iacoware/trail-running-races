@@ -10,7 +10,8 @@ const describe = (warning: SheetWarning) =>
 // it is now; the warnings belong to the first read and would only repeat noise on a reread.
 export const readSheetQuietly = Effect.fn("readSheetQuietly")(function* () {
     const reader = yield* SheetReader
-    return yield* Effect.fromResult(parseSheet(yield* reader.rows))
+    const rows = yield* reader.rows
+    return yield* Effect.fromResult(parseSheet(rows))
 })
 
 export const readSheet = Effect.fn("readSheet")(function* () {

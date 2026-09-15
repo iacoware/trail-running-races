@@ -45,7 +45,8 @@ export const layer = Layer.effect(
         const { executable, args } = splitCommand(command)
         const spawner = yield* ChildProcessSpawner.ChildProcessSpawner
         // The closed region list lives in the Schema; the prompt receives it so the two never drift.
-        const template = (yield* readPromptTemplate()).replaceAll(REGIONS_PLACEHOLDER, REGIONS_TEXT)
+        const promptTemplate = yield* readPromptTemplate()
+        const template = promptTemplate.replaceAll(REGIONS_PLACEHOLDER, REGIONS_TEXT)
 
         const run = Effect.fn("run")(
             function* (name: string) {
