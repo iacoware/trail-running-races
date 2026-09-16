@@ -10,7 +10,6 @@ const returnedExpressions = (fn: FunctionNode): ReadonlyArray<ESTree.Node> => {
     )
 }
 
-// A handler that is itself a data-last match, or returns a match or a ternary, branches twice.
 const nestedBranches = (handler: ESTree.Node): ReadonlyArray<ESTree.Node> => {
     if (isMatchCall(handler)) return [handler]
     if (!isFunctionNode(handler)) return []

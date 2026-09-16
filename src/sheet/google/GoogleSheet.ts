@@ -99,7 +99,6 @@ const openTab = Effect.fn("openTab")(function* (scope: string) {
     return { rows, insert }
 })
 
-// The credentials only allow reading: this layer cannot write to the sheet.
 export const readerLayer = Layer.effect(
     SheetReader,
     Effect.map(openTab(READ_ONLY_SCOPE), ({ rows }) => SheetReader.of({ rows })),

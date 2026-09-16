@@ -91,11 +91,9 @@ const tuscany = sheetWith(
     ["Chianti UTMB", "18-21 marzo"],
 )
 
-// The world a run starts from: the race list plus the sheet it reads.
 const startingFrom = <ROut, E>(names: ReadonlyArray<string>, sheet: Layer.Layer<ROut, E>) =>
     Effect.provide(Layer.mergeAll(listOf(...names), sheet))
 
-// What the test observes: the agent's answers and the rows the writer receives.
 const watching = (
     searched: Array<string>,
     answers: Record<string, RaceCard>,
