@@ -1,5 +1,6 @@
 import { eslintCompatPlugin } from "@oxlint/plugins"
 
+import { adapterImportBoundaryRule } from "./rules/adapter-import-boundary.ts"
 import { boundaryEntrypointShapeRule } from "./rules/boundary-entrypoint-shape.ts"
 import { errorHandlingInEffectFnHandlerRule } from "./rules/error-handling-in-effect-fn-handler.ts"
 import { noAsymmetricMatchHandlersRule } from "./rules/no-asymmetric-match-handlers.ts"
@@ -23,6 +24,7 @@ import { untracedRecursionRule } from "./rules/untraced-recursion.ts"
 const effectLocalPlugin = eslintCompatPlugin({
     meta: { name: "effect-local" },
     rules: {
+        "adapter-import-boundary": adapterImportBoundaryRule,
         "boundary-entrypoint-shape": boundaryEntrypointShapeRule,
         "error-handling-in-effect-fn-handler": errorHandlingInEffectFnHandlerRule,
         "no-asymmetric-match-handlers": noAsymmetricMatchHandlersRule,
