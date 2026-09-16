@@ -55,7 +55,7 @@ Fuori, per ora:
 
 ## Da dove copiare, e dove guardare
 
-Repo di origine: `iacoware/trail-running-races`, commit **`e03d06f`** (2026-09-16), che è lo stato su cui tutto qui è stato verificato. La storia git delle regole **non** viene trasportata: dei 17 commit che toccano la directory 16 sono misti con il codice `src/` che le regole hanno costretto a migrare, quindi nel nuovo repo parlerebbero di file inesistenti. Questa riga è la mitigazione: il contesto resta raggiungibile.
+Repo di origine: `iacoware/trail-running-races`, commit **`c7f2e9b`** (2026-09-16), che è lo stato su cui tutto qui è stato verificato. La storia git delle regole **non** viene trasportata: dei 17 commit che toccano la directory 16 sono misti con il codice `src/` che le regole hanno costretto a migrare, quindi nel nuovo repo parlerebbero di file inesistenti. Questa riga è la mitigazione: il contesto resta raggiungibile.
 
 Percorsi assoluti sulla macchina di sviluppo, da usare durante l'estrazione:
 
