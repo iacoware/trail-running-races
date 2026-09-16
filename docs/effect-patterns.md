@@ -911,6 +911,7 @@ Verificato: `@effect/tsgo` `0.45.0` e `oxlint-tsgolint` `7.0.2001` esistono su n
 - la **patch è obbligatoria**: senza `effect-tsgo patch --oxlint`, `oxlint` rifiuta il preset con `Unknown plugin: 'effecttsgo'`. Il plugin non è caricabile da configurazione, sta nel binario patchato. Di conseguenza `prepare: effect-tsgo patch --oxlint` è in `package.json`; la patch sostituisce anche il `tsc` della piattaforma (annotato in `docs/tech-choices.md`);
 - nei file di configurazione i nomi delle regole sono **kebab-case con prefisso `effecttsgo/`** (`effecttsgo/floating-effect`), non i camelCase della documentazione (`floatingEffect`);
 - exit code: `error` → 1, solo `warning` → 0. Il lint non blocca finché le violazioni restano warning;
+- `oxlint` è pinnato a `1.82.0` **senza caret**: la patch dichiara compatibilità con `1.81.0` e `1.82.0` soltanto, quindi un minor nuovo la romperebbe;
 - **dal 2026-09-16** l'`extends` elenca tutti e cinque i preset e il blocco `rules` non contiene più regole `effecttsgo`: `.oxlintrc.json` passa da 95 a 76 righe. Dettagli e verifiche in "Copertura reale del preset" sotto.
 
 ### Copertura reale del preset, per pattern
