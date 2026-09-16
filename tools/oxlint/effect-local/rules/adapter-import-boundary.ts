@@ -3,6 +3,9 @@ import { dirname, relative, resolve, sep } from "node:path"
 
 import { defineRule } from "@oxlint/plugins"
 
+import { isEntryFile } from "../shared/entry-files.ts"
+import { filePatternsSchema } from "../shared/file-globs.ts"
+
 type Deps = {
     readonly isAdapterDir: (dir: string) => boolean
 }
@@ -69,7 +72,7 @@ export const makeAdapterImportBoundaryRule = (deps: Deps) =>
             type: "problem",
             docs: {
                 description:
-                    "Import adapters only at the entry point, and never from another adapter.",
+                    "Import adapters only at the entry point, and never from another adapter. Entry files are skipped.",
             },
             messages: {
                 adapterOutsideEntry:
@@ -77,15 +80,22 @@ export const makeAdapterImportBoundaryRule = (deps: Deps) =>
                 crossAdapter:
                     "`{{adapter}}` is another adapter: depend on its port instead and let the entry point compose the Layers.",
             },
+            schema: [
+                {
+                    type: "object",
+                    properties: { entryFiles: filePatternsSchema },
+                    additionalProperties: false,
+                },
+            ],
         },
-        // The entry point is exempted by an `overrides` entry in .oxlintrc.json, not by an option.
         create(context) {
             const ownDir = dirname(context.filename)
+            const inEntryFile = isEntryFile(context)
 
             return {
                 ImportDeclaration(node) {
                     const source = node.source.value
-                    if (!isRelativeImport(source)) return
+                    if (inEntryFile || !isRelativeImport(source)) return
 
                     const targetDir = dirname(resolve(ownDir, source))
                     if (targetDir === ownDir || !deps.isAdapterDir(targetDir)) return

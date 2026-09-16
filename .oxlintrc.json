@@ -1,7 +1,7 @@
 {
     "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
     "extends": ["./node_modules/@effect/tsgo/oxlint-presets/recommended.json"],
-    "ignorePatterns": ["node_modules", "fixtures"],
+    "ignorePatterns": ["node_modules", "fixtures", "tools/oxlint/anti-slop-effect"],
     "jsPlugins": [
         "./tools/oxlint/anti-slop-effect/index.ts",
         "./tools/oxlint/effect-local/index.ts"
@@ -62,8 +62,6 @@
         {
             "files": ["src/main.ts"],
             "rules": {
-                "effect-local/adapter-import-boundary": "off",
-                "effect-local/run-only-at-entry": "off",
                 "effecttsgo/strict-effect-provide": "off"
             }
         },
@@ -82,12 +80,6 @@
             "rules": {
                 "anti-slop-effect/no-manual-tagged-construction": "off",
                 "effecttsgo/strict-effect-provide": "off"
-            }
-        },
-        {
-            "files": ["tools/oxlint/anti-slop-effect/**"],
-            "rules": {
-                "effect-local/no-effect-return-type": "off"
             }
         },
         {

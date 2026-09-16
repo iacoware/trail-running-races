@@ -1,7 +1,8 @@
 import { defineRule, type ESTree } from "@oxlint/plugins"
 
 import { calleeOf } from "../shared/effect-ast.ts"
-import { isTestFile, testFilesSchema } from "../shared/test-files.ts"
+import { filePatternsSchema } from "../shared/file-globs.ts"
+import { isTestFile } from "../shared/test-files.ts"
 
 const matchers = new Set(["match", "$match"])
 
@@ -33,7 +34,7 @@ export const provideNamedLayerRule = defineRule({
         schema: [
             {
                 type: "object",
-                properties: { testFiles: testFilesSchema },
+                properties: { testFiles: filePatternsSchema },
                 additionalProperties: false,
             },
         ],

@@ -1,7 +1,8 @@
 import { defineRule, type ESTree } from "@oxlint/plugins"
 
 import { calleeOf, isEffectFnApplication } from "../shared/effect-ast.ts"
-import { isTestFile, testFilesSchema } from "../shared/test-files.ts"
+import { filePatternsSchema } from "../shared/file-globs.ts"
+import { isTestFile } from "../shared/test-files.ts"
 
 const pipeReceiver = (call: ESTree.CallExpression) => {
     const { callee } = call
@@ -44,7 +45,7 @@ export const noProvideOnDefinitionRule = defineRule({
         schema: [
             {
                 type: "object",
-                properties: { testFiles: testFilesSchema },
+                properties: { testFiles: filePatternsSchema },
                 additionalProperties: false,
             },
         ],

@@ -38,6 +38,15 @@ new RuleTester().run("adapter-import-boundary", rule, {
             filename: "src/sheet/google/GoogleSheet.ts",
         },
         {
+            code: 'import { GoogleSheet } from "./sheet/google/GoogleSheet.ts"',
+            filename: "src/main.ts",
+        },
+        {
+            code: 'import { GoogleSheet } from "./sheet/google/GoogleSheet.ts"',
+            filename: "src/start.ts",
+            options: [{ entryFiles: ["**/start.ts"] }],
+        },
+        {
             code: 'import { RaceList } from "../races/RaceList.ts"',
             filename: "src/commands/missing.ts",
         },
