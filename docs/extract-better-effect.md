@@ -59,14 +59,14 @@ Repo di origine: `iacoware/trail-running-races`, commit **`e03d06f`** (2026-09-1
 
 Percorsi assoluti sulla macchina di sviluppo, da usare durante l'estrazione:
 
-| Cosa                                | Percorso                                                                               | Azione                                                            |
-| ----------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Sorgenti delle regole               | `/Users/iacoware/projects/iacoware/trail-running-races/tools/oxlint/effect-local/`      | **copiare** (`index.ts`, `rules/`, `shared/`, `README.md`)        |
-| Catalogo dei pattern                | `/Users/iacoware/projects/iacoware/trail-running-races/docs/effect-patterns.md`         | **copiare e potare** secondo la decisione 6                       |
-| Questo documento                    | `/Users/iacoware/projects/iacoware/trail-running-races/docs/extract-better-effect.md`   | **spostare** nel nuovo repo                                       |
-| Severità e opzioni oggi in uso      | `/Users/iacoware/projects/iacoware/trail-running-races/.oxlintrc.json`                  | **consultare**: da qui si ricava il preset (tutto a `warn`)       |
-| Piano di lavoro chiuso              | `/Users/iacoware/projects/iacoware/trail-running-races/docs/effect-patterns-plan.md`    | **cancellare** (decisione 7)                                      |
-| Regole anti-slop vendorizzate       | `/Users/iacoware/projects/iacoware/trail-running-races/tools/oxlint/anti-slop-effect/`  | **non copiare**: fuori perimetro, resta qui                       |
+| Cosa                           | Percorso                                                                               | Azione                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Sorgenti delle regole          | `/Users/iacoware/projects/iacoware/trail-running-races/tools/oxlint/effect-local/`     | **copiare** (`index.ts`, `rules/`, `shared/`, `README.md`)  |
+| Catalogo dei pattern           | `/Users/iacoware/projects/iacoware/trail-running-races/docs/effect-patterns.md`        | **copiare e potare** secondo la decisione 6                 |
+| Questo documento               | `/Users/iacoware/projects/iacoware/trail-running-races/docs/extract-better-effect.md`  | **spostare** nel nuovo repo                                 |
+| Severità e opzioni oggi in uso | `/Users/iacoware/projects/iacoware/trail-running-races/.oxlintrc.json`                 | **consultare**: da qui si ricava il preset (tutto a `warn`) |
+| Piano di lavoro chiuso         | `/Users/iacoware/projects/iacoware/trail-running-races/docs/effect-patterns-plan.md`   | **cancellare** (decisione 7)                                |
+| Regole anti-slop vendorizzate  | `/Users/iacoware/projects/iacoware/trail-running-races/tools/oxlint/anti-slop-effect/` | **non copiare**: fuori perimetro, resta qui                 |
 
 Nel nuovo repo va messa una riga di README con origine e commit, così l'omissione della storia è dichiarata invece che subita.
 
