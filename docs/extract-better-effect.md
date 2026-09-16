@@ -40,10 +40,10 @@ Fuori, per ora:
 
     Da **non** toccare: la numerazione `P01`–`P34`. È referenziata dalla tabella in `tools/oxlint/effect-local/README.md` e dai rimandi incrociati fra pattern; rinumerare romperebbe entrambi senza guadagno.
 
-    I pattern `solo-skill` (P03, P06, P12, P19, P20, P29, P31) si portano via anche se nessuna regola li impone: sono lo stile di casa e il seme della skill futura. Vanno però marcati come non verificati meccanicamente, perché il lettore non li scambi per regole attive.
+    I pattern `solo-skill` (P03, P06, P12, P19, P20, P29, P31) si portano via anche se nessuna regola li impone — P19 in parte sì, con `acquire-release-disposable` sulla sola metà `acquireRelease` —: sono lo stile di casa e il seme della skill futura. Vanno però marcati come non verificati meccanicamente, perché il lettore non li scambi per regole attive.
 
 7. **`docs/effect-patterns-plan.md` viene cancellato**: era un documento di lavoro temporaneo, con tutti i passi chiusi. I fatti ancora utili che conteneva sono già riportati qui.
-8. **Il nuovo repo contiene anche una skill per i pattern `solo-skill`.** Il preset lint copre solo ciò che è meccanizzabile: senza la skill, metà dell'obiettivo — codice Effect più leggibile e più in linea col nostro modo di scrivere — resta fuori dalla valutazione, perché P03, P06, P12, P19, P20, P29 e P31 nessuna regola li vede. Il costo marginale è basso: dopo la decisione 6 quei testi sono già nel repo.
+8. **Il nuovo repo contiene anche una skill per i pattern `solo-skill`.** Il preset lint copre solo ciò che è meccanizzabile: senza la skill, metà dell'obiettivo — codice Effect più leggibile e più in linea col nostro modo di scrivere — resta fuori dalla valutazione, perché P03, P06, P12, P19, P20, P29 e P31 nessuna regola li vede, salvo mezzo P19. Il costo marginale è basso: dopo la decisione 6 quei testi sono già nel repo.
 
     Vincolo di scope, ereditato dal passo 5 del catalogo: la skill è **sottile** e contiene **solo ciò che il linter non applica già**. I sette pattern `solo-skill`, la tabella di migrazione v3 → v4, il rimando a `node_modules/effect/AGENTS.md` e `ai-docs/` del pacchetto installato, e l'istruzione di lanciare lint e typecheck prima di chiudere. Ripetere in prosa le regole già imposte dal preset aggiungerebbe solo una seconda fonte da tenere allineata.
 
