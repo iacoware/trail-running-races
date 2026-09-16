@@ -8,8 +8,7 @@ const parseObject = (text: string): Option.Option<unknown> => {
     }
 }
 
-// Returns the index just past the brace that balances the one at `open`, tracking strings
-// so braces inside JSON strings do not count.
+// The index is exclusive, and braces inside JSON strings do not count.
 const balancedEnd = (text: string, open: number): number | undefined => {
     let depth = 0
     let inString = false
