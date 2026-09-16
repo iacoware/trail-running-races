@@ -12,13 +12,12 @@ export const layer = (path: string) =>
 
             const rows = fs.readFileString(path).pipe(
                 Effect.map(parseCsv),
-                Effect.mapError(
-                    (cause) =>
-                        new SheetCsvError({
-                            path,
-                            message: `foglio CSV non leggibile da ${path}: ${cause.message}`,
-                            cause,
-                        }),
+                Effect.mapError((cause) =>
+                    SheetCsvError.make({
+                        path,
+                        message: `foglio CSV non leggibile da ${path}: ${cause.message}`,
+                        cause,
+                    }),
                 ),
             )
 

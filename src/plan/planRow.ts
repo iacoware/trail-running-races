@@ -77,7 +77,7 @@ export const planRow = (
     const start = parseDate(race.data)
     if (Option.isNone(start)) {
         return Result.fail(
-            new UnparsableDateError({
+            UnparsableDateError.make({
                 race: name,
                 date: race.data,
                 message: `data della scheda fuori grammatica: ${race.data}`,

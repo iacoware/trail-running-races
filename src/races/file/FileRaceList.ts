@@ -18,13 +18,12 @@ export const layer = Layer.effect(
 
         const names = Effect.gen(function* () {
             const text = yield* fs.readFileString(path).pipe(
-                Effect.mapError(
-                    (cause) =>
-                        new RaceListError({
-                            path,
-                            message: `elenco gare non leggibile da ${path}: ${cause.message}`,
-                            cause,
-                        }),
+                Effect.mapError((cause) =>
+                    RaceListError.make({
+                        path,
+                        message: `elenco gare non leggibile da ${path}: ${cause.message}`,
+                        cause,
+                    }),
                 ),
             )
             const list = parseRaceList(text)

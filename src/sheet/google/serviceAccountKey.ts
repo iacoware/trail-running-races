@@ -15,12 +15,11 @@ const decodeKey = Schema.decodeUnknownEffect(Schema.fromJsonString(ServiceAccoun
 const readKeyFile = Effect.fn("readKeyFile")(function* (path: string) {
     const fs = yield* FileSystem.FileSystem
     return yield* fs.readFileString(path).pipe(
-        Effect.mapError(
-            (cause) =>
-                new ServiceAccountKeyError({
-                    message: `chiave del service account non leggibile da ${path}: ${cause.message}`,
-                    cause,
-                }),
+        Effect.mapError((cause) =>
+            ServiceAccountKeyError.make({
+                message: `chiave del service account non leggibile da ${path}: ${cause.message}`,
+                cause,
+            }),
         ),
     )
 })
@@ -40,12 +39,11 @@ export const loadServiceAccountKey = Effect.fn("loadServiceAccountKey")(function
     })
 
     return yield* decodeKey(json).pipe(
-        Effect.mapError(
-            (cause) =>
-                new ServiceAccountKeyError({
-                    message: `chiave del service account non valida (${describe(source)}): ${cause.message}`,
-                    cause,
-                }),
+        Effect.mapError((cause) =>
+            ServiceAccountKeyError.make({
+                message: `chiave del service account non valida (${describe(source)}): ${cause.message}`,
+                cause,
+            }),
         ),
     )
 })

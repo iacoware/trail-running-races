@@ -44,13 +44,12 @@ const openTab = Effect.fn("openTab")(function* (scope: string) {
 
     const decode = <S extends Schema.Top>(schema: S, value: unknown) =>
         Schema.decodeUnknownEffect(schema)(value).pipe(
-            Effect.mapError(
-                (cause) =>
-                    new SheetApiError({
-                        spreadsheetId,
-                        message: `risposta inattesa da Google Sheets: ${cause.message}`,
-                        cause,
-                    }),
+            Effect.mapError((cause) =>
+                SheetApiError.make({
+                    spreadsheetId,
+                    message: `risposta inattesa da Google Sheets: ${cause.message}`,
+                    cause,
+                }),
             ),
         )
 
@@ -66,7 +65,7 @@ const openTab = Effect.fn("openTab")(function* (scope: string) {
     }))
     const chosen = chooseTab(available, tab)
     if (Option.isNone(chosen)) {
-        return yield* new SheetTabNotFoundError({
+        return yield* SheetTabNotFoundError.make({
             spreadsheetId,
             message:
                 `tab ${Option.getOrElse(tab, () => "(nessuno)")} non trovato nel foglio ` +

@@ -13,15 +13,13 @@ export const parseAgentOutput = (
     const json = extractJson(output)
     if (Option.isNone(json)) {
         const message = "nessun oggetto JSON nell'output dell'agente"
-        return Result.fail(new AgentInvalidOutput({ race, output, message }))
+        return Result.fail(AgentInvalidOutput.make({ race, output, message }))
     }
-    return Result.mapError(
-        decodeCard(json.value),
-        (cause) =>
-            new AgentInvalidOutput({
-                race,
-                output,
-                message: `scheda non conforme allo schema: ${cause.message}`,
-            }),
+    return Result.mapError(decodeCard(json.value), (cause) =>
+        AgentInvalidOutput.make({
+            race,
+            output,
+            message: `scheda non conforme allo schema: ${cause.message}`,
+        }),
     )
 }

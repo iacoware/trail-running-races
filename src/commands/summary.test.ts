@@ -14,7 +14,7 @@ const filled = (name: string): RaceFillResult => ({
 const timedOut = (name: string): RaceFillResult => ({
     _tag: "Failed",
     name,
-    error: new AgentTimeout({
+    error: AgentTimeout.make({
         race: name,
         seconds: 300,
         message: "agente senza risposta entro 300s",

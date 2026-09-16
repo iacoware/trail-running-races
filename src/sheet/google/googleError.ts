@@ -29,20 +29,20 @@ export const toSheetError =
         const message = messageOf(cause)
 
         if (isAuthFailure(status, codeOf(cause), message)) {
-            return new SheetAuthError({
+            return SheetAuthError.make({
                 spreadsheetId,
                 message: `accesso al foglio ${spreadsheetId} negato: ${message}`,
                 cause,
             })
         }
         if (status === 404) {
-            return new SheetNotFoundError({
+            return SheetNotFoundError.make({
                 spreadsheetId,
                 message: `foglio ${spreadsheetId} non trovato: ${message}`,
                 cause,
             })
         }
-        return new SheetApiError({
+        return SheetApiError.make({
             spreadsheetId,
             message: `errore Google Sheets sul foglio ${spreadsheetId}: ${message}`,
             cause,

@@ -49,7 +49,7 @@ const agentAnswering = (searched: Array<string>, answers: Record<string, RaceCar
                 searched.push(name)
                 const card = answers[name]
                 return card === undefined
-                    ? Effect.fail(new AgentTimeout({ race: name, seconds: 1, message: "timeout" }))
+                    ? Effect.fail(AgentTimeout.make({ race: name, seconds: 1, message: "timeout" }))
                     : Effect.succeed(card)
             },
         }),
@@ -388,7 +388,7 @@ test("reports the write error of one race and keeps inserting the next one", () 
                 insert: (row) =>
                     row.name === "Gara Rifiutata"
                         ? Effect.fail(
-                              new SheetApiError({
+                              SheetApiError.make({
                                   spreadsheetId: "foglio",
                                   message: "quota superata",
                                   cause: undefined,

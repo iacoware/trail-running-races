@@ -34,7 +34,7 @@ const findColumn = (header: Row, key: ColumnKey) => {
     const index = header.findIndex((cell) => raceKey(cell).startsWith(raceKey(label)))
     return index === -1
         ? Result.fail(
-              new SheetColumnMissingError({
+              SheetColumnMissingError.make({
                   column: label,
                   message: `colonna ${label} non trovata nell'header del foglio: ${header.join(", ")}`,
               }),

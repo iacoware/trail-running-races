@@ -17,13 +17,12 @@ const REGIONS_TEXT = REGIONS.map((region) => `\`${region}\``).join(", ")
 const readPromptTemplate = Effect.fn("readPromptTemplate")(function* () {
     const fs = yield* FileSystem.FileSystem
     return yield* fs.readFileString(PROMPT_PATH).pipe(
-        Effect.mapError(
-            (cause) =>
-                new PromptFileError({
-                    path: PROMPT_PATH,
-                    message: `prompt non leggibile da ${PROMPT_PATH}: ${cause.message}`,
-                    cause,
-                }),
+        Effect.mapError((cause) =>
+            PromptFileError.make({
+                path: PROMPT_PATH,
+                message: `prompt non leggibile da ${PROMPT_PATH}: ${cause.message}`,
+                cause,
+            }),
         ),
     )
 })
@@ -62,7 +61,7 @@ export const layer = Layer.effect(
                 )
                 const exitCode = yield* handle.exitCode
                 if (exitCode !== 0) {
-                    return yield* new AgentProcessError({
+                    return yield* AgentProcessError.make({
                         race: name,
                         message: `agente terminato con exit code ${exitCode}: ${stderr.trim()}`,
                     })
@@ -72,14 +71,12 @@ export const layer = Layer.effect(
             Effect.scoped,
             (effect, name) =>
                 effect.pipe(
-                    Effect.catchTag(
-                        "PlatformError",
-                        (cause) =>
-                            new AgentProcessError({
-                                race: name,
-                                message: `agente non eseguibile (${command}): ${cause.message}`,
-                                cause,
-                            }),
+                    Effect.catchTag("PlatformError", (cause) =>
+                        AgentProcessError.make({
+                            race: name,
+                            message: `agente non eseguibile (${command}): ${cause.message}`,
+                            cause,
+                        }),
                     ),
                 ),
         )
@@ -89,7 +86,7 @@ export const layer = Layer.effect(
                 Effect.timeoutOrElse({
                     duration: Duration.seconds(timeoutSeconds),
                     orElse: () =>
-                        new AgentTimeout({
+                        AgentTimeout.make({
                             race: name,
                             seconds: timeoutSeconds,
                             message: `agente senza risposta entro ${timeoutSeconds}s`,
