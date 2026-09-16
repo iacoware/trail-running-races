@@ -45,7 +45,7 @@ Classi di enforcement:
 | P16 | Option/Result/Exit via modulo, mai `_tag`                                                           | idioma | lint-sintattico | `Either` → `Result`                                            | conforme                                  |
 | P17 | `Effect.fn("nome")` per funzioni effettful                                                          | idioma | lint-sintattico | invariato                                                      | conforme                                  |
 | P18 | Niente effetti flottanti né `yield` senza `*`                                                       | idioma | lint-tipi       | invariato                                                      | conforme (verificato con `oxlint`)        |
-| P19 | Risorse con `acquireRelease`, `Effect.scoped` solo se serve                                         | idioma | lint-tipi       | `Layer.scoped` rimosso                                         | conforme                                  |
+| P19 | Risorse con `acquireRelease`, `Effect.scoped` solo se serve                                         | idioma | solo-skill      | `Layer.scoped` rimosso                                         | conforme                                  |
 | P20 | Concorrenza esplicita                                                                               | idioma | solo-skill      | invariato                                                      | conforme                                  |
 | P21 | Log e output via Effect, niente `console` dentro gli effetti                                        | idioma | lint-sintattico | invariato                                                      | conforme (`Console`; una deroga motivata) |
 | P22 | Test con `@effect/vitest` e fake come Layer                                                         | idioma | lint-sintattico | `layer(...)`, `it.effect`                                      | conforme                                  |
@@ -62,7 +62,7 @@ Classi di enforcement:
 | P33 | Niente `Effect`, `Stream` e `Layer` nel tipo di ritorno annotato                                    | locale | lint-sintattico | invariato                                                      | conforme                                  |
 | P34 | Handler di un match allo stesso livello di astrazione                                               | locale | lint-sintattico | invariato                                                      | conforme                                  |
 
-Totale: 25 `lint-sintattico`, 2 `lint-tipi`, 7 `solo-skill`.
+Totale: 26 `lint-sintattico`, 1 `lint-tipi`, 7 `solo-skill`.
 
 ## Pattern interamente meccanizzati
 
@@ -456,7 +456,7 @@ const client = yield* Effect.acquireRelease(
 
 - **archivio**: la connessione resta aperta se il ping fallisce (`apps/caveau/src/app/public/health/route.ts:28-36`); una cache statica di client (`packages/shared/src/mongodb.ts:23`) prende il posto di un layer con finalizer. Zero `Effect.scoped`/`acquireRelease`.
 - **Questo repo**: conforme (`src/agent/process/ProcessAgent.ts:69`, dove lo spawn richiede `Scope`).
-- **Enforcement**: `lint-tipi`. Capire se `R` contiene `Scope` richiede i tipi; `scopeInLayerEffect` esiste solo per v3. Per v4 non è stata verificata alcuna diagnostica sugli `Effect.scoped` superflui, quindi in pratica il pattern ricade nella skill.
+- **Enforcement**: `solo-skill`, con la sola metà `acquireRelease` coperta in parte da `acquire-release-disposable` (warn). Capire se `R` contiene `Scope` richiede i tipi, e `scope-in-layer-effect` esiste solo per v3: per v4 non è stata verificata alcuna diagnostica sugli `Effect.scoped` superflui.
 
 ### P20 · Concorrenza esplicita
 
@@ -992,7 +992,7 @@ Nei test l'idioma completo sarebbe salire a `layer(...)` di `@effect/vitest` per
 3. ~~**Plugin locale**~~ **fatto** (2026-09-14): `tools/oxlint/effect-local/`, 12 regole con `RuleTester`, vedi "Plugin locale" sopra. Cadute perché coperte dal preset: `no-sync-decode-in-effect` (P11), `no-process-env` (P13), `return-yield-error` (P07), `no-console-in-effect` (P21).
 4. **tsgo fuori da oxlint**: se l'integrazione del passo 1 non funziona su `rc.112`, il ripiego è `effect-tsgo diagnostics --project tsconfig.json` come script separato, senza patch, con `floatingEffect`, `missingStarInYieldEffectGen`, `globalErrorInEffectFailure`, `effectFnOpportunity` e `leakingRequirements` (P18, P19).
 5. **Skill**, sottile:
-    - i pattern `solo-skill` (P02, P03, P06, P12, P19, P20);
+    - i pattern `solo-skill` (P03, P06, P12, P19, P20, P29, P31);
     - la tabella v3 → v4:
 
         | v3                         | v4                           |
