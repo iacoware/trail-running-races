@@ -45,6 +45,11 @@ Si controlla in una sessione **nuova** di Claude Code in questo repo se `probe` 
 - **Se raccolta** → il passo 6 crea symlink.
 - **Se non raccolta** → lo script copia, e va scritto nel README del nuovo repo che a ogni modifica della skill lo script va rilanciato.
 
+**Esito, 2026-09-23: raccolta.** Il passo 6 crea symlink. Due dettagli oltre la domanda posta:
+
+- la skill è comparsa **nella sessione già aperta**, senza riavvio: la lista non è costruita solo all'avvio, quindi l'installazione non impone di riaprire Claude Code;
+- `.claude/skills` è fuori dall'allowlist di scrittura della sandbox: `install-skill.sh` va lanciato fuori dalla sandbox di una sessione, o il suo `ln -s` viene negato con `Operation not permitted`.
+
 ## Passo 1 · Creare il repo
 
 ```bash
@@ -205,7 +210,7 @@ La sandbox di Claude Code consente scrittura sulla working directory della sessi
 
 | Passo | Working directory | Perché lì |
 | --- | --- | --- |
-| 0 | questo repo | scrive `.claude/skills/probe`; serve una sessione **nuova**, la lista delle skill si costruisce all'avvio |
+| 0 | questo repo | **fatto**: scriveva `.claude/skills/probe`; la sessione nuova si è rivelata non necessaria, la skill compare a caldo |
 | 1–6 | `$BE` | dal passo 1 il progetto *è* `$BE`; legge questo repo solo per copiare regole e catalogo |
 | 7 | questo repo | `pnpm add -D link:$BE`, `git rm`, `.oxlintrc.json`, docs |
 | 8 | `~/projects/doubleloop/inloco` | modifiche e `pnpm install` in quel repo |
