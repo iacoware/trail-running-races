@@ -5,34 +5,22 @@
         "./node_modules/@effect/tsgo/oxlint-presets/correctness.json",
         "./node_modules/@effect/tsgo/oxlint-presets/effect-native.json",
         "./node_modules/@effect/tsgo/oxlint-presets/style.json",
-        "./node_modules/@effect/tsgo/oxlint-presets/recommended.json"
+        "./node_modules/@effect/tsgo/oxlint-presets/recommended.json",
+        "./node_modules/@iacoware/better-effect/presets/all.json"
     ],
     "ignorePatterns": ["node_modules", "fixtures", "tools/oxlint/anti-slop-effect"],
-    "jsPlugins": [
-        "./tools/oxlint/anti-slop-effect/index.ts",
-        "./tools/oxlint/effect-local/index.ts"
-    ],
+    "jsPlugins": ["./tools/oxlint/anti-slop-effect/index.ts"],
     "rules": {
-        "effect-local/adapter-import-boundary": "error",
-        "effect-local/boundary-entrypoint-shape": "warn",
-        "effect-local/error-handling-in-effect-fn-handler": "warn",
-        "effect-local/no-asymmetric-match-handlers": "warn",
-        "effect-local/no-bare-error-in-effect": "error",
-        "effect-local/no-effect-promise": "warn",
-        "effect-local/no-effect-return-type": "warn",
-        "effect-local/no-inline-yield-star": "warn",
-        "effect-local/no-nested-match": "warn",
-        "effect-local/no-parameterless-catch-all": "error",
-        "effect-local/no-provide-on-definition": "error",
-        "effect-local/no-transport-types-in-generator": "error",
-        "effect-local/prefer-effect-fn": "warn",
-        "effect-local/provide-named-layer": "error",
-        "effect-local/redacted-secret-names": "warn",
-        "effect-local/run-only-at-entry": "error",
-        "effect-local/service-port-shape-only": "error",
-        "effect-local/single-style-per-function": "error",
-        "effect-local/try-object-form": "error",
-        "effect-local/untraced-recursion": "warn",
+        "better-effect/adapter-import-boundary": "error",
+        "better-effect/no-bare-error-in-effect": "error",
+        "better-effect/no-parameterless-catch-all": "error",
+        "better-effect/no-provide-on-definition": "error",
+        "better-effect/no-transport-types-in-generator": "error",
+        "better-effect/provide-named-layer": "error",
+        "better-effect/run-only-at-entry": "error",
+        "better-effect/service-port-shape-only": "error",
+        "better-effect/single-style-per-function": "error",
+        "better-effect/try-object-form": "error",
         "anti-slop-effect/no-manual-effect-error-tag": "error",
         "anti-slop-effect/prefer-effect-match": "error",
         "anti-slop-effect/no-manual-tag-comparison": "error",
@@ -61,15 +49,6 @@
             "rules": {
                 "anti-slop-effect/no-manual-tagged-construction": "off",
                 "effecttsgo/strict-effect-provide": "off"
-            }
-        },
-        {
-            "files": ["tools/**"],
-            "rules": {
-                "anti-slop-effect/no-manual-tag-comparison": "off",
-                "anti-slop-effect/no-manual-tagged-construction": "off",
-                "effecttsgo/strict-boolean-expressions": "off",
-                "effecttsgo/node-builtin-import": "off"
             }
         }
     ]

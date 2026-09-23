@@ -21,6 +21,7 @@
     "devDependencies": {
         "@effect/tsgo": "0.45.0",
         "@effect/vitest": "4.0.0-rc.112",
+        "@iacoware/better-effect": "link:/Users/iacoware/projects/iacoware/better-effect",
         "@oxlint/plugins": "1.82.0",
         "@types/node": "^24.13.3",
         "oxfmt": "0.67.0",
