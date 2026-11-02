@@ -6,25 +6,24 @@
         "./node_modules/@effect/tsgo/oxlint-presets/effect-native.json",
         "./node_modules/@effect/tsgo/oxlint-presets/style.json",
         "./node_modules/@effect/tsgo/oxlint-presets/recommended.json",
-        "./node_modules/@iacoware/better-effect/presets/all.json"
+        "./node_modules/@doubleloop-io/oxlint-plugin-effect/dist/presets/all.json"
     ],
-    "ignorePatterns": ["node_modules", "fixtures", "tools/oxlint/anti-slop-effect"],
-    "jsPlugins": ["./tools/oxlint/anti-slop-effect/index.ts"],
+    "ignorePatterns": ["node_modules", "fixtures"],
     "rules": {
-        "better-effect/adapter-import-boundary": "error",
-        "better-effect/no-bare-error-in-effect": "error",
-        "better-effect/no-parameterless-catch-all": "error",
-        "better-effect/no-provide-on-definition": "error",
-        "better-effect/no-transport-types-in-generator": "error",
-        "better-effect/provide-named-layer": "error",
-        "better-effect/run-only-at-entry": "error",
-        "better-effect/service-port-shape-only": "error",
-        "better-effect/single-style-per-function": "error",
-        "better-effect/try-object-form": "error",
-        "anti-slop-effect/no-manual-effect-error-tag": "error",
-        "anti-slop-effect/prefer-effect-match": "error",
-        "anti-slop-effect/no-manual-tag-comparison": "error",
-        "anti-slop-effect/no-manual-tagged-construction": "error",
+        "dl-effect/adapter-import-boundary": "error",
+        "dl-effect/no-throw-or-primitive-failure": "error",
+        "dl-effect/no-parameterless-catch-all": "error",
+        "dl-effect/no-provide-on-definition": "error",
+        "dl-effect/no-transport-types-in-generator": "error",
+        "dl-effect/provide-named-layer": "error",
+        "dl-effect/run-only-in-runner": "error",
+        "dl-effect/service-port-shape-only": "error",
+        "dl-effect/single-style-per-function": "error",
+        "dl-effect/try-object-form": "error",
+        "dl-effect/anti-slop-no-manual-effect-error-tag": "error",
+        "dl-effect/anti-slop-prefer-effect-match": "error",
+        "dl-effect/no-manual-discriminant-comparison": "error",
+        "dl-effect/no-manual-discriminant-construction": "error",
         "effecttsgo/missing-pipeable-signature": "off"
     },
     "overrides": [
@@ -47,7 +46,7 @@
         {
             "files": ["**/*.test.ts", "src/testing/**"],
             "rules": {
-                "anti-slop-effect/no-manual-tagged-construction": "off",
+                "dl-effect/no-manual-discriminant-construction": "off",
                 "effecttsgo/strict-effect-provide": "off"
             }
         }

@@ -10,8 +10,7 @@
         "format": "oxfmt",
         "format:check": "oxfmt --check",
         "typecheck": "tsc --noEmit",
-        "test": "vitest run && pnpm test:lint-rules",
-        "test:lint-rules": "node --test tools/oxlint/**/rules/*.test.ts"
+        "test": "vitest run"
     },
     "dependencies": {
         "@effect/platform-node": "4.0.0-rc.112",
@@ -19,10 +18,9 @@
         "effect": "4.0.0-rc.112"
     },
     "devDependencies": {
+        "@doubleloop-io/oxlint-plugin-effect": "^0.1.1",
         "@effect/tsgo": "0.45.0",
         "@effect/vitest": "4.0.0-rc.112",
-        "@iacoware/better-effect": "link:/Users/iacoware/projects/iacoware/better-effect",
-        "@oxlint/plugins": "1.82.0",
         "@types/node": "^24.13.3",
         "oxfmt": "0.67.0",
         "oxlint": "1.82.0",
