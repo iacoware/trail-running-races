@@ -1,5 +1,5 @@
 import { effect as test, expect } from "@effect/vitest"
-import { Effect, Layer, Option, Stream } from "effect"
+import { Console, Effect, Layer, Option, Stream } from "effect"
 
 import { Agent } from "../agent/Agent.ts"
 import { AgentTimeout } from "../agent/errors.ts"
@@ -10,6 +10,7 @@ import { RaceList } from "../races/RaceList.ts"
 import { SheetApiError } from "../sheet/errors.ts"
 import { SheetReader } from "../sheet/SheetReader.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
+import { consoleInto } from "../testing/captureConsole.ts"
 import { captureLogs } from "../testing/captureLogs.ts"
 import { fill, RaceFillResult } from "./fill.ts"
 
@@ -83,7 +84,10 @@ const insertingSheet = (...rows: Array<Array<string>>) => {
     )
 }
 
-const fillResults = (only: Option.Option<string>) => Stream.runCollect(fill({ only }))
+const fillResults = (only: Option.Option<string>, printed: Array<string> = []) =>
+    Stream.runCollect(fill({ only, filled: "inserite" })).pipe(
+        Effect.provideService(Console.Console, consoleInto(printed)),
+    )
 
 const tuscany = sheetWith(
     ["Toscana"],
@@ -410,3 +414,41 @@ test("reports the write error of one race and keeps inserting the next one", () 
         expect(results.map((result) => result._tag)).toEqual(["Failed", "Filled"])
         expect(written.map((row) => row.name)).toEqual(["Gara Buona"])
     }).pipe(startingFrom(["Gara Rifiutata", "Gara Buona"], tuscany)))
+
+test("prints the progress of every race so a long run does not look stuck", () =>
+    Effect.gen(function* () {
+        const printed: Array<string> = []
+
+        yield* fillResults(Option.none(), printed).pipe(
+            watching([], { "Garfagnana Epic Trail": found(), "Gara Assente": notFound }, []),
+        )
+
+        expect(printed).toEqual([
+            "lettura foglio…",
+            "3 gare da cercare",
+            "[1/3] Garfagnana Epic Trail: ricerca…",
+            "[1/3] Garfagnana Epic Trail: inserita in Toscana, riga 4 (0s)",
+            "[2/3] Gara Assente: ricerca…",
+            "[2/3] Gara Assente: non trovata → Da verificare (0s)",
+            "[3/3] Gara Rotta: ricerca…",
+            "[3/3] Gara Rotta: errore AgentTimeout (0s)",
+        ])
+    }).pipe(
+        startingFrom(
+            ["Garfagnana Epic Trail", "Gara Assente", "Gara Rotta"],
+            insertingSheet(
+                ["Toscana"],
+                ["Brunello Crossing", "20-21 febbraio"],
+                ["Chianti UTMB", "18-21 marzo"],
+            ),
+        ),
+    ))
+
+test("says there is nothing to search when every race is already in the sheet", () =>
+    Effect.gen(function* () {
+        const printed: Array<string> = []
+
+        yield* fillResults(Option.none(), printed).pipe(watching([], {}, []))
+
+        expect(printed).toEqual(["lettura foglio…", "nessuna gara da cercare"])
+    }).pipe(startingFrom(["Chianti UTMB"], tuscany)))

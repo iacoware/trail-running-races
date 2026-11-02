@@ -5,7 +5,8 @@ import * as ProcessAgent from "./agent/process/ProcessAgent.ts"
 import { CliCommand, parseArgs } from "./commands/cliArgs.ts"
 import { fill } from "./commands/fill.ts"
 import { missing } from "./commands/missing.ts"
-import { hasErrors, summaryLines, type FilledLabel } from "./commands/summary.ts"
+import type { FilledLabel } from "./commands/progress.ts"
+import { hasErrors, summaryLines } from "./commands/summary.ts"
 import * as FileRaceList from "./races/file/FileRaceList.ts"
 import * as CsvSheetReader from "./sheet/csv/CsvSheetReader.ts"
 import * as GoogleSheet from "./sheet/google/GoogleSheet.ts"
@@ -56,7 +57,7 @@ const printFillSummary = Effect.fn("printFillSummary")(function* (
     only: Option.Option<string>,
     filled: FilledLabel,
 ) {
-    const results = yield* Stream.runCollect(fill({ only }))
+    const results = yield* Stream.runCollect(fill({ only, filled }))
     for (const line of summaryLines(results, filled)) yield* Console.log(line)
     if (hasErrors(results)) process.exitCode = 1
 })

@@ -1,4 +1,4 @@
-import { Data, Effect, Option, Result, Stream } from "effect"
+import { Console, Data, Effect, Option, Result, Stream } from "effect"
 
 import { Agent } from "../agent/Agent.ts"
 import type { AgentError } from "../agent/errors.ts"
@@ -11,6 +11,13 @@ import type { Sheet } from "../sheet/parseSheet.ts"
 import { readSheet, readSheetQuietly } from "../sheet/readSheet.ts"
 import { SheetWriter } from "../sheet/SheetWriter.ts"
 import { missingIn } from "./missing.ts"
+import {
+    candidatesLine,
+    type FilledLabel,
+    outcomeLine,
+    readingSheetLine,
+    searchingLine,
+} from "./progress.ts"
 
 export type RaceFillResult = Data.TaggedEnum<{
     Filled: { readonly name: string; readonly row: PlannedRow }
@@ -86,11 +93,33 @@ const fillRace = Effect.fn("fillRace")(
         ),
 )
 
-export const fill = (options: { readonly only: Option.Option<string> }) =>
+// Searching a race takes minutes: without these lines the run looks stuck.
+const fillRaceReporting = Effect.fn("fillRaceReporting")(function* (
+    name: string,
+    index: number,
+    total: number,
+    filled: FilledLabel,
+) {
+    yield* Console.log(searchingLine(index, total, name))
+    const [elapsed, result] = yield* Effect.timed(fillRace(name))
+    yield* Console.log(outcomeLine(index, total, result, filled, elapsed))
+    return result
+})
+
+export const fill = (options: {
+    readonly only: Option.Option<string>
+    readonly filled: FilledLabel
+}) =>
     Stream.unwrap(
         Effect.gen(function* () {
+            yield* Console.log(readingSheetLine)
             const sheet = yield* readSheet()
             const names = yield* candidates(sheet, options.only)
-            return Stream.fromIterable(names).pipe(Stream.mapEffect(fillRace))
+            yield* Console.log(candidatesLine(names.length))
+            return Stream.fromIterable(names).pipe(
+                Stream.mapEffect((name, index) =>
+                    fillRaceReporting(name, index, names.length, options.filled),
+                ),
+            )
         }),
     )

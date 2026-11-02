@@ -1,6 +1,7 @@
 import { Data, Predicate } from "effect"
 
 import { RaceFillResult } from "./fill.ts"
+import type { FilledLabel } from "./progress.ts"
 
 type FailedRace = Data.TaggedEnum.Value<RaceFillResult, "Failed">
 
@@ -31,10 +32,6 @@ const failures = (failed: ReadonlyArray<FailedRace>) => [
     `errori: ${failed.length}`,
     ...failed.flatMap(failureLines),
 ]
-
-// The plan is printed race by race as the run goes; not found and ambiguous appear here only.
-// A dry run plans the rows it would write, a real run has already written them.
-export type FilledLabel = "pianificate" | "inserite"
 
 export const summaryLines = (
     results: ReadonlyArray<RaceFillResult>,
