@@ -27,6 +27,16 @@ const TabList = Schema.Struct({
     sheets: Schema.optional(Schema.Array(Schema.Struct({ properties: TabProperties }))),
 })
 
+const decodeRows = Schema.decodeUnknownEffect(Rows)
+const decodeTabList = Schema.decodeUnknownEffect(TabList)
+
+const unexpectedResponse = (spreadsheetId: string) => (cause: Schema.SchemaError) =>
+    SheetApiError.make({
+        spreadsheetId,
+        message: `risposta inattesa da Google Sheets: ${cause.message}`,
+        cause,
+    })
+
 const openTab = Effect.fn("openTab")(function* (scope: string) {
     const { spreadsheetId, tab, serviceAccount } = yield* sheetConfig
     const key = yield* loadServiceAccountKey(serviceAccount)
@@ -42,21 +52,12 @@ const openTab = Effect.fn("openTab")(function* (scope: string) {
     const call = <A>(request: () => Promise<A>) =>
         Effect.tryPromise({ try: request, catch: toSheetError(spreadsheetId) })
 
-    const decode = <S extends Schema.Top>(schema: S, value: unknown) =>
-        Schema.decodeUnknownEffect(schema)(value).pipe(
-            Effect.mapError((cause) =>
-                SheetApiError.make({
-                    spreadsheetId,
-                    message: `risposta inattesa da Google Sheets: ${cause.message}`,
-                    cause,
-                }),
-            ),
-        )
-
     const listed = yield* call(() =>
         api.spreadsheets.get({ spreadsheetId, fields: "sheets.properties(sheetId,title,hidden)" }),
     )
-    const { sheets: list = [] } = yield* decode(TabList, listed.data)
+    const { sheets: list = [] } = yield* decodeTabList(listed.data).pipe(
+        Effect.mapError(unexpectedResponse(spreadsheetId)),
+    )
     // The JSON API leaves out zero-valued fields, so the very first tab of a spreadsheet
     // comes back without the `sheetId` it does have, which is 0.
     const available = list.map(({ properties }) => ({
@@ -82,8 +83,10 @@ const openTab = Effect.fn("openTab")(function* (scope: string) {
                 range: quoteSheetTitle(chosen.value.title),
             }),
         )
-        return yield* decode(Rows, response.data.values ?? [])
-    })
+        return yield* decodeRows(response.data.values ?? []).pipe(
+            Effect.mapError(unexpectedResponse(spreadsheetId)),
+        )
+    }).pipe(Effect.withSpan("rows"))
 
     const insert = (planned: PlannedRow) =>
         call(() =>

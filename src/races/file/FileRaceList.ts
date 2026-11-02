@@ -29,7 +29,7 @@ export const layer = Layer.effect(
             const list = parseRaceList(text)
             yield* Effect.forEach(list.duplicates, (duplicate) => warnDuplicate(path, duplicate))
             return list.names
-        })
+        }).pipe(Effect.withSpan("names"))
 
         return RaceList.of({ names })
     }),

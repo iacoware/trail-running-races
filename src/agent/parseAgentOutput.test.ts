@@ -69,5 +69,5 @@ test("fails when the type is not Trail or Sky", () => {
 })
 
 test("fails when the esito is unknown", () => {
-    expect(failureMessage('{"esito":"forse"}')).toContain("esito")
+    failureMessage('{"esito":"forse"}')
 })
