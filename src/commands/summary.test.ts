@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 
-import { AgentTimeout } from "../agent/errors.ts"
+import { AgentInvalidOutput, AgentTimeout } from "../agent/errors.ts"
 import { plannedRow } from "../testing/plannedRow.ts"
 import type { RaceFillResult } from "./fill.ts"
 import { hasErrors, summaryLines } from "./summary.ts"
@@ -43,6 +43,43 @@ test("counts every category and lists the races behind each one", () => {
         "errori: 1",
         "  - Ultra trail Mugello: AgentTimeout: agente senza risposta entro 300s",
     ])
+})
+
+test("shows the agent's raw output under an invalid-output error", () => {
+    const failed: RaceFillResult = {
+        _tag: "Failed",
+        name: "Gara",
+        error: AgentInvalidOutput.make({
+            race: "Gara",
+            output: 'Ecco:\n{"esito":"forse"}\n',
+            message: "scheda non conforme allo schema: Expected RaceCard",
+        }),
+    }
+
+    const lines = summaryLines([failed], "pianificate")
+
+    expect(lines.slice(-4)).toEqual([
+        "  - Gara: AgentInvalidOutput: scheda non conforme allo schema: Expected RaceCard",
+        "    output dell'agente:",
+        "      Ecco:",
+        '      {"esito":"forse"}',
+    ])
+})
+
+test("marks an empty agent output instead of printing nothing", () => {
+    const failed: RaceFillResult = {
+        _tag: "Failed",
+        name: "Gara",
+        error: AgentInvalidOutput.make({
+            race: "Gara",
+            output: "  \n",
+            message: "nessun oggetto JSON nell'output dell'agente",
+        }),
+    }
+
+    const lines = summaryLines([failed], "pianificate")
+
+    expect(lines.at(-1)).toBe("    output dell'agente: (vuoto)")
 })
 
 test("keeps the zero counts of an empty run", () => {

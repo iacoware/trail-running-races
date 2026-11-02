@@ -1,4 +1,8 @@
+import { Data, Predicate } from "effect"
+
 import { RaceFillResult } from "./fill.ts"
+
+type FailedRace = Data.TaggedEnum.Value<RaceFillResult, "Failed">
 
 const withTag = <T extends RaceFillResult["_tag"]>(
     results: ReadonlyArray<RaceFillResult>,
@@ -8,6 +12,24 @@ const withTag = <T extends RaceFillResult["_tag"]>(
 const count = (label: string, lines: ReadonlyArray<string>) => [
     `${label}: ${lines.length}`,
     ...lines.map((line) => `  - ${line}`),
+]
+
+// The decode error alone does not say what the agent wrote; its raw output does.
+const failureLines = (result: FailedRace) => {
+    const headline = `  - ${result.name}: ${result.error._tag}: ${result.error.message}`
+    if (!Predicate.isTagged(result.error, "AgentInvalidOutput")) return [headline]
+    const output = result.error.output.trim()
+    if (output === "") return [headline, "    output dell'agente: (vuoto)"]
+    return [
+        headline,
+        "    output dell'agente:",
+        ...output.split("\n").map((line) => `      ${line}`),
+    ]
+}
+
+const failures = (failed: ReadonlyArray<FailedRace>) => [
+    `errori: ${failed.length}`,
+    ...failed.flatMap(failureLines),
 ]
 
 // The plan is printed race by race as the run goes; not found and ambiguous appear here only.
@@ -33,12 +55,7 @@ export const summaryLines = (
             (result) => `${result.name}: candidati ${result.candidates.join(", ")}`,
         ),
     ),
-    ...count(
-        "errori",
-        withTag(results, "Failed").map(
-            (result) => `${result.name}: ${result.error._tag}: ${result.error.message}`,
-        ),
-    ),
+    ...failures(withTag(results, "Failed")),
 ]
 
 // Only an error is worth a failing exit code: a race not found or ambiguous is a result.
